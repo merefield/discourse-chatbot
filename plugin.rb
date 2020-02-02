@@ -2,7 +2,7 @@
 # about: a plugin that adds a Frotz bot that can tell interactive stories
 # version: 0.1
 # authors: merefield
-# credits: is a mashup of an existing chatbot interface for Discourse by p & merefield
+# credits: is a mashup of an existing chatbot for Discourse by p08, ambisoft & merefield
 # and a php RESTful wrapper for Frotz by Tim Lefler https://github.com/tlef/restful-frotz
 # and of course relies on the Frotz interpreter here: https://gitlab.com/DavidGriffith/frotz
 # specifically the dumb interface
