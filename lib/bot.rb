@@ -19,9 +19,12 @@ module DiscourseFrotz
 
       mentions_bot_name = post_contents.downcase =~ /@#{bot_username.downcase}\b/
 
-      prior_post = Post.where(topic_id: topic.id).second_to_last
-
-      last_post_was_bot = (post.reply_to_user_id == bot_user.id) || (prior_post.user_id == bot_user.id)
+      if post.post_number > 1
+        prior_post = Post.where(topic_id: topic.id).second_to_last
+        last_post_was_bot = (post.reply_to_user_id == bot_user.id) || (prior_post.user_id == bot_user.id)
+      else
+        last_post_was_bot = false
+      end
 
       user_id = user.id
 
@@ -32,7 +35,7 @@ module DiscourseFrotz
             reply_to_post_id: post.id,
             message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
           }
-          job_class = ::Jobs::DiscourseFrotzCallFrotzBotJob
+          job_class = ::Jobs::DiscourseFrotzPostReplyJob
           invoke_background_job(job_class, opts)
       end
     end

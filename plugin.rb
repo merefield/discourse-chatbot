@@ -17,29 +17,6 @@ after_initialize do
 
     def execute(opts)
 
-      #puts "DiscourseFroztPostReplyJob running..."
-
-      bot_user_id = opts[:bot_user_id]
-      reply_to_post_id = opts[:reply_to_post_id]
-      message_body = opts[:message_body]
-
-      bot_user = ::User.find_by(id: bot_user_id)
-      post = ::Post.find_by(id: reply_to_post_id)
-
-      #puts "Bot user: #{bot_user}"
-      #puts "Post: #{post}"
-
-      if bot_user && post
-        reply_creator = DiscourseFrotz::ReplyCreator.new(user: bot_user, reply_to: post)
-        reply_creator.create(message_body)
-      end
-    end
-  end
-
-  class ::Jobs::DiscourseFrotzCallFrotzBotJob < Jobs::Base
-
-    def execute(opts)
-
       bot_user_id = opts[:bot_user_id]
       reply_to_post_id = opts[:reply_to_post_id]
 
@@ -48,12 +25,11 @@ after_initialize do
 
       if bot_user && post
         message_body = nil
-        #begin
+        begin
           message_body = DiscourseFrotz::FrotzBot.ask(opts)
-        #rescue
-          
-        #   message_body = "Sorry, I'm not well right now. Lets talk some other time."
-        #end
+        rescue
+          message_body = "Sorry, I'm not well right now. Lets talk some other time."
+        end
         reply_creator = DiscourseFrotz::ReplyCreator.new(user: bot_user, reply_to: post)
         reply_creator.create(message_body)
       end
@@ -62,8 +38,14 @@ after_initialize do
 
   DiscourseEvent.on(:post_created) do |*params|
     post, opts, user = params
-    bot = DiscourseFrotz::Bot.new
-    bot.on_post_created(post)
+
+    bot_username = SiteSetting.frotz_bot_user
+    bot_user = User.find_by(username: bot_username)
+
+    if (user.id != bot_user.id) && post.reply_count = 0
+      bot = DiscourseFrotz::Bot.new
+      bot.on_post_created(post)
+    end
   end
 
 end

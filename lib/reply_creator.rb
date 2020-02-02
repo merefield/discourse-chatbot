@@ -21,10 +21,22 @@ module DiscourseFrotz
         is_private_msg = (@reply_to.topic && @reply_to.topic.private_message?)
         unless is_private_msg
           puts "Creating a new reply message..."
-          result = NewPostManager.new(@author, params).perform
-          if result.success?
-            puts "The message has been created successfully"
-          else
+
+          if raw_content.blank? 
+            raw_content = '...'
+          end
+          
+          default_opts = {
+            raw: raw_content,
+            topic_id: @reply_to.topic_id,
+            reply_to_post_number: @reply_to.post_number,
+            post_alert_options: { skip_send_email: true },
+            skip_validations: true
+          }
+          begin
+           new_post = PostCreator.create!(@author, default_opts)
+           puts "The message has been created successfully"
+          rescue
             puts "Problem with the message:"
             puts result.errors.inspect
           end
