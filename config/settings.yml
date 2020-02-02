@@ -1,0 +1,9 @@
+plugins:
+  frotz_stories:
+    client: false
+    type: list
+    default: ""
+  frotz_bot_user:
+    client: false
+    type: username
+    default: -2

@@ -1,0 +1,4 @@
+en:
+  site_settings:
+    frotz_stories: "Add each story file in format 'name,filename'"
+    frotz_bot_user: "User (preferably not a real person) used to tell the story"
