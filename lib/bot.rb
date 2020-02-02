@@ -19,7 +19,9 @@ module DiscourseFrotz
 
       mentions_bot_name = post_contents.downcase =~ /@#{bot_username.downcase}\b/
 
-      last_post_was_bot = (post.reply_to_user_id == bot_user.id) || (post.post_number - 1 > 0 && Post.find_by(post_number: (post.post_number - 1)).user_id == bot_user.id)
+      prior_post = Post.where(topic_id: topic.id).second_to_last
+
+      last_post_was_bot = (post.reply_to_user_id == bot_user.id) || (prior_post.user_id == bot_user.id)
 
       user_id = user.id
 
