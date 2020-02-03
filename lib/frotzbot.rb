@@ -4,23 +4,30 @@ module DiscourseFrotz
 
   class FrotzBot
     EXEC_PATH = '~/projects/frotz/./dfrotz'.freeze
-    STORY_PATH = '~/projects/frotz/stories/hhgg.z3'.freeze
+    #STORY_PATH = '~/projects/frotz/stories/hhgg.z3'.freeze
+    #STORY_HEADER_LINES = 8
+    #STORY_LOAD_LINES = 6
+    #STORY_SAVE_LINES = 3
+    STORY_PATH = '~/projects/frotz/stories/zork1.z5'.freeze
     STORY_HEADER_LINES = 9
-    STORY_LOAD_LINES = 6
+    STORY_LOAD_LINES = 7
     STORY_SAVE_LINES = 3
     SAVE_PATH = 'frotz/savegames'.freeze
     STREAM_PATH = 'frotz/streams'.freeze
 
     def self.strip_header_and_footer(string, show_intro)
+      puts "BEFORE strip:\n"+string
       lines = string.split(/\n+|\r+/)
 
       if show_intro
-        lines.delete(lines[0])
+        lines.delete_at(0)
+        lines.delete_at(0)
       end
   
       stripped_lines = []
   
       lines.each_with_index do |line, index|
+        line = line.sub("> > ", "")
         if line.strip[0,1] == "@"
           next
         end
@@ -33,7 +40,7 @@ module DiscourseFrotz
           #
           # Skip the load data
           #
-        elsif (!show_intro && ((index + STORY_SAVE_LINES) >= lines.count+1))
+        elsif (!show_intro && ((index + STORY_SAVE_LINES) >= (lines.count+1)))
           #
           # Skip the save data
           #
@@ -42,7 +49,7 @@ module DiscourseFrotz
         end
       end
   
-      return stripped_lines.join("\n");
+      return stripped_lines.join("\n")
     end
 
 
@@ -90,7 +97,7 @@ module DiscourseFrotz
       output = `#{EXEC_PATH} -i -Z 0 #{STORY_PATH} < #{STREAM_PATH}/#{user_id}.f_in`
 
       lines = strip_header_and_footer(output, !had_save);
-
+      puts "AFTER strip:\n"+lines
       reply = lines
     end
   end
