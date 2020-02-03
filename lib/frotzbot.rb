@@ -3,19 +3,8 @@ module DiscourseFrotz
   class FrotzBot < StandardError; end
 
   class FrotzBot
-    EXEC_PATH = '~/projects/frotz/./dfrotz'.freeze
-    #STORY_PATH = '~/projects/frotz/stories/hhgg.z3'.freeze
-    #STORY_HEADER_LINES = 8
-    #STORY_LOAD_LINES = 6
-    #STORY_SAVE_LINES = 3
-    STORY_PATH = '~/projects/frotz/stories/zork1.z5'.freeze
-    STORY_HEADER_LINES = 9
-    STORY_LOAD_LINES = 7
-    STORY_SAVE_LINES = 3
-    SAVE_PATH = 'frotz/savegames'.freeze
-    STREAM_PATH = 'frotz/streams'.freeze
 
-    def self.strip_header_and_footer(string, show_intro)
+    def self.strip_header_and_footer(string, show_intro, story_header_lines, story_load_lines, story_save_lines)
       puts "BEFORE strip:\n"+string
       lines = string.split(/\n+|\r+/)
 
@@ -32,15 +21,15 @@ module DiscourseFrotz
           next
         end
   
-        if (index < STORY_HEADER_LINES-1)
+        if (index < story_header_lines-1)
           if show_intro
             stripped_lines << line.gsub("\"", "'")
           end
-        elsif (index < (STORY_HEADER_LINES+STORY_LOAD_LINES-1))
+        elsif (index < (story_header_lines+story_load_lines-1))
           #
           # Skip the load data
           #
-        elsif (!show_intro && ((index + STORY_SAVE_LINES) >= (lines.count+1)))
+        elsif (!show_intro && ((index + story_save_lines) >= (lines.count+1)))
           #
           # Skip the save data
           #
@@ -52,26 +41,131 @@ module DiscourseFrotz
       return stripped_lines.join("\n")
     end
 
+    def self.list_games
+
+      game_settings = SiteSetting.frotz_stories.split('|')
+      games_list = ""
+      
+      game_settings.each_with_index do |line, index|
+        game = line.split(',')
+        games_list +="#{index+1}. #{game[0]}\n"
+      end
+
+      games_list
+    end
+
 
     def self.ask(opts)
   
       msg = opts[:message_body]
 
       frotz_response = ""
+      save_location = ""
+      new_save_location = ""
+      game_file = ""
+      story_header_lines = 9
+      story_load_lines = 7
+      story_save_lines = 3
+      game_file_prefix = ""
+      game_number = 1
+      game_reset = false
 
       user_id = opts[:user_id]
 
+      available_games = list_games
+
       msg = CGI.unescapeHTML(msg.gsub(/[^a-zA-Z0-9 ]+/, "")).gsub(/[^A-Za-z0-9]/, " ").strip
 
-      save_location = Pathname("#{SAVE_PATH}/#{user_id}.zsav")
+      current_users_save_files = `ls -t #{SiteSetting.frotz_save_files_location}/*_#{user_id}.zsav | head -1`
+      
+      save_location = current_users_save_files.split('\n').first
+      
+      if save_location
+        first_filename = save_location.split('/')[-1]
+        if first_filename.include?('_')
+          current_game_file_prefix = first_filename.split('_')[0]
 
+          available_games = SiteSetting.frotz_stories.split('|')
+
+          available_games.each_with_index do |line, index|
+              game = line.split(',')
+              story_file = game[1]
+
+              if story_file.include?(current_game_file_prefix)
+                game_number = index + 1
+                game_file = story_file
+                story_header_lines = game[2].to_i
+                story_load_lines = game[3].to_i
+                story_save_lines = game[4].to_i
+              end
+          end
+        end
+      end
+     
       if ['save','restore','quit','exit'].include?(msg)
           return "'#{msg}' is a restricted command"
       end
 
-      if ['reset','restart'].include?(msg)
-        system("rm #{save_location}")
-        return "Game reset!"
+      if ['reset game'].include?(msg)
+        if current_users_save_files.length
+          `rm #{save_location}`
+          game_reset = true
+          msg = "start game #{game_number}"
+        else
+          return "No save file found, game is already at start"
+        end
+      end
+
+      if msg.include?('list games')
+        return list_games
+      end
+
+      if msg.include?('continue game') || msg.include?('start game')
+        if !msg[/\d+/].nil?
+          game_index = msg[/\d+/].to_i - 1
+
+          available_games = SiteSetting.frotz_stories.split('|')
+
+          available_games.each_with_index do |line, index|
+          
+            if index == game_index
+              game = line.split(',')
+              game_file = game[1]
+              story_header_lines = game[2].to_i
+              story_load_lines = game[3].to_i
+              story_save_lines = game[4].to_i
+              new_save_location = Pathname("#{SiteSetting.frotz_save_files_location}/#{game_file.split('.')[0]}_#{user_id}.zsav")
+            end
+          end
+
+          msg = "look"
+          
+          if ['continue game'].include?(msg)
+            
+            found_save = false
+            
+            available_saves = current_users_save_files.split('\n')
+
+            available_saves.each_with_index do |save, index|
+              if save.split('/')[-1].includes(game_file)
+              
+                save_location = Pathname(save)
+                new_save_location = Pathname(save)
+                found_save = true
+              end
+            end
+
+            if !found_save
+              save_location = ""
+            end
+          end
+        else
+          return "You must specify a game (use 'list games')"
+        end
+      end
+
+      if game_file.blank?
+        return "You must specify a valid game (use 'list games' then 'start game <game number>')"
       end
 
       # Restore from saved path
@@ -82,23 +176,24 @@ module DiscourseFrotz
       # Save to save path - override Y, if file exists
       #
 	    overwrite = ""
-      had_save =  save_location.exist?
 
-      if had_save
+      if save_location.blank?
 		    overwrite = "\ny"
-      end
+      end 
 
-	    input_data = "restore\n#{save_location}\n\\lt\n\\cm\\w\n#{msg}\nsave\n#{save_location}#{overwrite}\n"
+      story_path = Pathname("#{SiteSetting.frotz_story_files_location}/#{game_file}")
 
-      input_stream = Pathname("#{STREAM_PATH}/#{user_id}.f_in")
+	    input_data = "restore\n#{save_location}\n\\lt\n\\cm\\w\n#{msg}\nsave\n#{new_save_location}#{overwrite}\n"
+
+      input_stream = Pathname("#{SiteSetting.frotz_stream_files_location}/#{user_id}.f_in")
       
       File.open(input_stream, 'w+') { |file| file.write(input_data) }
 
-      output = `#{EXEC_PATH} -i -Z 0 #{STORY_PATH} < #{STREAM_PATH}/#{user_id}.f_in`
+      output = `#{SiteSetting.frotz_dumb_executable_file_location} -i -Z 0 #{story_path} < #{input_stream}`
 
-      lines = strip_header_and_footer(output, !had_save);
+      lines = strip_header_and_footer(output, save_location.blank?, story_header_lines, story_load_lines, story_save_lines) 
       puts "AFTER strip:\n"+lines
-      reply = lines
+      reply = game_reset ? "Game Reset:\n\n" + lines : lines
     end
   end
 end

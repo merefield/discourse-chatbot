@@ -7,3 +7,15 @@ plugins:
     client: false
     type: username
     default: -2
+  frotz_save_files_location:
+    client: false
+    default: "frotz/savegames"
+  frotz_stream_files_location:
+    client: false
+    default: "frotz/streams"
+  frotz_story_files_location:
+    client: false
+    default: "~/projects/frotz/stories"
+  frotz_dumb_executable_file_location:
+    client: false
+    default: "~/projects/frotz/./dfrotz"

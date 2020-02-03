@@ -27,8 +27,8 @@ after_initialize do
         message_body = nil
         begin
           message_body = DiscourseFrotz::FrotzBot.ask(opts)
-        rescue
-          message_body = "Sorry, I'm not well right now. Lets talk some other time."
+       # rescue
+        #  message_body = "Sorry, I'm not well right now. Lets talk some other time."
         end
         reply_creator = DiscourseFrotz::ReplyCreator.new(user: bot_user, reply_to: post)
         reply_creator.create(message_body)
