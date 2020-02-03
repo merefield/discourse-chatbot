@@ -67,6 +67,8 @@ module DiscourseFrotz
       story_load_lines = 7
       story_save_lines = 3
       game_file_prefix = ""
+      game_title = ""
+      supplemental_info = ""
       game_number = 1
       game_reset = false
 
@@ -76,12 +78,12 @@ module DiscourseFrotz
 
       msg = CGI.unescapeHTML(msg.gsub(/[^a-zA-Z0-9 ]+/, "")).gsub(/[^A-Za-z0-9]/, " ").strip
 
-      current_users_save_files = `ls -t #{SiteSetting.frotz_save_files_location}/*_#{user_id}.zsav | head -1`
+      current_users_save_files = `ls -t #{SiteSetting.frotz_save_files_location}/*_#{user_id}.zsav`
       
-      save_location = current_users_save_files.split('\n').first
+      save_location = Pathname(current_users_save_files.split("\n").first)
       
       if save_location
-        first_filename = save_location.split('/')[-1]
+        first_filename = save_location.basename.to_s
         if first_filename.include?('_')
           current_game_file_prefix = first_filename.split('_')[0]
 
@@ -130,25 +132,25 @@ module DiscourseFrotz
           
             if index == game_index
               game = line.split(',')
+              game_title = game[0]
               game_file = game[1]
               story_header_lines = game[2].to_i
               story_load_lines = game[3].to_i
               story_save_lines = game[4].to_i
+              save_location = ""
               new_save_location = Pathname("#{SiteSetting.frotz_save_files_location}/#{game_file.split('.')[0]}_#{user_id}.zsav")
             end
           end
-
-          msg = "look"
           
-          if ['continue game'].include?(msg)
-            
+          if msg.include?('continue game')
+
             found_save = false
             
-            available_saves = current_users_save_files.split('\n')
+            available_saves = current_users_save_files.split("\n")
 
             available_saves.each_with_index do |save, index|
-              if save.split('/')[-1].includes(game_file)
-              
+            
+              if Pathname(save).basename.to_s.include?(game_file.split(".")[0])
                 save_location = Pathname(save)
                 new_save_location = Pathname(save)
                 found_save = true
@@ -158,6 +160,8 @@ module DiscourseFrotz
             if !found_save
               save_location = ""
             end
+            supplemental_info = "Continuing from where you left off in #{game_title}:\n\n"
+            msg = "look"
           end
         else
           return "You must specify a game (use 'list games')"
@@ -176,14 +180,21 @@ module DiscourseFrotz
       # Save to save path - override Y, if file exists
       #
 	    overwrite = ""
+      input_data = ""
 
       if save_location.blank?
-		    overwrite = "\ny"
+        story_load_lines = 0
+      else
+        input_data = "restore\n#{save_location}\n"
+        if new_save_location.blank?
+          new_save_location = save_location
+        end
       end 
 
+      overwrite = "\ny"
       story_path = Pathname("#{SiteSetting.frotz_story_files_location}/#{game_file}")
 
-	    input_data = "restore\n#{save_location}\n\\lt\n\\cm\\w\n#{msg}\nsave\n#{new_save_location}#{overwrite}\n"
+	    input_data += "\\lt\n\\cm\\w\n#{msg}\nsave\n#{new_save_location}#{overwrite}\n"
 
       input_stream = Pathname("#{SiteSetting.frotz_stream_files_location}/#{user_id}.f_in")
       
@@ -193,7 +204,7 @@ module DiscourseFrotz
 
       lines = strip_header_and_footer(output, save_location.blank?, story_header_lines, story_load_lines, story_save_lines) 
       puts "AFTER strip:\n"+lines
-      reply = game_reset ? "Game Reset:\n\n" + lines : lines
+      reply = game_reset ? "Game Reset:\n\n" + lines : supplemental_info + lines
     end
   end
 end
