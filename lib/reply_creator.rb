@@ -36,9 +36,9 @@ module DiscourseFrotz
           begin
            new_post = PostCreator.create!(@author, default_opts)
            puts "The message has been created successfully"
-          rescue
-            puts "Problem with the message:"
-            puts result.errors.inspect
+          rescue => e
+            puts "Problem with the message: #{e}"
+            Rails.logger.error ("FroztBot: There was a problem: #{e}")
           end
         else
           puts "Skipping since the post belongs to a private conversation"
