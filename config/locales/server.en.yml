@@ -1,8 +1,21 @@
 en:
   site_settings:
+    discourse_frotz_enabled: "Enable the Frotz plugin"
     frotz_stories: "Add each story file in format 'name,filename'"
     frotz_bot_user: "User (preferably not a real person) used to tell the story"
     frotz_saves_directory: "Directory containing frotz games saves"
     frotz_stream_files_directory: "Directory containing frotz plugin stream files"
     frotz_story_files_directory: "Directory containing frotz story files"
     frotz_dumb_executable_directory: "Directory containing frotz dumb executable"
+  frotz:
+    errors:
+      general: "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"
+      noexecutable: "No frozt dumb executable found, please raise with admin"
+      nosavefile: "No save file found, game is already at start"
+      restricted: "is a restricted command"
+      gamenotspecified: "You must specify a game (use 'list games' then 'start game _game-number_')"
+      valuetoohigh: "Value provided is too high, not enough games available.  Use 'list games'."
+      nostoryfile: "No corresponding story file found, please raise with admin"
+    responses:
+      starting: "Staring game"
+      continuing: "Cotinuing where you left of in"

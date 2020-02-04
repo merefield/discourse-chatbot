@@ -70,7 +70,7 @@ module DiscourseFrotz
       overwrite = ""
       input_data = ""
 
-      msg = opts[:message_body]
+      msg = opts[:message_body].downcase
 
       user_id = opts[:user_id]
 
@@ -83,7 +83,7 @@ module DiscourseFrotz
       executable_check = `ls -t #{SiteSetting.frotz_dumb_executable_directory}/dfrotz`
 
       if executable_check.blank?
-        return "No frozt dumb executable found, please raise with admin"
+        return I18n.t('frotz.errors.noexecutable')
       end 
 
       save_location = Pathname(current_users_save_files.split("\n").first.blank? ? "" : current_users_save_files.split("\n").first)
@@ -111,7 +111,7 @@ module DiscourseFrotz
       end
      
       if ['save','restore','quit','exit'].include?(msg)
-          return "'#{msg}' is a restricted command"
+          return "'#{msg}' #{I18n.t('frotz.errors.restricted')}"
       end
 
       if ['reset game'].include?(msg)
@@ -120,7 +120,7 @@ module DiscourseFrotz
           supplemental_info = "**Game Reset:**\n\n"
           msg = "start game #{game_number}"
         else
-          return "_No save file found, game is already at start_"
+          return I18n.t('frotz.errors.nosavefile')
         end
       end
 
@@ -134,6 +134,10 @@ module DiscourseFrotz
 
           available_games = SiteSetting.frotz_stories.split('|')
 
+          if game_index > available_games.count - 1
+            return I18n.t('frotz.errors.valuetoohigh')
+          end
+
           available_games.each_with_index do |line, index|
           
             if index == game_index
@@ -143,7 +147,7 @@ module DiscourseFrotz
               story_header_lines = game[2].to_i
               story_load_lines = game[3].to_i
               story_save_lines = game[4].to_i
-              supplemental_info = "**Starting game #{game_title}:**\n\n"
+              supplemental_info = "**#{I18n.t('frotz.responses.starting')} #{game_title}:**\n\n"
               save_location = ""
               new_save_location = Pathname("#{SiteSetting.frotz_saves_directory}/#{game_file.split('.')[0]}_#{user_id}.zsav")
             end
@@ -167,16 +171,16 @@ module DiscourseFrotz
             if !found_save
               save_location = ""
             end
-            supplemental_info = "**Continuing from where you left off in #{game_title}:**\n\n"
+            supplemental_info = "**#{I18n.t('frotz.responses.continuing')} #{game_title}:**\n\n"
             msg = "look"
           end
         else
-          return "You must specify a game (use 'list games' then 'start game _game-number_')"
+          return I18n.t('frotz.errors.gamenotspecified')
         end
       end
 
       if game_file.blank?
-        return "You must specify a valid game (use 'list games' then 'start game _game number_')"
+        return I18n.t('frotz.errors.gamenotspecified')
       end
 
       if save_location.blank?
@@ -200,7 +204,7 @@ module DiscourseFrotz
       story_path_check = `ls -t #{SiteSetting.frotz_story_files_directory}/#{game_file}`
 
       if story_path_check.blank?
-        return "No corresponding story file found, please raise with admin"
+        return I18n.t('frotz.errors.nostoryfile')
       end 
 
       story_path = Pathname("#{SiteSetting.frotz_story_files_directory}/#{game_file}")

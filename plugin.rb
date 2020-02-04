@@ -11,6 +11,8 @@ require_relative 'lib/bot'
 require_relative 'lib/frotzbot'
 require_relative 'lib/reply_creator'
 
+enabled_site_setting :discourse_frotz_enabled
+
 after_initialize do
 
   class ::Jobs::DiscourseFrotzPostReplyJob < Jobs::Base
@@ -28,7 +30,7 @@ after_initialize do
         begin
           message_body = DiscourseFrotz::FrotzBot.ask(opts)
         rescue => e
-          message_body = "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"
+          message_body = I18n.t('frotz.errors.general')
           Rails.logger.error ("FroztBot: There was a problem: #{e}")
         end
         reply_creator = DiscourseFrotz::ReplyCreator.new(user: bot_user, reply_to: post)
