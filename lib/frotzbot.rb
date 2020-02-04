@@ -5,7 +5,7 @@ module DiscourseFrotz
   class FrotzBot
 
     def self.strip_header_and_footer(string, show_intro, story_header_lines, story_load_lines, story_save_lines)
-      puts "BEFORE strip:\n"+string
+
       lines = string.split(/\n+|\r+/)
 
       if show_intro
@@ -54,11 +54,8 @@ module DiscourseFrotz
       games_list
     end
 
-
     def self.ask(opts)
   
-      msg = opts[:message_body]
-
       frotz_response = ""
       save_location = ""
       new_save_location = ""
@@ -70,7 +67,10 @@ module DiscourseFrotz
       game_title = ""
       supplemental_info = ""
       game_number = 1
-      game_reset = false
+      overwrite = ""
+      input_data = ""
+
+      msg = opts[:message_body]
 
       user_id = opts[:user_id]
 
@@ -111,10 +111,10 @@ module DiscourseFrotz
       if ['reset game'].include?(msg)
         if current_users_save_files.length
           `rm #{save_location}`
-          game_reset = true
+          supplemental_info = "**Game Reset:**\n\n"
           msg = "start game #{game_number}"
         else
-          return "No save file found, game is already at start"
+          return "_No save file found, game is already at start_"
         end
       end
 
@@ -137,6 +137,7 @@ module DiscourseFrotz
               story_header_lines = game[2].to_i
               story_load_lines = game[3].to_i
               story_save_lines = game[4].to_i
+              supplemental_info = "**Starting game #{game_title}:**\n\n"
               save_location = ""
               new_save_location = Pathname("#{SiteSetting.frotz_save_files_location}/#{game_file.split('.')[0]}_#{user_id}.zsav")
             end
@@ -160,27 +161,17 @@ module DiscourseFrotz
             if !found_save
               save_location = ""
             end
-            supplemental_info = "Continuing from where you left off in #{game_title}:\n\n"
+            supplemental_info = "**Continuing from where you left off in #{game_title}:**\n\n"
             msg = "look"
           end
         else
-          return "You must specify a game (use 'list games')"
+          return "You must specify a game (use 'list games' then 'start game _game-number_')"
         end
       end
 
       if game_file.blank?
-        return "You must specify a valid game (use 'list games' then 'start game <game number>')"
+        return "You must specify a valid game (use 'list games' then 'start game _game number_')"
       end
-
-      # Restore from saved path
-      # \lt - Turn on line identification
-      # \cm - Dont show blank lines
-      # \w  - Advance the timer to now
-      # Command
-      # Save to save path - override Y, if file exists
-      #
-	    overwrite = ""
-      input_data = ""
 
       if save_location.blank?
         story_load_lines = 0
@@ -190,6 +181,13 @@ module DiscourseFrotz
           new_save_location = save_location
         end
       end 
+
+      # Restore from saved path
+      # \lt - Turn on line identification
+      # \cm - Dont show blank lines
+      # \w  - Advance the timer to now
+      # Command
+      # Save to save path - override Y, if file exists
 
       overwrite = "\ny"
       story_path = Pathname("#{SiteSetting.frotz_story_files_location}/#{game_file}")
@@ -201,10 +199,12 @@ module DiscourseFrotz
       File.open(input_stream, 'w+') { |file| file.write(input_data) }
 
       output = `#{SiteSetting.frotz_dumb_executable_file_location} -i -Z 0 #{story_path} < #{input_stream}`
-
+      
+      puts "BEFORE strip:\n"+output
       lines = strip_header_and_footer(output, save_location.blank?, story_header_lines, story_load_lines, story_save_lines) 
       puts "AFTER strip:\n"+lines
-      reply = game_reset ? "Game Reset:\n\n" + lines : supplemental_info + lines
+      
+      reply = supplemental_info + lines
     end
   end
 end
