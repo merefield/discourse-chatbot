@@ -2,20 +2,20 @@ plugins:
   frotz_stories:
     client: false
     type: list
-    default: ""
+    default: "The Hitchhiker's Guide to the Galaxy,hhgg.z3,8,6,3|Zork 1,zork1.z5,9,7,3"
   frotz_bot_user:
     client: false
     type: username
-    default: -2
-  frotz_save_files_location:
+    default: -5
+  frotz_saves_directory:
     client: false
     default: "frotz/savegames"
-  frotz_stream_files_location:
+  frotz_stream_files_directory:
     client: false
     default: "frotz/streams"
-  frotz_story_files_location:
+  frotz_story_files_directory:
     client: false
-    default: "~/projects/frotz/stories"
-  frotz_dumb_executable_file_location:
+    default: "frotz/stories"
+  frotz_dumb_executable_directory:
     client: false
-    default: "~/projects/frotz/./dfrotz"
+    default: "frotz"

@@ -78,9 +78,15 @@ module DiscourseFrotz
 
       msg = CGI.unescapeHTML(msg.gsub(/[^a-zA-Z0-9 ]+/, "")).gsub(/[^A-Za-z0-9]/, " ").strip
 
-      current_users_save_files = `ls -t #{SiteSetting.frotz_save_files_location}/*_#{user_id}.zsav`
+      current_users_save_files = `ls -t #{SiteSetting.frotz_saves_directory}/*_#{user_id}.zsav`
       
-      save_location = Pathname(current_users_save_files.split("\n").first)
+      executable_check = `ls -t #{SiteSetting.frotz_dumb_executable_directory}/dfrotz`
+
+      if executable_check.blank?
+        return "No frozt dumb executable found, please raise with admin"
+      end 
+
+      save_location = Pathname(current_users_save_files.split("\n").first.blank? ? "" : current_users_save_files.split("\n").first)
       
       if save_location
         first_filename = save_location.basename.to_s
@@ -139,7 +145,7 @@ module DiscourseFrotz
               story_save_lines = game[4].to_i
               supplemental_info = "**Starting game #{game_title}:**\n\n"
               save_location = ""
-              new_save_location = Pathname("#{SiteSetting.frotz_save_files_location}/#{game_file.split('.')[0]}_#{user_id}.zsav")
+              new_save_location = Pathname("#{SiteSetting.frotz_saves_directory}/#{game_file.split('.')[0]}_#{user_id}.zsav")
             end
           end
           
@@ -190,15 +196,22 @@ module DiscourseFrotz
       # Save to save path - override Y, if file exists
 
       overwrite = "\ny"
-      story_path = Pathname("#{SiteSetting.frotz_story_files_location}/#{game_file}")
+
+      story_path_check = `ls -t #{SiteSetting.frotz_story_files_directory}/#{game_file}`
+
+      if story_path_check.blank?
+        return "No corresponding story file found, please raise with admin"
+      end 
+
+      story_path = Pathname("#{SiteSetting.frotz_story_files_directory}/#{game_file}")
 
 	    input_data += "\\lt\n\\cm\\w\n#{msg}\nsave\n#{new_save_location}#{overwrite}\n"
 
-      input_stream = Pathname("#{SiteSetting.frotz_stream_files_location}/#{user_id}.f_in")
+      input_stream = Pathname("#{SiteSetting.frotz_stream_files_directory}/#{user_id}.f_in")
       
       File.open(input_stream, 'w+') { |file| file.write(input_data) }
 
-      output = `#{SiteSetting.frotz_dumb_executable_file_location} -i -Z 0 #{story_path} < #{input_stream}`
+      output = `#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -i -Z 0 #{story_path} < #{input_stream}`
       
       puts "BEFORE strip:\n"+output
       lines = strip_header_and_footer(output, save_location.blank?, story_header_lines, story_load_lines, story_save_lines) 
