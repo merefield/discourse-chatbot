@@ -5,6 +5,14 @@ plugins:
   frotz_permitted_in_private_messages:
     default: false
     client: false
+  frotz_permitted_all_categories:
+    default: true
+    client: false
+  frotz_permitted_categories:
+    client: false
+    default: ''
+    type: category_list
+    list_type: "compact"
   frotz_stories:
     client: false
     type: list

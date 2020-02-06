@@ -2,6 +2,8 @@ en:
   site_settings:
     discourse_frotz_enabled: "Enable the Frotz plugin"
     frotz_permitted_in_private_messages: "Allow FrotzBot to play in Private Messages (might be abused?)"
+    frotz_permitted_all_categories: "Allow Frotzbot to play in any Category"
+    frotz_permitted_categories: "Allow Frotzbot to play only in these Categories if not allowed to play in all"
     frotz_stories: "Add each story file in format 'name,filename'"
     frotz_bot_user: "User (preferably not a real person) used to tell the story"
     frotz_saves_directory: "Directory containing frotz games saves"
@@ -18,6 +20,8 @@ en:
       invalidgamenumber: "Value provided is not valid, choose a valid game number.  Use 'list games'."
       nostoryfile: "No corresponding story file found, please raise with admin"
       forbiddeninprivatemessages: "Use in private messages has not been permitted, please contact the admin"
+      forbiddenoutsidethesecategories: "Public use of FrotzBot has only been permitted in these Categories: "
+      forbiddenanycategory: "Public use of FrotzBot has not been enabled in any Category, please contact your admin"
     responses:
       starting: "Starting game"
       continuing: "Cotinuing where you left of in"
