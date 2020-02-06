@@ -17,7 +17,7 @@ en:
       gamenotspecified: "You must specify a game (use 'list games' then 'start game _game-number_')"
       invalidgamenumber: "Value provided is not valid, choose a valid game number.  Use 'list games'."
       nostoryfile: "No corresponding story file found, please raise with admin"
-      forbiddeninprivatemessages: "Use in private messages has not been permitted, speak to your admin"
+      forbiddeninprivatemessages: "Use in private messages has not been permitted, please contact the admin"
     responses:
       starting: "Starting game"
       continuing: "Cotinuing where you left of in"
