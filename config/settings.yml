@@ -2,6 +2,9 @@ plugins:
   discourse_frotz_enabled:
     default: true
     client: false
+  frotz_permitted_in_private_messages:
+    default: false
+    client: false
   frotz_stories:
     client: false
     type: list

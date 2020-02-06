@@ -15,39 +15,21 @@ enabled_site_setting :discourse_frotz_enabled
 
 after_initialize do
 
-  class ::Jobs::DiscourseFrotzPostReplyJob < Jobs::Base
-
-    def execute(opts)
-
-      bot_user_id = opts[:bot_user_id]
-      reply_to_post_id = opts[:reply_to_post_id]
-
-      bot_user = ::User.find_by(id: bot_user_id)
-      post = ::Post.find_by(id: reply_to_post_id)
-
-      if bot_user && post
-        message_body = nil
-        begin
-          message_body = DiscourseFrotz::FrotzBot.ask(opts)
-        rescue => e
-          message_body = I18n.t('frotz.errors.general')
-          Rails.logger.error ("FroztBot: There was a problem: #{e}")
-        end
-        reply_creator = DiscourseFrotz::ReplyCreator.new(user: bot_user, reply_to: post)
-        reply_creator.create(message_body)
-      end
-    end
-  end
+  load File.expand_path('../jobs/frotzbot_reply_job.rb', __FILE__)
 
   DiscourseEvent.on(:post_created) do |*params|
     post, opts, user = params
 
-    bot_username = SiteSetting.frotz_bot_user
-    bot_user = User.find_by(username: bot_username)
+    if SiteSetting.discourse_frotz_enabled
 
-    if (user.id != bot_user.id) && post.reply_count = 0
-      bot = DiscourseFrotz::Bot.new
-      bot.on_post_created(post)
+      bot_username = SiteSetting.frotz_bot_user
+      bot_user = User.find_by(username: bot_username)
+
+      if (user.id != bot_user.id) && post.reply_count = 0
+        bot = DiscourseFrotz::Bot.new
+        bot.on_post_created(post)
+      end
+
     end
   end
 

@@ -35,7 +35,7 @@ module DiscourseFrotz
             reply_to_post_id: post.id,
             message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
           }
-          job_class = ::Jobs::DiscourseFrotzPostReplyJob
+          job_class = ::Jobs::FrotzBotPostReplyJob
           invoke_background_job(job_class, opts)
       end
     end

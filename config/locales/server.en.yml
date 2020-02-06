@@ -1,6 +1,7 @@
 en:
   site_settings:
     discourse_frotz_enabled: "Enable the Frotz plugin"
+    frotz_permitted_in_private_messages: "Allow FrotzBot to play in Private Messages (might be abused?)"
     frotz_stories: "Add each story file in format 'name,filename'"
     frotz_bot_user: "User (preferably not a real person) used to tell the story"
     frotz_saves_directory: "Directory containing frotz games saves"
@@ -14,8 +15,9 @@ en:
       nosavefile: "No save file found, game is already at start"
       restricted: "is a restricted command"
       gamenotspecified: "You must specify a game (use 'list games' then 'start game _game-number_')"
-      valuetoohigh: "Value provided is too high, not enough games available.  Use 'list games'."
+      invalidgamenumber: "Value provided is not valid, choose a valid game number.  Use 'list games'."
       nostoryfile: "No corresponding story file found, please raise with admin"
+      forbiddeninprivatemessages: "Use in private messages has not been permitted, speak to your admin"
     responses:
-      starting: "Staring game"
+      starting: "Starting game"
       continuing: "Cotinuing where you left of in"

@@ -134,8 +134,8 @@ module DiscourseFrotz
 
           available_games = SiteSetting.frotz_stories.split('|')
 
-          if game_index > available_games.count - 1
-            return I18n.t('frotz.errors.valuetoohigh')
+          if !game_index.between?(0, available_games.count - 1)
+            return I18n.t('frotz.errors.invalidgamenumber')
           end
 
           available_games.each_with_index do |line, index|
@@ -209,7 +209,7 @@ module DiscourseFrotz
 
       story_path = Pathname("#{SiteSetting.frotz_story_files_directory}/#{game_file}")
 
-	    input_data += "\\lt\n\\cm\\w\n#{msg}\nsave\n#{new_save_location}#{overwrite}\n"
+      input_data += "\\lt\n\\cm\\w\n#{msg}\nsave\n#{new_save_location}#{overwrite}\n"
 
       input_stream = Pathname("#{SiteSetting.frotz_stream_files_directory}/#{user_id}.f_in")
       
