@@ -4,40 +4,129 @@ module DiscourseFrotz
 
   class FrotzBot
 
-    def self.strip_header_and_footer(string, show_intro, story_header_lines, story_load_lines, story_save_lines)
+    ## ANSIname => ANSIcode LUT
+    ANSINAME2CODE= {  "reset"     => "\e[0m",    "bold"       => "\e[1m",
+      "underline" => "\e[4m",    "blink"      => "\e[5m",
+      "reverse"   => "\e[7m",    "invisible"  => "\e[8m",
+      "black"     => "\e[0;30m", "darkgrey"   => "\e[1;30m",
+      "red"       => "\e[0;31m", "lightred"   => "\e[1;31m",
+      "green"     => "\e[0;32m", "lightgreen" => "\e[1;32m",
+      "brown"     => "\e[0;33m", "yellow"     => "\e[1;33m",
+      "blue"      => "\e[0;34m", "lightblue"  => "\e[1;34m",
+      "purple"    => "\e[0;35m", "magenta"    => "\e[1;35m",
+      "cyan"      => "\e[1;36m", "lightcyan"  => "\e[1;36m",
+      "grey"      => "\e[0;37m", "white"      => "\e[1;37m",
+      "bgblack"   => "\e[40m",   "bgred"      => "\e[41m",
+      "bggreen"   => "\e[42m",   "bgyellow"   => "\e[43m",
+      "bgblue"    => "\e[44m",   "bgmagenta"  => "\e[45m",
+      "bgcyan"    => "\e[46m",   "bgwhite"    => "\e[47m"
+    }
+
+    ## BBColor => ANSIname LUT
+    BBCOLOR2ANSI  = { "skyblue"   => "blue",     "royalblue" => "blue",
+        "blue"      => "blue",     "darkblue"  => "blue",
+        "orange"    => "red",      "orangered" => "red",
+        "crimson"   => "red",      "red"       => "lightred",
+        "firebrick" => "red",      "darkred"   => "red",
+        "green"     => "green",    "limegreen" => "green",
+        "seagreen"  => "green",    "darkgreen" => "green",
+        "deeppink"  => "magenta",  "tomato"    => "red",
+        "coral"     => "cyan",     "purple"    => "purple",
+        "indigo"    => "blue",     "burlywood" => "red",
+        "sandybrown"=> "red",      "sierra"    => "sierra",
+        "chocolate" => "brown",    "teal"      => "teal",
+        "silver"    => "white",
+        "black"     => "black",    "yellow"    => "yellow",
+        "magenta"   => "magenta",  "cyan"      => "cyan",
+        "white"     => "white"
+      }
+
+    ## ANSInames => BBCode LUT
+    ANSINAME2BBCODE = { "bold" => "B", "underline" => "U", "reverse" => "I",
+
+          "red"    => "color=red",      "blue"   => "color=blue",
+          "green"  => "color=green",    "cyan"   => "color=cyan",
+          "magenta"=> "color=deeppink", "purple" => "color=purple",
+          "black"  => "color=black",    "white"  => "color=white",
+          "yellow" => "color=yellow",   "brown"  => "color=chocolate",
+          "bgblack"   => "bgcolor=black",   "bgred"      => "bgcolor=red",
+          "bggreen"   => "bgcolor=green",   "bgyellow"   => "bgcolor=yellow",
+          "bgblue"    => "bgcolor=blue",   "bgmagenta"  => "bgcolor=magenta",
+          "bgcyan"    => "bgcolor=cyan",   "bgwhite"    => "bgcolor=white"
+        }
+
+    # ---------------------------
+
+    # Returns the string with all ansi escape sequences converted to BBCodes
+    def self.ansi_to_bbcode(string)
+      return "" if string.nil? || string.to_s.strip.empty?
+      result = ""
+      tagstack = []
+
+      ## Iterate over input lines
+      string.split("\n").each do |line|
+        ## Iterate over found ansi sequences
+        line.scan(/\e\[[0-9;]+m/).each do |seq|
+          ansiname = ANSINAME2CODE.invert["#{seq}"]
+
+        ## Pop last tag and form closing tag
+          if ansiname == "reset"
+            lasttag = tagstack.pop
+            bbname = "/" + String.new( lasttag.split("=")[0] )
+
+          ## Get corresponding BBCode tag + Push to stack
+          else
+            bbname   = ANSINAME2BBCODE[ansiname]
+            tagstack.push(bbname)
+          end
+
+          ## Replace ansi sequence by BBCode tag
+          replace = sprintf("[%s]", bbname)
+          line.sub!(seq, replace)
+        end
+
+        ## Append converted line
+        result << sprintf("%s\n", line)
+      end
+
+      ## Some tags are unclosed
+      while !tagstack.empty?
+        result << sprintf("[/%s]", String.new(tagstack.pop.split("=")[0])  )
+      end
+
+      return result
+    end
+
+    def self.strip_header_and_footer(string)
 
       lines = string.split(/\n+|\r+/)
 
-      if show_intro
-        lines.delete_at(0)
-        lines.delete_at(0)
-      end
-  
+      # Always ignore the first two lines which are Frotz housekeeping
+      lines.delete_at(0)
+      lines.delete_at(0)
+
       stripped_lines = []
-  
+
       lines.each_with_index do |line, index|
-        line = line.sub("> > ", "")
-        if line.strip[0,1] == "@"
+
+        if  ["@", ">"].include? line.strip[0,1]
           next
         end
-  
-        if (index < story_header_lines-1)
-          if show_intro
-            stripped_lines << line.gsub("\"", "'")
-          end
-        elsif (index < (story_header_lines+story_load_lines-1))
-          #
-          # Skip the load data
-          #
-        elsif (!show_intro && ((index + story_save_lines) >= (lines.count+1)))
-          #
-          # Skip the save data
-          #
-        elsif (!show_intro)
-          stripped_lines << line.gsub("\"", "'")
+
+        ## Pre-process the ASCII codes
+
+        line.gsub!("\e[0K","")  #suppress clear formats
+        line.gsub!(/\e\[3.m/) {|substring| substring[0..1] + "0;" + substring [2..4]} #convert 8bit ASCII colours to ANSI
+        line.gsub!("\e[27m","") #suppress invert
+        line.gsub!("\e[7m","")  #suppress reverse
+        line.gsub!("\e[0;37m","\e[1;37m")  #tweak colours
+        line.gsub!("\e[0;36m","\e[1;36m")  #tweak colours
+
+        unless line.squish == "Ok." || line.squish == ""
+          stripped_lines << ansi_to_bbcode(line.gsub("\"", "'"))
         end
       end
-  
+
       return stripped_lines.join("\n")
     end
 
@@ -60,9 +149,6 @@ module DiscourseFrotz
       save_location = ""
       new_save_location = ""
       game_file = ""
-      story_header_lines = 9
-      story_load_lines = 7
-      story_save_lines = 3
       game_file_prefix = ""
       game_title = ""
       supplemental_info = ""
@@ -102,9 +188,6 @@ module DiscourseFrotz
               if story_file.include?(current_game_file_prefix)
                 game_number = index + 1
                 game_file = story_file
-                story_header_lines = game[2].to_i
-                story_load_lines = game[3].to_i
-                story_save_lines = game[4].to_i
               end
           end
         end
@@ -186,11 +269,10 @@ module DiscourseFrotz
       if save_location.blank?
         story_load_lines = 0
       else
-        input_data = "restore\n#{save_location}\n"
         if new_save_location.blank?
           new_save_location = save_location
         end
-      end 
+      end
 
       # Restore from saved path
       # \lt - Turn on line identification
@@ -209,18 +291,18 @@ module DiscourseFrotz
 
       story_path = Pathname("#{SiteSetting.frotz_story_files_directory}/#{game_file}")
 
-      input_data += "\\lt\n\\cm\\w\n#{msg}\nsave\n#{new_save_location}#{overwrite}\n"
+      input_data += "#{msg}\nsave\n#{new_save_location}#{overwrite}\n\cD"
 
-      input_stream = Pathname("#{SiteSetting.frotz_stream_files_directory}/#{user_id}.f_in")
-      
-      File.open(input_stream, 'w+') { |file| file.write(input_data) }
+      if save_location.blank?
+        output, s = Open3.capture2("#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -f ansi -i -Z 0 #{story_path}", :stdin_data=>input_data, :binmode=>true )
+      else
+        output, s = Open3.capture2("#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -L #{save_location} -f ansi -i -Z 0 #{story_path}", :stdin_data=>input_data, :binmode=>true )
+      end
 
-      output = `#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -i -Z 0 #{story_path} < #{input_stream}`
-      
       puts "BEFORE strip:\n"+output
-      lines = strip_header_and_footer(output, save_location.blank?, story_header_lines, story_load_lines, story_save_lines) 
+      lines = strip_header_and_footer(output)
       puts "AFTER strip:\n"+lines
-      
+
       reply = supplemental_info + lines
     end
   end
