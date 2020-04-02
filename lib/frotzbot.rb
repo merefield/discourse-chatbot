@@ -63,31 +63,28 @@ module DiscourseFrotz
       result = ""
       tagstack = []
 
-      ## Iterate over input lines
-      string.split("\n").each do |line|
-        ## Iterate over found ansi sequences
-        line.scan(/\e\[[0-9;]+m/).each do |seq|
-          ansiname = ANSINAME2CODE.invert["#{seq}"]
+      ## Iterate over found ansi sequences
+      string.scan(/\e\[[0-9;]+m/).each do |seq|
+        ansiname = ANSINAME2CODE.invert["#{seq}"]
 
         ## Pop last tag and form closing tag
-          if ansiname == "reset"
-            lasttag = tagstack.pop
-            bbname = "/" + String.new( lasttag.split("=")[0] )
+        if ansiname == "reset"
+          lasttag = tagstack.pop
+          bbname = "/" + String.new( lasttag.split("=")[0] )
 
-          ## Get corresponding BBCode tag + Push to stack
-          else
-            bbname   = ANSINAME2BBCODE[ansiname]
-            tagstack.push(bbname)
-          end
-
-          ## Replace ansi sequence by BBCode tag
-          replace = sprintf("[%s]", bbname)
-          line.sub!(seq, replace)
+        ## Get corresponding BBCode tag + Push to stack
+        else
+          bbname   = ANSINAME2BBCODE[ansiname]
+          tagstack.push(bbname)
         end
 
-        ## Append converted line
-        result << sprintf("%s\n", line)
+        ## Replace ansi sequence by BBCode tag
+        replace = sprintf("[%s]", bbname)
+        string.sub!(seq, replace)
       end
+
+      ## Append converted line
+      result << sprintf("%s", string)
 
       ## Some tags are unclosed
       while !tagstack.empty?
@@ -122,11 +119,15 @@ module DiscourseFrotz
         line.gsub!("\e[0;37m","\e[1;37m")  #tweak colours
         line.gsub!("\e[0;36m","\e[1;36m")  #tweak colours
 
-        unless line.squish == "Ok." || line.squish == ""
-          stripped_lines << ansi_to_bbcode(line.gsub("\"", "'"))
+        unless line.squish == "Ok."
+          unless line.squish == "" || line == "\n"
+            line = ansi_to_bbcode(line)
+            line.gsub!("\"", "'")
+          end
+          stripped_lines << line
         end
-      end
 
+      end
       return stripped_lines.join("\n")
     end
 
@@ -291,7 +292,11 @@ module DiscourseFrotz
 
       story_path = Pathname("#{SiteSetting.frotz_story_files_directory}/#{game_file}")
 
-      input_data += "#{msg}\nsave\n#{new_save_location}#{overwrite}\n\cD"
+      if !msg.include?('start game')
+        input_data += "#{msg}\nsave\n#{new_save_location}#{overwrite}\n\cD"
+      else
+        input_data += "save\n#{new_save_location}#{overwrite}\n\cD"
+      end
 
       if save_location.blank?
         output, s = Open3.capture2("#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -f ansi -i -Z 0 #{story_path}", :stdin_data=>input_data, :binmode=>true )
