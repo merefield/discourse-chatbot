@@ -195,13 +195,13 @@ module DiscourseFrotz
       if !msg.include?('start game')
         input_data += "#{msg}\nsave\n#{new_save_location}#{overwrite}\n\cD"
       else
-        input_data += "save\n#{new_save_location}#{overwrite}\n\cD"
+        input_data += "\cD"
       end
 
       if save_location.blank?
-        output, s = Open3.capture2("#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -f bbcode -i -Z 0 #{story_path}", :stdin_data=>input_data, :binmode=>true )
+        output, s = Open3.capture2("#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -f bbcode -m -i -Z 0 #{story_path}", :stdin_data=>input_data, :binmode=>true )
       else
-        output, s = Open3.capture2("#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -L #{save_location} -f bbcode -i -Z 0 #{story_path}", :stdin_data=>input_data, :binmode=>true )
+        output, s = Open3.capture2("#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -L #{save_location} -f bbcode -m -i -Z 0 #{story_path}", :stdin_data=>input_data, :binmode=>true )
       end
 
       puts "BEFORE strip:\n"+output
