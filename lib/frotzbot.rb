@@ -16,7 +16,12 @@ module DiscourseFrotz
 
       lines.each_with_index do |line, index|
 
-        if  ["@", ">"].include? line.strip[0,1]
+        line.gsub!("\\", "")
+        line.strip!
+        line.gsub!("[code]", "")
+        line.gsub!("[/code]", "")
+
+        if  (["@", ">"].include? line.strip[0,1]) #|| (["\>"].include? line.strip[0,2])
           next
         end
 
@@ -195,7 +200,7 @@ module DiscourseFrotz
       if !msg.include?('start game')
         input_data += "#{msg}\nsave\n#{new_save_location}#{overwrite}\n\cD"
       else
-        input_data += "\cD"
+        input_data += "save\n#{new_save_location}#{overwrite}\n\cD"
       end
 
       if save_location.blank?
