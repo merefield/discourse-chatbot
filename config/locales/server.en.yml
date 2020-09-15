@@ -9,6 +9,7 @@ en:
     frotz_saves_directory: "Directory containing frotz games saves"
     frotz_story_files_directory: "Directory containing frotz story files"
     frotz_dumb_executable_directory: "Directory containing frotz dumb executable"
+    frotz_text_stream_timeout: "Timeout in seconds before frotzbot gives up waiting for new adventure text to arrive.  Alter with caution!"
   frotz:
     errors:
       general: "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"

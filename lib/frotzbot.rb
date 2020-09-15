@@ -173,7 +173,7 @@ module DiscourseFrotz
         while !done
           line = ""
           begin
-            Timeout.timeout(1) do 
+            Timeout.timeout(SiteSetting.frotz_text_stream_timeout) do
               line = stdout.gets
             end
           rescue Timeout::Error
@@ -202,7 +202,7 @@ module DiscourseFrotz
           if (responded || msg.include?('start game')) && !saved
             # skip the load
             if stdout.lineno > 2
-              lines += line
+              lines += line.lstrip
             end
           end
           puts line

@@ -30,3 +30,8 @@ plugins:
   frotz_story_files_directory:
     client: false
     default: "frotz/stories"
+  frotz_text_stream_timeout:
+    client: false
+    default: 0.5
+    type: number
+
