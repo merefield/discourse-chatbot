@@ -7,7 +7,6 @@ en:
     frotz_stories: "Add each story file in format 'name,filename'"
     frotz_bot_user: "User (preferably not a real person) used to tell the story"
     frotz_saves_directory: "Directory containing frotz games saves"
-    frotz_stream_files_directory: "Directory containing frotz plugin stream files"
     frotz_story_files_directory: "Directory containing frotz story files"
     frotz_dumb_executable_directory: "Directory containing frotz dumb executable"
   frotz:

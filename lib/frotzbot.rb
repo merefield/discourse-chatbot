@@ -101,9 +101,6 @@ module DiscourseFrotz
               game = line.split(',')
               game_title = game[0]
               game_file = game[1]
-              story_header_lines = game[2].to_i
-              story_load_lines = game[3].to_i
-              story_save_lines = game[4].to_i
               supplemental_info = "**#{I18n.t('frotz.responses.starting')} #{game_title}:**\n\n"
               save_location = ""
               new_save_location = Pathname("#{SiteSetting.frotz_saves_directory}/#{game_file.split('.')[0]}_#{user_id}.zsav")
@@ -140,12 +137,8 @@ module DiscourseFrotz
         return I18n.t('frotz.errors.gamenotspecified')
       end
 
-      if save_location.blank?
-        story_load_lines = 0
-      else
-        if new_save_location.blank?
-          new_save_location = save_location
-        end
+      if !save_location.blank? && new_save_location.blank?
+        new_save_location = save_location
       end
 
       overwrite = "y\n"
