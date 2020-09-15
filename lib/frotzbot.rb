@@ -4,38 +4,6 @@ module DiscourseFrotz
 
   class FrotzBot
 
-    def self.strip_header_and_footer(string)
-
-      lines = string.split(/\n+|\r+/)
-
-      # Always ignore the first two lines which are Frotz housekeeping
-      lines.delete_at(0)
-      lines.delete_at(0)
-
-      stripped_lines = []
-
-      lines.each_with_index do |line, index|
-
-        line.gsub!("\\", "")
-        line.strip!
-        line.gsub!("[code]", "")
-        line.gsub!("[/code]", "")
-
-        if  (["@", ">"].include? line.strip[0,1]) #|| (["\>"].include? line.strip[0,2])
-          next
-        end
-
-        unless line.squish == "Ok."
-          unless line.squish == "" || line == "\n"
-            line.gsub!("\"", "'")
-          end
-          stripped_lines << line
-        end
-
-      end
-      return stripped_lines.join("\n")
-    end
-
     def self.list_games
 
       game_settings = SiteSetting.frotz_stories.split('|')
@@ -71,7 +39,7 @@ module DiscourseFrotz
       msg = CGI.unescapeHTML(msg.gsub(/[^a-zA-Z0-9 ]+/, "")).gsub(/[^A-Za-z0-9]/, " ").strip
 
       current_users_save_files = `ls -t #{SiteSetting.frotz_saves_directory}/*_#{user_id}.zsav`
-      
+
       executable_check = `ls -t #{SiteSetting.frotz_dumb_executable_directory}/dfrotz`
 
       if executable_check.blank?
@@ -98,7 +66,7 @@ module DiscourseFrotz
           end
         end
       end
-     
+
       if ['save','restore','quit','exit'].include?(msg)
           return "'#{msg}' #{I18n.t('frotz.errors.restricted')}"
       end
@@ -141,7 +109,7 @@ module DiscourseFrotz
               new_save_location = Pathname("#{SiteSetting.frotz_saves_directory}/#{game_file.split('.')[0]}_#{user_id}.zsav")
             end
           end
-          
+
           if msg.include?('continue game')
 
             found_save = false
@@ -180,14 +148,7 @@ module DiscourseFrotz
         end
       end
 
-      # Restore from saved path
-      # \lt - Turn on line identification
-      # \cm - Dont show blank lines
-      # \w  - Advance the timer to now
-      # Command
-      # Save to save path - override Y, if file exists
-
-      overwrite = "\ny"
+      overwrite = "y\n"
 
       story_path_check = `ls -t #{SiteSetting.frotz_story_files_directory}/#{game_file}`
 
@@ -197,22 +158,63 @@ module DiscourseFrotz
 
       story_path = Pathname("#{SiteSetting.frotz_story_files_directory}/#{game_file}")
 
-      if !msg.include?('start game')
-        input_data += "#{msg}\nsave\n#{new_save_location}#{overwrite}\n\cD"
-      else
-        input_data += "save\n#{new_save_location}#{overwrite}\n\cD"
-      end
+      save_input = "save\n#{new_save_location}\n#{overwrite}"
+
+      done = false
+      saved = false
+      tries_left = 8
+      lines = ""
 
       if save_location.blank?
-        output, s = Open3.capture2("#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -f bbcode -m -i -Z 0 #{story_path}", :stdin_data=>input_data, :binmode=>true )
+        initiating_command = "#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -f bbcode -m -i -Z 0 #{story_path}"
       else
-        output, s = Open3.capture2("#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -L #{save_location} -f bbcode -m -i -Z 0 #{story_path}", :stdin_data=>input_data, :binmode=>true )
+        initiating_command = "#{SiteSetting.frotz_dumb_executable_directory}/./dfrotz -L #{save_location} -f bbcode -m -i -Z 0 #{story_path}"
       end
 
-      puts "BEFORE strip:\n"+output
-      lines = strip_header_and_footer(output)
-      puts "AFTER strip:\n"+lines
+      Open3.popen2(initiating_command) do |stdin, stdout, wait_thr|
+        done = false
+        line = ""
+        lines = ""
+        responded = false
 
+        while !done
+          line = ""
+          begin
+            Timeout.timeout(1) do 
+              line = stdout.gets
+            end
+          rescue Timeout::Error
+            line = ""
+          end
+
+          if !line.nil? && (line.downcase.match?("\\*\\*more\\*\\*") || (line.downcase.match?("press") && line.match?("to"))) then
+            stdin.putc 0xa
+          elsif line == ""
+            if !responded
+              if !msg.include?('start game')
+                stdin.puts "#{msg}\n"
+              end
+              responded = true
+            elsif !saved
+              stdin.puts save_input
+              saved = true
+              stdin.close
+            end
+          elsif stdout.eof
+            done = true
+            stdout.close
+            break
+          end
+
+          if (responded || msg.include?('start game')) && !saved
+            # skip the load
+            if stdout.lineno > 2
+              lines += line
+            end
+          end
+          puts line
+        end
+      end
       reply = supplemental_info + lines
     end
   end
