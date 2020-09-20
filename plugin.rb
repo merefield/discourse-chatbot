@@ -11,6 +11,8 @@ require_relative 'lib/bot'
 require_relative 'lib/frotzbot'
 require_relative 'lib/reply_creator'
 
+gem 'open3', '0.1.0'
+
 enabled_site_setting :discourse_frotz_enabled
 
 after_initialize do
