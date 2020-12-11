@@ -16,7 +16,7 @@ class ::Jobs::FrotzBotPostReplyJob < Jobs::Base
 
       if (is_private_msg && !SiteSetting.frotz_permitted_in_private_messages)
         message_body = I18n.t('frotz.errors.forbiddeninprivatemessages')
-      elsif (SiteSetting.frotz_permitted_all_categories || (permitted_categories.include? post.topic.category_id.to_s))
+      elsif is_private_msg && SiteSetting.frotz_permitted_in_private_messages || !is_private_msg && SiteSetting.frotz_permitted_all_categories || (permitted_categories.include? post.topic.category_id.to_s)
         puts "Creating a new reply message..."
         begin
           message_body = DiscourseFrotz::FrotzBot.ask(opts)
