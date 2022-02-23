@@ -16,7 +16,7 @@ plugins:
   frotz_stories:
     client: false
     type: list
-    default: "The Hitchhiker's Guide to the Galaxy,hhgg.z3|Zork 1,zork1.z5"
+    default: "The Hitchhiker's Guide to the Galaxy,hhgg.z3|Zork 1,zork1.z3"
   frotz_bot_user:
     client: false
     type: username
@@ -34,4 +34,3 @@ plugins:
     client: false
     default: 0.5
     type: number
-
