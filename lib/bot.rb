@@ -1,8 +1,8 @@
-module DiscourseFrotz
+module DiscourseOpenAIBot
 
   class Bot
 
-    DELAY_IN_SECONDS = 0
+    DELAY_IN_SECONDS = 3
 
     def on_post_created(post)
 
@@ -14,7 +14,7 @@ module DiscourseFrotz
       # remove the 'quote' blocks
       post_contents.gsub!(%r{\[quote.*?\][^\[]+\[/quote\]}, '')
 
-      bot_username = SiteSetting.frotz_bot_user
+      bot_username = SiteSetting.openai_bot_bot_user
       bot_user = User.find_by(username: bot_username)
 
       mentions_bot_name = post_contents.downcase =~ /@#{bot_username.downcase}\b/
@@ -33,9 +33,11 @@ module DiscourseFrotz
             user_id: user_id,
             bot_user_id: bot_user.id,
             reply_to_post_id: post.id,
+            topic_id: topic.id,
+            conversation_id: topic.conversation_id || nil,
             message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
           }
-          job_class = ::Jobs::FrotzBotPostReplyJob
+          job_class = ::Jobs::OpenAIBotPostReplyJob
           invoke_background_job(job_class, opts)
       end
     end

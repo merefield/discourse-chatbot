@@ -1,27 +1,21 @@
 en:
   site_settings:
-    discourse_frotz_enabled: "Enable the Frotz plugin"
-    frotz_permitted_in_private_messages: "Allow FrotzBot to play in Private Messages (might be abused?)"
-    frotz_permitted_all_categories: "Allow Frotzbot to play in any Category"
-    frotz_permitted_categories: "Allow Frotzbot to play only in these Categories if not allowed to play in all"
-    frotz_stories: "Add each story file in format 'name,filename'"
-    frotz_bot_user: "User (preferably not a real person) used to tell the story"
-    frotz_saves_directory: "Directory containing frotz games saves"
-    frotz_story_files_directory: "Directory containing frotz story files"
-    frotz_dumb_executable_directory: "Directory containing frotz dumb executable"
-    frotz_text_stream_timeout: "Timeout in seconds before frotzbot gives up waiting for new adventure text to arrive.  Alter with caution!"
-  frotz:
+    discourse_openai_bot_enabled: "Enable the Frotz plugin"
+    openai_bot_permitted_in_private_messages: "Allow OpenAIBot to play in Private Messages (might be abused?)"
+    openai_bot_permitted_all_categories: "Allow Frotzbot to play in any Category"
+    openai_bot_permitted_categories: "Allow Frotzbot to play only in these Categories if not allowed to play in all"
+    openai_bot_bot_user: "User (preferably not a real person) used to tell the story"
+    openai_bot_text_stream_timeout: "Timeout in seconds before frotzbot gives up waiting for new adventure text to arrive.  Alter with caution!"
+  openai_bot:
     errors:
       general: "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"
-      noexecutable: "No frozt dumb executable found, please raise with admin"
-      nosavefile: "No save file found, game is already at start"
       restricted: "is a restricted command"
       gamenotspecified: "You must specify a game (use 'list games' then 'start game _game-number_')"
       invalidgamenumber: "Value provided is not valid, choose a valid game number.  Use 'list games'."
       nostoryfile: "No corresponding story file found, please raise with admin"
       forbiddeninprivatemessages: "Use in private messages has not been permitted, please contact the admin"
-      forbiddenoutsidethesecategories: "Public use of FrotzBot has only been permitted in these Categories: "
-      forbiddenanycategory: "Public use of FrotzBot has not been enabled in any Category, please contact your admin"
+      forbiddenoutsidethesecategories: "Public use of OpenAIBot has only been permitted in these Categories: "
+      forbiddenanycategory: "Public use of OpenAIBot has not been enabled in any Category, please contact your admin"
     responses:
       starting: "Starting game"
       continuing: "Cotinuing where you left of in"

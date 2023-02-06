@@ -1,36 +1,38 @@
 plugins:
-  discourse_frotz_enabled:
+  discourse_openai_bot_enabled:
     default: true
     client: false
-  frotz_permitted_in_private_messages:
+  openai_bot_permitted_in_private_messages:
     default: false
     client: false
-  frotz_permitted_all_categories:
+  openai_bot_permitted_all_categories:
     default: true
     client: false
-  frotz_permitted_categories:
+  openai_bot_permitted_categories:
     client: false
     default: ''
     type: category_list
     list_type: "compact"
-  frotz_stories:
+  openai_bot_base_url:
     client: false
-    type: list
-    default: "The Hitchhiker's Guide to the Galaxy,hhgg.z3|Zork 1,zork1.z3"
-  frotz_bot_user:
+    default: "https://api.openai.com/v1/completions"
+  openai_bot_request_model:
+    client: false
+    default: "text-davinci-003"
+  openai_bot_api_key:
+    client: false
+    default: ''
+  openai_bot_request_temperature:
+    client: false
+    default: 0
+  openai_bot_request_max_tokens:
+    client: false
+    default: 10
+  openai_bot_bot_user:
     client: false
     type: username
     default: -5
-  frotz_dumb_executable_directory:
-    client: false
-    default: "frotz"
-  frotz_saves_directory:
-    client: false
-    default: "frotz/savegames"
-  frotz_story_files_directory:
-    client: false
-    default: "frotz/stories"
-  frotz_text_stream_timeout:
+  openai_bot_text_stream_timeout:
     client: false
     default: 0.5
     type: number

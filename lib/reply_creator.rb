@@ -1,4 +1,4 @@
-module DiscourseFrotz
+module DiscourseOpenAIBot
   class ReplyCreator
 
     def initialize(options = {})
@@ -36,7 +36,7 @@ module DiscourseFrotz
           puts "The message has been created successfully"
         rescue => e
           puts "Problem with the message: #{e}"
-          Rails.logger.error ("FroztBot: There was a problem: #{e}")
+          Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
         end
 
     end
