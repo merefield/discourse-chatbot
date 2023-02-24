@@ -1,4 +1,4 @@
-module DiscourseOpenAIBot
+module ::DiscourseOpenAIBot
 
   class Bot
 
@@ -34,7 +34,7 @@ module DiscourseOpenAIBot
             bot_user_id: bot_user.id,
             reply_to_post_id: post.id,
             topic_id: topic.id,
-            conversation_id: topic.conversation_id || nil,
+           # conversation_id: topic.conversation_id || nil,
             message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
           }
           job_class = ::Jobs::OpenAIBotPostReplyJob

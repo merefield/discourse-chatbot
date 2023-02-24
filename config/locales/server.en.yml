@@ -1,11 +1,13 @@
 en:
   site_settings:
-    discourse_openai_bot_enabled: "Enable the Frotz plugin"
+    openai_bot_enabled: "Enable the Frotz plugin"
+    openai_bot_open_ai_token: 'Your Open AI token.  You can get one at <a>https://platform.openai.com/</a>'
+    openai_bot_open_ai_model: 'The model to be accessed. Supported models are listed at <a>https://platform.openai.com/docs/models/overview</a>'
+    openai_bot_max_look_behind: "Maximum number of Posts bot will consider as prompt for completion"
     openai_bot_permitted_in_private_messages: "Allow OpenAIBot to play in Private Messages (might be abused?)"
     openai_bot_permitted_all_categories: "Allow Frotzbot to play in any Category"
     openai_bot_permitted_categories: "Allow Frotzbot to play only in these Categories if not allowed to play in all"
     openai_bot_bot_user: "User (preferably not a real person) used to tell the story"
-    openai_bot_text_stream_timeout: "Timeout in seconds before frotzbot gives up waiting for new adventure text to arrive.  Alter with caution!"
   openai_bot:
     errors:
       general: "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"

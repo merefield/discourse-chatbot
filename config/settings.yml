@@ -1,5 +1,5 @@
 plugins:
-  discourse_openai_bot_enabled:
+  openai_bot_enabled:
     default: true
     client: false
   openai_bot_permitted_in_private_messages:
@@ -13,26 +13,25 @@ plugins:
     default: ''
     type: category_list
     list_type: "compact"
+  openai_bot_max_look_behind:
+    default: 5
+    client: false
   openai_bot_base_url:
     client: false
     default: "https://api.openai.com/v1/completions"
-  openai_bot_request_model:
+  openai_bot_open_ai_model:
     client: false
     default: "text-davinci-003"
-  openai_bot_api_key:
+  openai_bot_open_ai_token:
     client: false
     default: ''
   openai_bot_request_temperature:
     client: false
     default: 0
-  openai_bot_request_max_tokens:
+  openai_bot_max_response_tokens:
     client: false
-    default: 10
+    default: 200
   openai_bot_bot_user:
     client: false
     type: username
     default: -5
-  openai_bot_text_stream_timeout:
-    client: false
-    default: 0.5
-    type: number
