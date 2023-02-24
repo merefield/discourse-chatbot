@@ -1,4 +1,2 @@
-# discourse-frotz
-A plugin that uses Frotz to give you an interactive fiction experience on your Discourse forum
-
-You can read more about it and discuss it here on [its Discourse Meta Topic](https://meta.discourse.org/t/discourse-frotz-an-interactive-fiction-game-bot/140617)
+# discourse-openai-bot
+A plugin that uses Open AI Large Language models to provide an response useful interactive ai experience.
