@@ -1,57 +1,25 @@
+# frozen_string_literal: true
+require "openai"
+
 module ::DiscourseOpenAIBot
+
+  MESSAGE = "message"
+  POST = "post"
 
   class Bot
 
-    DELAY_IN_SECONDS = 3
-
-    def on_post_created(post)
-
-      user = post.user
-      topic = post.topic
-
-      post_contents = post.raw.to_s
-
-      # remove the 'quote' blocks
-      post_contents.gsub!(%r{\[quote.*?\][^\[]+\[/quote\]}, '')
-
-      bot_username = SiteSetting.openai_bot_bot_user
-      bot_user = User.find_by(username: bot_username)
-
-      mentions_bot_name = post_contents.downcase =~ /@#{bot_username.downcase}\b/
-
-      if post.post_number > 1
-        prior_post = Post.where(topic_id: topic.id).second_to_last
-        last_post_was_bot = (post.reply_to_user_id == bot_user.id) || (prior_post.user_id == bot_user.id)
-      else
-        last_post_was_bot = false
-      end
-
-      user_id = user.id
-
-      if bot_user && (user != bot_user) && (mentions_bot_name || last_post_was_bot)
-          opts = {
-            user_id: user_id,
-            bot_user_id: bot_user.id,
-            reply_to_post_id: post.id,
-            topic_id: topic.id,
-           # conversation_id: topic.conversation_id || nil,
-            message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
-          }
-          job_class = ::Jobs::OpenAIBotPostReplyJob
-          invoke_background_job(job_class, opts)
-      end
+    def initialize
+      raise "Overwrite me!"
     end
 
-    private
-
-    def invoke_background_job(job_class, opts)
-      delay_in_seconds = DELAY_IN_SECONDS.to_i
-      if delay_in_seconds > 0
-        job_class.perform_in(delay_in_seconds.seconds, opts.as_json)
-      else
-        job_class.perform_async(opts.as_json)
-      end
+    def get_response(prompt)
+      raise "Overwrite me!"
     end
 
+    def ask(opts)
+      content = opts[:type] == POST ? PostPromptUtils.create_prompt(opts) : MessagePromptUtils.create_prompt(opts)
+
+      response = get_response(content)
+    end
   end
 end
