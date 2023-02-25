@@ -16,9 +16,17 @@ enabled_site_setting :openai_bot_enabled
 
 after_initialize do
   %w(
+    ../lib/discourse_openai_bot/event_evaluation.rb
+    ../lib/discourse_openai_bot/message/message_evaluation.rb
+    ../lib/discourse_openai_bot/post/post_evaluation.rb
     ../lib/discourse_openai_bot/bot.rb
-    ../lib/discourse_openai_bot/openai_bot.rb
+    ../lib/discourse_openai_bot/bots/open_ai_bot.rb
+    ../lib/discourse_openai_bot/prompt_utils.rb
+    ../lib/discourse_openai_bot/post/post_prompt_utils.rb
+    ../lib/discourse_openai_bot/message/message_prompt_utils.rb
     ../lib/discourse_openai_bot/reply_creator.rb
+    ../lib/discourse_openai_bot/post/post_reply_creator.rb
+    ../lib/discourse_openai_bot/message/message_reply_creator.rb
     ../app/jobs/discourse_openai_bot/openai_bot_reply_job.rb
   ).each do |path|
     load File.expand_path(path, __FILE__)
@@ -64,13 +72,28 @@ after_initialize do
     post, opts, user = params
 
     if SiteSetting.openai_bot_enabled
-
+      puts "1. trigger"
       bot_username = SiteSetting.openai_bot_bot_user
       bot_user = User.find_by(username: bot_username)
 
       if (user.id != bot_user.id) && post.reply_count = 0
-        bot = DiscourseOpenAIBot::Bot.new
-        bot.on_post_created(post)
+        event_evaluation = DiscourseOpenAIBot::PostEvaluation.new
+        event_evaluation.on_submission(post)
+      end
+    end
+  end
+
+  DiscourseEvent.on(:chat_message_created) do |*params|
+    chat_message, chat_channel, user = params
+
+    if SiteSetting.openai_bot_enabled
+      puts "1. trigger"
+      bot_username = SiteSetting.openai_bot_bot_user
+      bot_user = User.find_by(username: bot_username)
+
+      if (user.id != bot_user.id) #&& post.reply_count = 0
+        event_evaluation = DiscourseOpenAIBot::MessageEvaluation.new
+        event_evaluation.on_submission(chat_message)
       end
     end
   end
