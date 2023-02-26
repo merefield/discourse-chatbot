@@ -1,4 +1,4 @@
-module ::DiscourseOpenAIBot
+module ::DiscourseChatbot
   class MessageReplyCreator < ReplyCreator
 
     def initialize(options = {})

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require "openai"
 
-module ::DiscourseOpenAIBot
+module ::DiscourseChatbot
 
   class OpenAIBot < Bot
 
@@ -13,19 +13,18 @@ module ::DiscourseOpenAIBot
       # end
 
       # TODO consider other bot parameters
-      # , params: {key: openai_bot_api_key, cb_settings_tweak1: wackiness, cb_settings_tweak2: talkativeness, cb_settings_tweak3: attentiveness})
+      # , params: {key: chatbot_api_key, cb_settings_tweak1: wackiness, cb_settings_tweak2: talkativeness, cb_settings_tweak3: attentiveness})
   
-      @client = ::OpenAI::Client.new(access_token: SiteSetting.openai_bot_open_ai_token)
+      @client = ::OpenAI::Client.new(access_token: SiteSetting.chatbot_open_ai_token)
 
     end
-
 
     def get_response(prompt)
       response = @client.completions(
         parameters: {
-            model: SiteSetting.openai_bot_open_ai_model,
+            model: SiteSetting.chatbot_open_ai_model,
             prompt: "#{prompt}",
-            max_tokens: SiteSetting.openai_bot_max_response_tokens
+            max_tokens: SiteSetting.chatbot_max_response_tokens
         })
   
       if response.parsed_response["error"]
@@ -34,7 +33,6 @@ module ::DiscourseOpenAIBot
   
       final_text = response["choices"][0]["text"]
     end
-
 
     def ask(opts)
       super(opts)
