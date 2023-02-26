@@ -1,4 +1,4 @@
-class ::Jobs::OpenAIBotPostReplyJob < Jobs::Base
+class ::Jobs::ChatbotReplyJob < Jobs::Base
   sidekiq_options retry: false
 
   POST = "post"
@@ -23,20 +23,12 @@ class ::Jobs::OpenAIBotPostReplyJob < Jobs::Base
         message_body = nil
         is_private_msg = post.topic.private_message?
 
-        permitted_categories = SiteSetting.openai_bot_permitted_categories.split('|')
+        permitted_categories = SiteSetting.chatbot_permitted_categories.split('|')
 
-        if (is_private_msg && !SiteSetting.openai_bot_permitted_in_private_messages)
+        if (is_private_msg && !SiteSetting.chatbot_permitted_in_private_messages)
           message_body = I18n.t('openai_bot.errors.forbiddeninprivatemessages')
-        elsif is_private_msg && SiteSetting.openai_bot_permitted_in_private_messages || !is_private_msg && SiteSetting.openai_bot_permitted_all_categories || (permitted_categories.include? post.topic.category_id.to_s)
+        elsif is_private_msg && SiteSetting.chatbot_permitted_in_private_messages || !is_private_msg && SiteSetting.chatbot_permitted_all_categories || (permitted_categories.include? post.topic.category_id.to_s)
           create_bot_reply = true
-          # puts "Creating a new reply message..."
-          # begin
-          #   bot = DiscourseOpenAIBot::OpenAIBot.new
-          #   message_body = bot.ask(opts)
-          # rescue => e
-          #   message_body = I18n.t('openai_bot.errors.general')
-          #   Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
-          # end
         else
           if permitted_categories.size > 0
             message_body = I18n.t('openai_bot.errors.forbiddenoutsidethesecategories')
@@ -51,15 +43,13 @@ class ::Jobs::OpenAIBotPostReplyJob < Jobs::Base
             message_body = I18n.t('openai_bot.errors.forbiddenanycategory') 
           end
         end
-        # reply_creator = DiscourseOpenAIBot::ReplyCreator.new(user: bot_user, reply_to: post)
-        # reply_creator.create(message_body)
       elsif type == MESSAGE && message
         create_bot_reply = true
       end
       if create_bot_reply
         puts "Creating a new reply message..."
         begin
-          bot = DiscourseOpenAIBot::OpenAIBot.new
+          bot = DiscourseChatbot::OpenAIBot.new
           message_body = bot.ask(opts)
         # rescue => e
         #   message_body = I18n.t('openai_bot.errors.general')
@@ -68,9 +58,9 @@ class ::Jobs::OpenAIBotPostReplyJob < Jobs::Base
       end
       opts.merge!(message_body: message_body)
       if type == POST
-        reply_creator = DiscourseOpenAIBot::PostReplyCreator.new(opts)
+        reply_creator = DiscourseChatbot::PostReplyCreator.new(opts)
       else
-        reply_creator = DiscourseOpenAIBot::MessageReplyCreator.new(opts)
+        reply_creator = DiscourseChatbot::MessageReplyCreator.new(opts)
       end
       reply_creator.create
     end

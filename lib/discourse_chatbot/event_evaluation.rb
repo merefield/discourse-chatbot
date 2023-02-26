@@ -1,8 +1,8 @@
-module ::DiscourseOpenAIBot
+module ::DiscourseChatbot
 
   class EventEvaluation
 
-    DELAY_IN_SECONDS = 3
+    # DELAY_IN_SECONDS = 3
 
     def on_submission(submission)
       raise "Overwrite me!"

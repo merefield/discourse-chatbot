@@ -1,9 +1,9 @@
-module ::DiscourseOpenAIBot
+module ::DiscourseChatbot
 
   class PostEvaluation < EventEvaluation
 
-    DELAY_IN_SECONDS = 3
-    POST = "post"
+    # DELAY_IN_SECONDS = 3
+    # POST = "post"
 
     def on_submission(submission)
       puts "2. evaluation"
@@ -18,13 +18,13 @@ module ::DiscourseOpenAIBot
       # remove the 'quote' blocks
       post_contents.gsub!(%r{\[quote.*?\][^\[]+\[/quote\]}, '')
 
-      bot_username = SiteSetting.openai_bot_bot_user
-      bot_user = User.find_by(username: bot_username)
+      bot_username = SiteSetting.chatbot_bot_user
+      bot_user = ::User.find_by(username: bot_username)
 
       mentions_bot_name = post_contents.downcase =~ /@#{bot_username.downcase}\b/
 
       if post.post_number > 1
-        prior_post = Post.where(topic_id: topic.id).second_to_last
+        prior_post = ::Post.where(topic_id: topic.id).second_to_last
         last_post_was_bot = (post.reply_to_user_id == bot_user.id) || (prior_post.user_id == bot_user.id)
       else
         last_post_was_bot = false
@@ -43,7 +43,7 @@ module ::DiscourseOpenAIBot
             message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
           }
           puts "3. invocation"
-          job_class = ::Jobs::OpenAIBotPostReplyJob
+          job_class = ::Jobs::ChatbotReplyJob
           invoke_background_job(job_class, opts)
       end
     end

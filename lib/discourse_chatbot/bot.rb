@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 require "openai"
 
-module ::DiscourseOpenAIBot
+module ::DiscourseChatbot
 
-  MESSAGE = "message"
-  POST = "post"
+  # MESSAGE = "message"
+  # POST = "post"
 
   class Bot
 
