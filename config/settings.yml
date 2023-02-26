@@ -32,6 +32,6 @@ plugins:
     client: false
     default: 200
   chatbot_bot_user:
-    client: false
+    client: true
     type: username
     default: aibot

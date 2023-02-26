@@ -1,0 +1,9 @@
+  {{#if this.showChatbotButton}}
+  <DButton
+    @id="chatbot-btn"
+    @class="btn-primary chatbot-btn"
+    @action={{action this.startChatting}}
+    @label="chatbot.title_capitalized"
+    @icon="robot"
+  />
+  {{/if}}
