@@ -5,6 +5,8 @@ module ::DiscourseChatbot
     # DELAY_IN_SECONDS = 3
     # MESSAGE = "message"
 
+    DIRECT_MESSAGE = "DirectMessage"
+
     def on_submission(submission)
       puts "2. evaluation"
       
@@ -30,10 +32,13 @@ module ::DiscourseChatbot
         puts "found it's a reply to a prior message"
         replied_to_user = ::ChatMessage.find(in_reply_to_id).user
       end
+
+      direct_chat = ChatChannel.find(channel_id).chatable_type == DIRECT_MESSAGE
+      bot_chat_channel = User.find(bot_user_id).user_chat_channel_memberships.where(chat_channel_id: channel_id)
       
-      last_message_was_bot = (replied_to_user && replied_to_user.id == bot_user_id) || (prior_message.user_id == bot_user_id && in_reply_to_id == nil)
+      talking_to_bot = (direct_chat && bot_chat_channel) || (replied_to_user && replied_to_user.id == bot_user_id) || (prior_message.user_id == bot_user_id && in_reply_to_id == nil)
       
-      if bot_user && (user_id != bot_user_id) && (mentions_bot_name || last_message_was_bot)
+      if bot_user && (user_id != bot_user_id) && (mentions_bot_name || talking_to_bot)
         opts = {
             type: MESSAGE,
             user_id: user_id,
