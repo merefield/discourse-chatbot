@@ -8,7 +8,8 @@ en:
     chatbot_permitted_all_categories: "Allow Chatbot to interact in any Category"
     chatbot_permitted_categories: "Allow Chatbot to interact only in these Categories if not allowed to play in all"
     chatbot_bot_user: "The Chatbot User"
-  openai_bot:
+  chatbot:
+    bio: "Hi, I’m not a real person. I’m a bot that can discuss things with you. Don't take me too seriously.  Sometimes, I'm even right about stuff!"
     errors:
       general: "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"
       forbiddeninprivatemessages: "Use in private messages has not been permitted, please contact the admin"
