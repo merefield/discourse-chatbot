@@ -26,12 +26,12 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
         permitted_categories = SiteSetting.chatbot_permitted_categories.split('|')
 
         if (is_private_msg && !SiteSetting.chatbot_permitted_in_private_messages)
-          message_body = I18n.t('openai_bot.errors.forbiddeninprivatemessages')
+          message_body = I18n.t('chatbot.errors.forbiddeninprivatemessages')
         elsif is_private_msg && SiteSetting.chatbot_permitted_in_private_messages || !is_private_msg && SiteSetting.chatbot_permitted_all_categories || (permitted_categories.include? post.topic.category_id.to_s)
           create_bot_reply = true
         else
           if permitted_categories.size > 0
-            message_body = I18n.t('openai_bot.errors.forbiddenoutsidethesecategories')
+            message_body = I18n.t('chatbot.errors.forbiddenoutsidethesecategories')
             permitted_categories.each_with_index do |permitted_category, index|
               if index == permitted_categories.size - 1
                 message_body += "##{Category.find_by(id:permitted_category).slug}"
@@ -40,7 +40,7 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
               end
             end
           else
-            message_body = I18n.t('openai_bot.errors.forbiddenanycategory') 
+            message_body = I18n.t('chatbot.errors.forbiddenanycategory') 
           end
         end
       elsif type == MESSAGE && message
@@ -52,7 +52,7 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
           bot = DiscourseChatbot::OpenAIBot.new
           message_body = bot.ask(opts)
         # rescue => e
-        #   message_body = I18n.t('openai_bot.errors.general')
+        #   message_body = I18n.t('chatbot.errors.general')
         #   Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
         end
       end
