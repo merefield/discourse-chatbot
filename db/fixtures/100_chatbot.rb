@@ -1,6 +1,4 @@
 # frozen_string_literal: true
-puts 'chat'
-puts 'high!!'
 chatbot_name = 'AIBot'
 group_name = "ai_bot_group"
 group_full_name = "AI Bots"
@@ -29,6 +27,8 @@ if !user
     u.trust_level = TrustLevel[4]
   end
 
+
+
   # # TODO Design a unique bot icon
   # if !Rails.env.test?
   #   begin
@@ -55,6 +55,7 @@ if !group
     gu.group_id = -4
   end
 
+  SiteSetting.chat_allowed_groups += "|-4"
 end
 
 

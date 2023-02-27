@@ -34,4 +34,4 @@ plugins:
   chatbot_bot_user:
     client: true
     type: username
-    default: aibot
+    default: AIBot
