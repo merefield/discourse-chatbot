@@ -16,8 +16,8 @@ end
 require_relative "lib/discourse_chatbot/engine"
 
 enabled_site_setting :chatbot_enabled
-register_asset 'stylesheets/common/chatbot.scss'
-register_asset 'stylesheets/mobile/chatbot_mobile.scss'
+register_asset 'stylesheets/common/chatbot_common.scss'
+register_asset 'stylesheets/mobile/chatbot_mobile.scss', :mobile
 register_svg_icon 'robot'
 
 after_initialize do
