@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-
+puts 'chat'
 puts 'high!!'
 chatbot_name = 'AIBot'
 group_name = "ai_bot_group"
