@@ -2,7 +2,7 @@
   <DButton
     @id="chatbot-btn"
     @class="btn-primary chatbot-btn"
-    @action={{action this.startChatting}}
+    @action={{action (fn this.startChatting this.chat)}}
     @label="chatbot.title_capitalized"
     @icon="robot"
   />

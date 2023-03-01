@@ -18,8 +18,8 @@ export default class ContentLanguageDiscovery extends Component {
   }
 
   @action
-  startChatting () {
-    this.chat
+  startChatting (chat) {
+    chat
       .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
       .then((chatChannel) => {
         this.router.transitionTo("chat.channel", ...chatChannel.routeModels);
