@@ -1,6 +1,6 @@
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.2
+# version: 0.3
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
