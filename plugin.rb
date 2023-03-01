@@ -40,8 +40,8 @@ after_initialize do
     ../lib/discourse_chatbot/reply_creator.rb
     ../lib/discourse_chatbot/post/post_reply_creator.rb
     ../lib/discourse_chatbot/message/message_reply_creator.rb
-    ../app/jobs/discourse_chatbot/regular/chatbot_reply_job.rb
-    ../app/jobs/discourse_chatbot/scheduled/chatbot_quota_reset_job.rb
+    ../app/jobs/regular/chatbot_reply_job.rb
+    ../app/jobs/scheduled/chatbot_quota_reset_job.rb
   ).each do |path|
     load File.expand_path(path, __FILE__)
   end
