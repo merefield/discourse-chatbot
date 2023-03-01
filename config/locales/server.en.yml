@@ -4,10 +4,19 @@ en:
     chatbot_open_ai_token: 'Your Open AI token.  You can get one at <a>https://platform.openai.com/</a>'
     chatbot_open_ai_model: 'The model to be accessed. Supported models are listed at <a>https://platform.openai.com/docs/models/overview</a>'
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion"
-    chatbot_permitted_in_private_messages: "Allow Chatbot to interact in Private Messages (might be abused?)"
+    chatbot_permitted_in_private_messages: "Allow Chatbot to interact in Private Messages"
+    chatbot_permitted_in_chat: "Allow Chatbot to interact in Chat"
     chatbot_permitted_all_categories: "Allow Chatbot to interact in any Category"
     chatbot_permitted_categories: "Allow Chatbot to interact only in these Categories if not allowed to play in all"
     chatbot_bot_user: "The Chatbot User"
+    chatbot_quick_access_chat_button: "Display floating button which links to direct Chat with the bot"
+    chatbot_quota_high: "The allowed number of bot responses allowed by prompting user - high trust groups"
+    chatbot_quota_medium: "The allowed number of bot responses allowed by prompting user - medium trust groups"
+    chatbot_quota_low: "The allowed number of bot responses allowed by prompting user - low trust groups"
+    chatbot_high_trust_groups: "Groups considered high trust for bot interaction"
+    chatbot_medium_trust_groups: "Groups considered medium trust for bot interaction"
+    chatbot_low_trust_groups: "Groups considered low trust for bot interaction"
+
   chatbot:
     bio: "Hi, I’m not a real person. I’m a bot that can discuss things with you. Don't take me too seriously.  Sometimes, I'm even right about stuff!"
     errors:
@@ -15,3 +24,4 @@ en:
       forbiddeninprivatemessages: "Use in private messages has not been permitted, please contact the admin"
       forbiddenoutsidethesecategories: "Public use of Chatbot has only been permitted in these Categories: "
       forbiddenanycategory: "Public use of Chatbot has not been enabled in any Category, please contact your admin"
+      overquota: "I'm afraid you've reached this months quota for bot interactions"

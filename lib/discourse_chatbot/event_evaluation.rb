@@ -2,10 +2,35 @@ module ::DiscourseChatbot
 
   class EventEvaluation
 
-    # DELAY_IN_SECONDS = 3
-
     def on_submission(submission)
       raise "Overwrite me!"
+    end
+
+    def over_quota(user_id)
+      max_quota = 0
+      
+      GroupUser.where(user_id: user_id).each do |gu|
+        if SiteSetting.chatbot_high_trust_groups.split('|').include? gu.group_id.to_s
+          max_quota = SiteSetting.chatbot_quota_high if max_quota < SiteSetting.chatbot_quota_high
+        end
+        if SiteSetting.chatbot_medium_trust_groups.split('|').include? gu.group_id.to_s
+          max_quota = SiteSetting.chatbot_quota_medium if max_quota < SiteSetting.chatbot_quota_medium
+        end
+        if SiteSetting.chatbot_low_trust_groups.split('|').include? gu.group_id.to_s
+          max_quota = SiteSetting.chatbot_quota_low if max_quota < SiteSetting.chatbot_quota_low
+        end
+      end
+
+      if current_record = UserCustomField.find_by(user_id: user_id, name:"chatbot_queries")
+        current_queries = current_record.value.to_i + 1
+        current_record.value = current_queries.to_s
+        current_record.save!
+      else
+        current_queries = 1
+        UserCustomField.create!(user_id: user_id, name: "chatbot_queries", value: current_queries)
+      end
+
+      return current_queries > max_quota 
     end
 
     private

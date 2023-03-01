@@ -25,22 +25,9 @@ if !user
     u.active = true
     u.approved = true
     u.trust_level = TrustLevel[4]
+    u.admin = true
   end
 
-
-
-  # # TODO Design a unique bot icon
-  # if !Rails.env.test?
-  #   begin
-  #     UserAvatar.import_url_for_user(
-  #       "",
-  #       User.find(-3),
-  #       override_gravatar: true
-  #     )
-  #   rescue
-  #     # In case the avatar can't be downloaded, don't fail seed
-  #   end
-  # end
 end
 
 if !group
@@ -71,5 +58,3 @@ if !bot.user_profile.bio_raw
     bio_raw: I18n.t('chatbot.bio', site_title: SiteSetting.title, chatbot_username: bot.username)
   )
 end
-
-#Group.user_trust_level_change!(-3, TrustLevel[4])

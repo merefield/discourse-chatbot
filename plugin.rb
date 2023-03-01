@@ -1,6 +1,6 @@
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.1
+# version: 0.2
 # authors: merefield
 
 gem "httparty", '0.21.0' #, {require: false}
@@ -38,12 +38,15 @@ after_initialize do
     ../lib/discourse_chatbot/reply_creator.rb
     ../lib/discourse_chatbot/post/post_reply_creator.rb
     ../lib/discourse_chatbot/message/message_reply_creator.rb
-    ../app/jobs/discourse_chatbot/chatbot_reply_job.rb
+    ../app/jobs/discourse_chatbot/regular/chatbot_reply_job.rb
+    ../app/jobs/discourse_chatbot/scheduled/chatbot_quota_reset_job.rb
   ).each do |path|
     load File.expand_path(path, __FILE__)
   end
 
   #register_topic_custom_field_type("conversation_id", :string)
+
+  register_user_custom_field_type("chatbot_queries", :integer)
 
   # add_to_class(:topic, :conversation_id) do
   #   if !self.custom_fields["conversation_id"].nil?

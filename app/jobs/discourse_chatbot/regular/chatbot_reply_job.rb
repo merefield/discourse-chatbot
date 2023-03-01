@@ -5,9 +5,11 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
   MESSAGE = "message"
 
   def execute(opts)
+#    type, bot_user_id, reply_to_message_or_post_id, over_quota = opts
     type = opts[:type]
     bot_user_id = opts[:bot_user_id]
     reply_to_message_or_post_id = opts[:reply_to_message_or_post_id]
+    over_quota = opts[:over_quota]
 
     bot_user = ::User.find_by(id: bot_user_id)
     if type == POST
@@ -18,8 +20,10 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
 
     create_bot_reply = false
 
-    if bot_user 
-      if type == POST && post
+    if bot_user
+      if over_quota
+        message_body = I18n.t('chatbot.errors.overquota')
+      elsif type == POST && post
         message_body = nil
         is_private_msg = post.topic.private_message?
 
