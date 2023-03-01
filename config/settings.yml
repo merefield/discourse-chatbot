@@ -1,10 +1,16 @@
 plugins:
   chatbot_enabled:
     default: true
-    client: false
+    client: true
   chatbot_permitted_in_private_messages:
-    default: false
+    default: true
     client: false
+  chatbot_permitted_in_chat:
+    default: true
+    client: true
+  chatbot_quick_access_chat_button:
+    default: true
+    client: true
   chatbot_permitted_all_categories:
     default: true
     client: false
@@ -13,8 +19,34 @@ plugins:
     default: ''
     type: category_list
     list_type: "compact"
+  chatbot_quota_high_trust:
+    default: 100
+    client: false
+  chatbot_quota_medium_trust:
+    default: 50
+    client: false
+  chatbot_quota_low_trust:
+    default: 10
+    client: false
+  chatbot_high_trust_groups:
+    client: false
+    default: ''
+    type: group_list
+    list_type: compact
+  chatbot_medium_trust_groups:
+    client: false
+    default: ''
+    type: group_list
+    list_type: compact
+  chatbot_low_trust_groups:
+    client: false
+    default: ''
+    type: group_list
+    list_type: compact
   chatbot_max_look_behind:
     default: 5
+    max: 10
+    min: 1
     client: false
   chatbot_base_url:
     client: false

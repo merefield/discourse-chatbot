@@ -17,8 +17,7 @@ module ::DiscourseChatbot
       message_contents = chat_message.message
       in_reply_to_id = chat_message.in_reply_to_id
 
-      # remove the 'quote' blocks
-      #post_contents.gsub!(%r{\[quote.*?\][^\[]+\[/quote\]}, '')
+      over_quota = over_quota(user_id)
 
       bot_username = SiteSetting.chatbot_bot_user
       bot_user = User.find_by(username: bot_username)
@@ -45,6 +44,7 @@ module ::DiscourseChatbot
             bot_user_id: bot_user_id,
             reply_to_message_or_post_id: chat_message.id,
             topic_or_channel_id: channel_id,
+            over_quota: over_quota,
            # conversation_id: topic.conversation_id || nil,
             message_body: message_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
           }
