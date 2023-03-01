@@ -52,7 +52,7 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
       if create_bot_reply
         puts "4. Retrieving new reply message..."
         begin
-          bot = DiscourseChatbot::OpenAIBot.new
+          bot = ::DiscourseChatbot::OpenAIBot.new
           message_body = bot.ask(opts)
         rescue => e
           message_body = I18n.t('chatbot.errors.general')
@@ -61,9 +61,9 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
       end
       opts.merge!(message_body: message_body)
       if type == POST
-        reply_creator = DiscourseChatbot::PostReplyCreator.new(opts)
+        reply_creator = ::DiscourseChatbot::PostReplyCreator.new(opts)
       else
-        reply_creator = DiscourseChatbot::MessageReplyCreator.new(opts)
+        reply_creator = ::DiscourseChatbot::MessageReplyCreator.new(opts)
       end
       reply_creator.create
     end

@@ -60,7 +60,7 @@ after_initialize do
       bot_user = User.find_by(username: bot_username)
 
       if (user.id != bot_user.id) && post.reply_count = 0
-        event_evaluation = DiscourseChatbot::PostEvaluation.new
+        event_evaluation = ::DiscourseChatbot::PostEvaluation.new
         event_evaluation.on_submission(post)
       end
     end
@@ -75,7 +75,7 @@ after_initialize do
       bot_user = User.find_by(username: bot_username)
 
       if (user.id != bot_user.id) #&& post.reply_count = 0
-        event_evaluation = DiscourseChatbot::MessageEvaluation.new
+        event_evaluation = ::DiscourseChatbot::MessageEvaluation.new
         event_evaluation.on_submission(chat_message)
       end
     end
