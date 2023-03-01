@@ -1,9 +1,6 @@
 class ::Jobs::ChatbotReplyJob < Jobs::Base
   sidekiq_options retry: false
 
-  POST = "post"
-  MESSAGE = "message"
-
   def execute(opts)
     type = opts[:type]
     bot_user_id = opts[:bot_user_id]
@@ -11,7 +8,7 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
     over_quota = opts[:over_quota]
 
     bot_user = ::User.find_by(id: bot_user_id)
-    if type == POST
+    if type == ::DiscourseChatbot::POST
       post = ::Post.find_by(id: reply_to_message_or_post_id)
     else
       message = ::ChatMessage.find_by(id: reply_to_message_or_post_id)
@@ -22,7 +19,7 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
     if bot_user
       if over_quota
         message_body = I18n.t('chatbot.errors.overquota')
-      elsif type == POST && post
+      elsif type == ::DiscourseChatbot::POST && post
         message_body = nil
         is_private_msg = post.topic.private_message?
 
@@ -46,7 +43,7 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
             message_body = I18n.t('chatbot.errors.forbiddenanycategory') 
           end
         end
-      elsif type == MESSAGE && message
+      elsif type == ::DiscourseChatbot::MESSAGE && message
         create_bot_reply = true
       end
       if create_bot_reply
@@ -60,7 +57,7 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
         end
       end
       opts.merge!(message_body: message_body)
-      if type == POST
+      if type == ::DiscourseChatbot::POST
         reply_creator = ::DiscourseChatbot::PostReplyCreator.new(opts)
       else
         reply_creator = ::DiscourseChatbot::MessageReplyCreator.new(opts)
