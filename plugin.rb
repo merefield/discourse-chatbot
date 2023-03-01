@@ -11,6 +11,7 @@ module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
   POST = "post"
   MESSAGE = "message"
+  CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
   DELAY_IN_SECONDS = 3
 end
 
@@ -48,7 +49,7 @@ after_initialize do
   #TODO support conversation ids if API supports
   #register_topic_custom_field_type("conversation_id", :string)
 
-  register_user_custom_field_type("chatbot_queries", :integer)
+  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD, :integer)
 
   DiscourseEvent.on(:post_created) do |*params|
     post, opts, user = params
