@@ -13,6 +13,8 @@ Upon addition to a Discourse, the plugin currently sets up a AI bot user with th
 
 You can edit the name as you wish but make it easy to mention.
 
+### Setup
+
 *There is some minor setup required before you can use the bot*: take a moment to read through the entire set of Plugin settings.
 
 You must get a token from https://openai.com in order to use the current bot.  A default language model is set (one of the most sophisticated), but you can try a cheaper alternative, the list is here: <a>https://platform.openai.com/docs/models/overview</a>'
@@ -27,6 +29,6 @@ There's a floating quick chat button that connects you immediately to the bot.  
 
 Disclaimer: I'm not responsible for what the bot responds with.  Consider the plugin to be at Beta stage and things could go wrong.  It will improve with feedback.
 
-## TODO
+### TODO
 
 * Add front and back-end tests
