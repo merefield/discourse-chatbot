@@ -6,7 +6,7 @@ module ::DiscourseChatbot
     end
 
     def create
-        puts "4. Creating a new reply message..."
+        puts "5. Creating a new Chat Nessage..."
 
         default_opts = {
           content: @message_body,

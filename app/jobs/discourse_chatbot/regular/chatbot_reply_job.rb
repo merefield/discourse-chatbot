@@ -5,7 +5,6 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
   MESSAGE = "message"
 
   def execute(opts)
-#    type, bot_user_id, reply_to_message_or_post_id, over_quota = opts
     type = opts[:type]
     bot_user_id = opts[:bot_user_id]
     reply_to_message_or_post_id = opts[:reply_to_message_or_post_id]
@@ -51,13 +50,13 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
         create_bot_reply = true
       end
       if create_bot_reply
-        puts "Creating a new reply message..."
+        puts "4. Retrieving new reply message..."
         begin
           bot = DiscourseChatbot::OpenAIBot.new
           message_body = bot.ask(opts)
-        # rescue => e
-        #   message_body = I18n.t('chatbot.errors.general')
-        #   Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
+        rescue => e
+          message_body = I18n.t('chatbot.errors.general')
+          Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
         end
       end
       opts.merge!(message_body: message_body)

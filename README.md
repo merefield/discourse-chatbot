@@ -21,6 +21,8 @@ There is a quota system.  In order to interact with the bot you must belong to a
 
 You can prompt the bot to respond by replying to it, or @ mentioning it.  You can set how far the bot looks behind to get context for a response.  The bigger the value the more costly will be each call.
 
+Disclaimer: I'm not responsible for what the bot responds with.  Consider the plugin to be at Beta stage and things could go wrong.  It will improve with feedback.
+
 ## TODO
 
 * Add front and back-end tests
