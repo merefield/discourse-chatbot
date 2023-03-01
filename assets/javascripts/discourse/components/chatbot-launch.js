@@ -1,8 +1,6 @@
 import Component from '@glimmer/component';
 import { inject as service } from "@ember/service";
-// import I18n from "I18n";
 import { action } from '@ember/object';
-// import { tracked } from '@glimmer/tracking';
 
 export default class ContentLanguageDiscovery extends Component {
   @service siteSettings;
@@ -12,14 +10,15 @@ export default class ContentLanguageDiscovery extends Component {
   
   get showChatbotButton () {
     return this.currentUser &&
+      this.siteSettings.chat_enabled &&
       this.siteSettings.chatbot_enabled &&
       this.siteSettings.chatbot_permitted_in_chat &&
       this.siteSettings.chatbot_quick_access_chat_button;
   }
 
   @action
-  startChatting (chat) {
-    chat
+  startChatting () {
+    this.chat
       .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
       .then((chatChannel) => {
         this.router.transitionTo("chat.channel", ...chatChannel.routeModels);
