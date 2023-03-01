@@ -19,13 +19,13 @@ plugins:
     default: ''
     type: category_list
     list_type: "compact"
-  chatbot_quota_high:
+  chatbot_quota_high_trust:
     default: 100
     client: false
-  chatbot_quota_medium:
+  chatbot_quota_medium_trust:
     default: 50
     client: false
-  chatbot_quota_low:
+  chatbot_quota_low_trust:
     default: 10
     client: false
   chatbot_high_trust_groups:
@@ -45,6 +45,8 @@ plugins:
     list_type: compact
   chatbot_max_look_behind:
     default: 5
+    max: 10
+    min: 1
     client: false
   chatbot_base_url:
     client: false

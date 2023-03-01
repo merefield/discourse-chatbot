@@ -11,13 +11,13 @@ module ::DiscourseChatbot
       
       GroupUser.where(user_id: user_id).each do |gu|
         if SiteSetting.chatbot_high_trust_groups.split('|').include? gu.group_id.to_s
-          max_quota = SiteSetting.chatbot_quota_high if max_quota < SiteSetting.chatbot_quota_high
+          max_quota = SiteSetting.chatbot_quota_high_trust if max_quota < SiteSetting.chatbot_quota_high_trust
         end
         if SiteSetting.chatbot_medium_trust_groups.split('|').include? gu.group_id.to_s
-          max_quota = SiteSetting.chatbot_quota_medium if max_quota < SiteSetting.chatbot_quota_medium
+          max_quota = SiteSetting.chatbot_quota_medium_trust if max_quota < SiteSetting.chatbot_quota_medium_trust
         end
         if SiteSetting.chatbot_low_trust_groups.split('|').include? gu.group_id.to_s
-          max_quota = SiteSetting.chatbot_quota_low if max_quota < SiteSetting.chatbot_quota_low
+          max_quota = SiteSetting.chatbot_quota_low_trust if max_quota < SiteSetting.chatbot_quota_low_trust
         end
       end
 
