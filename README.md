@@ -1,8 +1,8 @@
 # discourse-chatbot
 
-A plugin that uses a cloud-based chatbot to provide an response useful interactive ai experience.
+A plugin that uses a cloud-based chatbot to provide a useful interactive ai experience.
 
-Is extensible but currently only supports interaction with Open AI Large Language models such as GPT3.  This may change in the future.  Please contact me if you wish to add additional bot types.  PR welcome.
+Is extensible and supporting other cloud bots is intended (hence the generic name for the plugin), but currently 'only' supports interaction with Open AI Large Language models such as GPT3.  This may change in the future.  Please contact me if you wish to add additional bot types or want to support me to add more.  PR welcome.
 
 Upon addition to a Discourse, the plugin currently sets up a AI bot user with the following attributes
 
