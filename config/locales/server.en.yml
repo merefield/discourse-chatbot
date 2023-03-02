@@ -2,7 +2,8 @@ en:
   site_settings:
     chatbot_enabled: "Enable the chatbot plugin"
     chatbot_open_ai_token: 'Your Open AI token.  You can get one at <a>https://platform.openai.com/</a>'
-    chatbot_open_ai_model: 'The model to be accessed. Supported models are listed at <a>https://platform.openai.com/docs/models/overview</a>'
+    chatbot_open_ai_model: 'The model to be accessed. More on supported models at <a>https://platform.openai.com/docs/models/overview</a>'
+    chatbot_gpt_turbo_prompt: 'If you are using the ChatGPT("gpt-3.5-turbo") model, this prompt describes what the bot should consider itself as so you can modify its behaviour'
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
     chatbot_permitted_in_private_messages: "Allow Chatbot to interact in Private Messages"
     chatbot_permitted_in_chat: "Allow Chatbot to interact in Chat"

@@ -3,13 +3,27 @@ module ::DiscourseChatbot
   class MessagePromptUtils < PromptUtils
 
     def self.create_prompt(opts)
+
       message_collection = collect_past_interactions(opts[:reply_to_message_or_post_id])
-      # {p.user.username}
-       content = message_collection.reverse.map { |p| <<~MD }
-       #{p.message}
-       ---
-       MD
-       return content.join
+      bot_user_id = opts[:bot_user_id]
+
+      if SiteSetting.chatbot_open_ai_model == "gpt-3.5-turbo"
+
+        messages=[{"role": "system", "content": SiteSetting.chatbot_gpt_turbo_prompt}]
+
+        messages += message_collection.reverse.map { |cm|
+          {"role": (cm.user_id == bot_user_id ? "assistant" : "user"), "content": cm.message}
+        }
+
+        return messages
+      else
+        # {p.user.username}
+        content = message_collection.reverse.map { |cm| <<~MD }
+        #{cm.message}
+        ---
+        MD
+        return content.join
+      end
     end
 
 

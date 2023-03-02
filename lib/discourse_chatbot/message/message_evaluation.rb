@@ -2,9 +2,6 @@ module ::DiscourseChatbot
 
   class MessageEvaluation < EventEvaluation
 
-    # DELAY_IN_SECONDS = 3
-    # MESSAGE = "message"
-
     DIRECT_MESSAGE = "DirectMessage"
 
     def on_submission(submission)

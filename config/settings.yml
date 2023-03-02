@@ -50,7 +50,15 @@ plugins:
     client: false
   chatbot_open_ai_model:
     client: false
-    default: "text-davinci-003"
+    type: enum
+    default: gpt-3.5-turbo
+    choices:
+      - gpt-3.5-turbo
+      - text-davinci-003
+      - text-davinci-002
+  chatbot_gpt_turbo_prompt:
+    client: false
+    default: "You are a helpful assistant."
   chatbot_open_ai_token:
     client: false
     default: ''

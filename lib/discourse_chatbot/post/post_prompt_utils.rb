@@ -4,12 +4,25 @@ module ::DiscourseChatbot
 
     def self.create_prompt(opts)
       post_collection = collect_past_interactions(opts[:reply_to_message_or_post_id])
-      # {p.user.username}
-       content = post_collection.reverse.map { |p| <<~MD }
-       #{p.raw}
-       ---
-       MD
-       return content
+      bot_user_id = opts[:bot_user_id]
+
+      if SiteSetting.chatbot_open_ai_model == "gpt-3.5-turbo"
+
+        messages=[{"role": "system", "content": SiteSetting.chatbot_gpt_turbo_prompt}]
+
+        messages += post_collection.reverse.map { |p|
+          {"role": (p.user_id == bot_user_id ? "assistant" : "user"), "content": p.raw}
+        }
+
+        return messages
+      else
+        # {p.user.username}
+        content = post_collection.reverse.map { |p| <<~MD }
+        #{p.raw}
+        ---
+        MD
+        return content
+      end
     end
 
 
