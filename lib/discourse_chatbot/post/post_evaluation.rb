@@ -2,9 +2,6 @@ module ::DiscourseChatbot
 
   class PostEvaluation < EventEvaluation
 
-    # DELAY_IN_SECONDS = 3
-    # POST = "post"
-
     def on_submission(submission)
       puts "2. evaluation"
 
@@ -24,16 +21,27 @@ module ::DiscourseChatbot
 
       mentions_bot_name = post_contents.downcase =~ /@#{bot_username.downcase}\b/
 
+      explicit_reply_to_bot = false
+      last_post_was_bot = false
+
       if post.post_number > 1
         prior_post = ::Post.where(topic_id: topic.id).second_to_last
-        last_post_was_bot = (post.reply_to_user_id == bot_user.id) || (prior_post.user_id == bot_user.id)
+        last_post_was_bot = prior_post.user_id == bot_user.id
+
+        explicit_reply_to_bot = post.reply_to_user_id == bot_user.id
       else
-        last_post_was_bot = false
+        if topic.private_message? && (::TopicUser.where(topic_id: topic.id).where(posted: false).uniq(&:user_id).pluck(:user_id).include? bot_user.id)
+          explicit_reply_to_bot = true
+        end
       end
 
       user_id = user.id
 
-      if bot_user && (user != bot_user) && (mentions_bot_name || last_post_was_bot)
+      existing_human_participants = ::TopicUser.where(topic_id: topic.id).where(posted: true).where('user_id not in (?)', [bot_user.id]).uniq(&:user_id).pluck(:user_id)
+
+      human_participants_count = (existing_human_participants << user.id).uniq.count
+
+      if bot_user && (user != bot_user) && (mentions_bot_name || explicit_reply_to_bot || (last_post_was_bot && human_participants_count == 1))
           opts = {
             type: POST,
             user_id: user_id,
@@ -41,7 +49,6 @@ module ::DiscourseChatbot
             reply_to_message_or_post_id: post.id,
             topic_or_channel_id: topic.id,
             over_quota: over_quota,
-           # conversation_id: topic.conversation_id || nil,
             message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
           }
           puts "3. invocation"

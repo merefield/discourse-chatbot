@@ -29,10 +29,12 @@ module ::DiscourseChatbot
         replied_to_user = ::ChatMessage.find(in_reply_to_id).user
       end
 
-      direct_chat = ChatChannel.find(channel_id).chatable_type == DIRECT_MESSAGE
+      channel = ChatChannel.find(channel_id)
+      direct_chat = channel.chatable_type == DIRECT_MESSAGE
+      channel_user_count = channel.user_count
       bot_chat_channel = User.find(bot_user_id).user_chat_channel_memberships.where(chat_channel_id: channel_id)
-      
-      talking_to_bot = (direct_chat && bot_chat_channel) || (replied_to_user && replied_to_user.id == bot_user_id) || (prior_message.user_id == bot_user_id && in_reply_to_id == nil)
+
+      talking_to_bot = (direct_chat && bot_chat_channel) || (replied_to_user && replied_to_user.id == bot_user_id) || (prior_message.user_id == bot_user_id && in_reply_to_id == nil && channel_user_count < 3)
       
       if bot_user && (user_id != bot_user_id) && (mentions_bot_name || talking_to_bot)
         opts = {
@@ -42,7 +44,6 @@ module ::DiscourseChatbot
             reply_to_message_or_post_id: chat_message.id,
             topic_or_channel_id: channel_id,
             over_quota: over_quota,
-           # conversation_id: topic.conversation_id || nil,
             message_body: message_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
           }
           puts "3. invocation"
