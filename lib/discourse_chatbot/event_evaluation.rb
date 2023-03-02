@@ -20,7 +20,6 @@ module ::DiscourseChatbot
           max_quota = SiteSetting.chatbot_quota_low_trust if max_quota < SiteSetting.chatbot_quota_low_trust
         end
       end
-      puts 'here'
 
       if current_record = UserCustomField.find_by(user_id: user_id, name: CHATBOT_QUERIES_CUSTOM_FIELD)
         current_queries = current_record.value.to_i + 1
