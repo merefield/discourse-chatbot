@@ -34,7 +34,7 @@ module ::DiscourseChatbot
       channel_user_count = channel.user_count
       bot_chat_channel = User.find(bot_user_id).user_chat_channel_memberships.where(chat_channel_id: channel_id)
 
-      talking_to_bot = (direct_chat && bot_chat_channel) || (replied_to_user && replied_to_user.id == bot_user_id) || (prior_message.user_id == bot_user_id && in_reply_to_id == nil && channel_user_count < 3)
+      talking_to_bot = (direct_chat && bot_chat_channel) || (replied_to_user && replied_to_user.id == bot_user_id) || (prior_message.user_id == bot_user_id && in_reply_to_id == nil && channel_user_count < 2)
       
       if bot_user && (user_id != bot_user_id) && (mentions_bot_name || talking_to_bot)
         opts = {
