@@ -37,8 +37,7 @@ module ::DiscourseChatbot
 
       while post_collection.length < collect_amount do
         if current_post.reply_to_post_number
-          #current_post = ::Post.find_by(topic_id: current_post.topic_id, post_number: current_post.reply_to_post_number)
-          current_post = ::Post.find(current_post.reply_to_post_number)
+          current_post = ::Post.find_by(topic_id: current_post.topic_id, post_number: current_post.reply_to_post_number)
         else
           if current_post.post_number > 1
             current_post = ::Post.where(topic_id: current_post.topic_id, deleted_at: nil).where('post_number < ?', current_post.post_number).last
