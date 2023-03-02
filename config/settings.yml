@@ -48,9 +48,6 @@ plugins:
     max: 10
     min: 1
     client: false
-  chatbot_base_url:
-    client: false
-    default: "https://api.openai.com/v1/completions"
   chatbot_open_ai_model:
     client: false
     default: "text-davinci-003"
