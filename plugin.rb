@@ -12,7 +12,6 @@ module ::DiscourseChatbot
   POST = "post"
   MESSAGE = "message"
   CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
-  DELAY_IN_SECONDS = 3
 end
 
 require_relative "lib/discourse_chatbot/engine"

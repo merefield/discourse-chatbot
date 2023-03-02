@@ -59,6 +59,10 @@ plugins:
   chatbot_gpt_turbo_prompt:
     client: false
     default: "You are a helpful assistant."
+  chatbot_reply_job_time_delay:
+    client: false
+    default: 3
+    min: 1
   chatbot_open_ai_token:
     client: false
     default: ''
