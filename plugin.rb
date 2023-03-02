@@ -1,18 +1,17 @@
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.5
+# version: 0.7
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
-gem "httparty", '0.21.0' #, {require: false}
-gem "ruby-openai", '3.3.0', {require: false} 
+gem "httparty", '0.21.0'
+gem "ruby-openai", '3.4.0', {require: false}
 
 module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
   POST = "post"
   MESSAGE = "message"
   CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
-  DELAY_IN_SECONDS = 3
 end
 
 require_relative "lib/discourse_chatbot/engine"
@@ -45,9 +44,6 @@ after_initialize do
   ).each do |path|
     load File.expand_path(path, __FILE__)
   end
-
-  #TODO support conversation ids if API supports
-  #register_topic_custom_field_type("conversation_id", :string)
 
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD, :integer)
 

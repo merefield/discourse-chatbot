@@ -20,18 +20,28 @@ module ::DiscourseChatbot
     end
 
     def get_response(prompt)
-      response = @client.completions(
-        parameters: {
-            model: SiteSetting.chatbot_open_ai_model,
-            prompt: "#{prompt}",
-            max_tokens: SiteSetting.chatbot_max_response_tokens
-        })
-  
-      if response.parsed_response["error"]
-        raise StandardError, response.parsed_response["error"]["message"]
+      if SiteSetting.chatbot_open_ai_model == "gpt-3.5-turbo"
+        response = @client.chat(
+          parameters: {
+              model: "gpt-3.5-turbo",
+              messages: prompt
+          })
+
+          final_text = response.dig("choices", 0, "message", "content")
+      else
+        response = @client.completions(
+          parameters: {
+              model: SiteSetting.chatbot_open_ai_model,
+              prompt: prompt,
+              max_tokens: SiteSetting.chatbot_max_response_tokens
+          })
+
+        if response.parsed_response["error"]
+          raise StandardError, response.parsed_response["error"]["message"]
+        end
+
+        final_text = response["choices"][0]["text"]
       end
-  
-      final_text = response["choices"][0]["text"]
     end
 
     def ask(opts)

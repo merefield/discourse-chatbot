@@ -2,9 +2,6 @@ module ::DiscourseChatbot
 
   class MessageEvaluation < EventEvaluation
 
-    # DELAY_IN_SECONDS = 3
-    # MESSAGE = "message"
-
     DIRECT_MESSAGE = "DirectMessage"
 
     def on_submission(submission)
@@ -28,7 +25,7 @@ module ::DiscourseChatbot
       prior_message = ::ChatMessage.where(chat_channel_id: channel_id).second_to_last
       replied_to_user = nil
       if in_reply_to_id
-        puts "found it's a reply to a prior message"
+        puts "2.5 found it's a reply to a prior message"
         replied_to_user = ::ChatMessage.find(in_reply_to_id).user
       end
 

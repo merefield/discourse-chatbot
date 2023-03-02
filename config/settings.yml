@@ -48,12 +48,21 @@ plugins:
     max: 10
     min: 1
     client: false
-  chatbot_base_url:
-    client: false
-    default: "https://api.openai.com/v1/completions"
   chatbot_open_ai_model:
     client: false
-    default: "text-davinci-003"
+    type: enum
+    default: gpt-3.5-turbo
+    choices:
+      - gpt-3.5-turbo
+      - text-davinci-003
+      - text-davinci-002
+  chatbot_gpt_turbo_prompt:
+    client: false
+    default: "You are a helpful assistant."
+  chatbot_reply_job_time_delay:
+    client: false
+    default: 3
+    min: 1
   chatbot_open_ai_token:
     client: false
     default: ''
