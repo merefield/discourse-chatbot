@@ -32,11 +32,24 @@ module ::DiscourseChatbot
       channel = ChatChannel.find(channel_id)
       direct_chat = channel.chatable_type == DIRECT_MESSAGE
       channel_user_count = channel.user_count
-      bot_chat_channel = User.find(bot_user_id).user_chat_channel_memberships.where(chat_channel_id: channel_id)
+      bot_chat_channel = (bot_user.user_chat_channel_memberships.where(chat_channel_id: channel_id).count > 0)
 
-      talking_to_bot = (direct_chat && bot_chat_channel) || (replied_to_user && replied_to_user.id == bot_user_id) || (prior_message.user_id == bot_user_id && in_reply_to_id == nil && channel_user_count < 2)
+      # puts submission.chat_channel_id
+      # puts bot_chat_channel
+      # puts channel_user_count
+
+      talking_to_bot = (direct_chat && bot_chat_channel && channel_user_count < 3) || (replied_to_user && replied_to_user.id == bot_user_id) #|| (prior_message.user_id == bot_user_id && in_reply_to_id == nil && channel_user_count < 3)
       
       if bot_user && (user_id != bot_user_id) && (mentions_bot_name || talking_to_bot)
+
+        if mentions_bot_name && !bot_chat_channel
+          bot_user.user_chat_channel_memberships.create!(chat_channel: channel, following: false)
+          channel.update!(user_count_stale: true)
+          #channel.update!(user_count: channel.user_count + 1)
+          Jobs::UpdateChannelUserCount.new.execute(chat_channel_id: channel_id)
+          puts "2.6 added bot to channel"
+        end
+
         opts = {
             type: MESSAGE,
             user_id: user_id,

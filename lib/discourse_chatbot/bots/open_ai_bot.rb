@@ -21,6 +21,9 @@ module ::DiscourseChatbot
 
     def get_response(prompt)
       if SiteSetting.chatbot_open_ai_model == "gpt-3.5-turbo"
+        # puts prompt.count
+        # puts prompt
+        # puts prompt.kind_of?(Array)
         response = @client.chat(
           parameters: {
               model: "gpt-3.5-turbo",
