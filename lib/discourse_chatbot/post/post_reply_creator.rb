@@ -11,7 +11,7 @@ module ::DiscourseChatbot
         default_opts = {
           raw: @message_body,
           topic_id: @topic_or_channel_id,
-          reply_to_post_number: @reply_to,
+          reply_to_post_number: @reply_to_post_number,
           post_alert_options: { skip_send_email: true },
           skip_validations: true
         }

@@ -46,7 +46,8 @@ module ::DiscourseChatbot
             type: POST,
             user_id: user_id,
             bot_user_id: bot_user.id,
-            reply_to_message_or_post_id: post.post_number,
+            reply_to_message_or_post_id: post.id,
+            original_post_number: post.post_number,
             topic_or_channel_id: topic.id,
             over_quota: over_quota,
             message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
