@@ -34,7 +34,7 @@ module ::DiscourseChatbot
               model: SiteSetting.chatbot_open_ai_model,
               prompt: prompt,
               max_tokens: SiteSetting.chatbot_max_response_tokens,
-              temperature: SiteSetting.chatbot_request_temperature / 10.0
+              temperature: SiteSetting.chatbot_request_temperature / 100.0
           })
 
         if response.parsed_response["error"]
