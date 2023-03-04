@@ -10,6 +10,7 @@ describe ::DiscourseChatbot::PostPromptUtils do
   let!(:post_4) { Fabricate(:post, topic: topic, reply_to_post_number: 2) }
   let!(:post_5) { Fabricate(:post, topic: topic) }
   let!(:post_6) { Fabricate(:post, topic: topic, reply_to_post_number: 3)}
+  let!(:post_7) { Fabricate(:post, topic: topic)}
 
   before(:all) do
     SiteSetting.chatbot_enabled = true
@@ -23,6 +24,13 @@ describe ::DiscourseChatbot::PostPromptUtils do
     past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_5.id)
     expect(past_posts.count).to equal(4)
     past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_6.id)
+    expect(past_posts.count).to equal(3)
+
+    post_5.destroy
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_7.id)
+    expect(past_posts.count).to equal(4)
+    post_3.destroy
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_7.id)
     expect(past_posts.count).to equal(3)
   end
 end
