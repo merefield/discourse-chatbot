@@ -3,7 +3,6 @@ en:
     chatbot_enabled: "Enable the chatbot plugin"
     chatbot_open_ai_token: 'Your Open AI token.  You can get one at <a>https://platform.openai.com/</a>'
     chatbot_open_ai_model: 'The model to be accessed. More on supported models at <a>https://platform.openai.com/docs/models/overview</a>'
-    chatbot_gpt_turbo_prompt: 'If you are using the ChatGPT("gpt-3.5-turbo") model, this prompt describes what the bot should consider itself as so you can modify its behaviour'
     chatbot_reply_job_time_delay: 'Number of seconds before reply job is run.  This helps prevent rate limits being hit and discourages spamming.'
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
     chatbot_permitted_in_private_messages: "Allow Chatbot to interact in Private Messages"
@@ -23,6 +22,11 @@ en:
 
   chatbot:
     bio: "Hi, I’m not a real person. I’m a bot that can discuss things with you. Don't take me too seriously.  Sometimes, I'm even right about stuff!"
+    prompt:
+      system: "You are a helpful assistant."
+      title: "The subject of this conversation is \"%{topic_title}\""
+      first_post: "The first thing someone said was %{username} who said \"%{raw}\""
+      post: "%{username} said \"%{raw}\""
     errors:
       general: "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"
       forbiddeninprivatemessages: "Use in private messages has not been permitted, please contact the admin"
