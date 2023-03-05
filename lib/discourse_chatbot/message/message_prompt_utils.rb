@@ -9,19 +9,24 @@ module ::DiscourseChatbot
 
       if SiteSetting.chatbot_open_ai_model == "gpt-3.5-turbo"
 
-        messages=[{"role": "system", "content": SiteSetting.chatbot_gpt_turbo_prompt}]
+        messages=[{"role": "system", "content": I18n.t("chatbot.prompt.system")}]
 
-        messages += message_collection.reverse.map { |cm|
-          {"role": (cm.user_id == bot_user_id ? "assistant" : "user"), "content": cm.message}
-        }
+        messages += message_collection.reverse.map do |cm|
+          username = ::User.find(cm.user_id).username
+          {"role": (cm.user_id == bot_user_id ? "assistant" : "user"), "content": (cm.user_id == bot_user_id ? "#{cm.message}" : I18n.t("chatbot.prompt.post", username: username, raw: cm.message))}
+        end
 
         return messages
       else
-        # {p.user.username}
-        content = message_collection.reverse.map { |cm| <<~MD }
-        #{cm.message}
-        ---
-        MD
+
+        content = message_collection.reverse.map do |cm|
+          username = ::User.find(cm.user_id).username
+          <<~MD
+          #{I18n.t("chatbot.prompt.post", username: username, raw: cm.message)}
+          ---
+          MD
+        end
+
         return content.join
       end
     end
