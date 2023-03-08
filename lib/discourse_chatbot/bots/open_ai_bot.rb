@@ -24,7 +24,8 @@ module ::DiscourseChatbot
         response = @client.chat(
           parameters: {
               model: "gpt-3.5-turbo",
-              messages: prompt
+              messages: prompt,
+              temperature: SiteSetting.chatbot_request_temperature / 100.0
           })
 
           final_text = response.dig("choices", 0, "message", "content")
