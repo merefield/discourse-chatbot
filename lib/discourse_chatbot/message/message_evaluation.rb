@@ -9,7 +9,8 @@ module ::DiscourseChatbot
       
       chat_message = submission
 
-      user_id = chat_message.user
+      user = chat_message.user
+      user_id = user.id
       channel_id = chat_message.chat_channel_id
       message_contents = chat_message.message
       in_reply_to_id = chat_message.in_reply_to_id
@@ -35,7 +36,7 @@ module ::DiscourseChatbot
       bot_chat_channel = (bot_user.user_chat_channel_memberships.where(chat_channel_id: channel_id).count > 0)
 
       talking_to_bot = (direct_chat && bot_chat_channel && channel_user_count < 3) || (replied_to_user && replied_to_user.id == bot_user_id)
-      
+
       if bot_user && (user_id != bot_user_id) && (mentions_bot_name || talking_to_bot)
 
         if mentions_bot_name && !bot_chat_channel
