@@ -9,10 +9,10 @@ describe ::DiscourseChatbot::PostPromptUtils do
   let!(:post_3) { Fabricate(:post, topic: topic, reply_to_post_number: 1) }
   let!(:post_4) { Fabricate(:post, topic: topic, reply_to_post_number: 2) }
   let!(:post_5) { Fabricate(:post, topic: topic) }
-  let!(:post_6) { Fabricate(:post, topic: topic, reply_to_post_number: 3)}
-  let!(:post_7) { Fabricate(:post, topic: topic)}
+  let!(:post_6) { Fabricate(:post, topic: topic, reply_to_post_number: 3) }
+  let!(:post_7) { Fabricate(:post, topic: topic) }
 
-  before(:all) do
+  before(:each) do
     SiteSetting.chatbot_enabled = true
   end
 

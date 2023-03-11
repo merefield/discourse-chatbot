@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 class ::Jobs::ChatbotQuotaResetJob < ::Jobs::Scheduled
   sidekiq_options retry: false
 
@@ -14,6 +15,6 @@ class ::Jobs::ChatbotQuotaResetJob < ::Jobs::Scheduled
         UserCustomField.create!(user_id: u.id, name: ::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD, value: current_queries)
       end
     end
-    
+
   end
 end

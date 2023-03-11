@@ -6,7 +6,7 @@ module ::DiscourseChatbot
   class OpenAIBot < Bot
 
     def initialize
-     
+
       # TODO add this in when support added via PR after "ruby-openai", '3.3.0'
       # OpenAI.configure do |config|
       #   config.request_timeout = 25
@@ -14,7 +14,7 @@ module ::DiscourseChatbot
 
       # TODO consider other bot parameters
       # , params: {key: chatbot_api_key, cb_settings_tweak1: wackiness, cb_settings_tweak2: talkativeness, cb_settings_tweak3: attentiveness})
-  
+
       @client = ::OpenAI::Client.new(access_token: SiteSetting.chatbot_open_ai_token)
 
     end

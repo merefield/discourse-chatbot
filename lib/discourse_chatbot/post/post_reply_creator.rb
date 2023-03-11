@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ::DiscourseChatbot
   class PostReplyCreator < ReplyCreator
 
@@ -6,7 +7,7 @@ module ::DiscourseChatbot
     end
 
     def create
-        puts "5. Creating a new Post..."
+      puts "5. Creating a new Post..."
 
         default_opts = {
           raw: @message_body,

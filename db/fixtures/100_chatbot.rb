@@ -45,7 +45,6 @@ if !group
   SiteSetting.chat_allowed_groups += "|-4"
 end
 
-
 bot = User.find(-4)
 
 bot.user_option.update!(

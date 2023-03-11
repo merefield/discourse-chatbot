@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ::DiscourseChatbot
 
   class EventEvaluation
@@ -8,7 +9,7 @@ module ::DiscourseChatbot
 
     def over_quota(user_id)
       max_quota = 0
-      
+
       GroupUser.where(user_id: user_id).each do |gu|
         if SiteSetting.chatbot_high_trust_groups.split('|').include? gu.group_id.to_s
           max_quota = SiteSetting.chatbot_quota_high_trust if max_quota < SiteSetting.chatbot_quota_high_trust
@@ -30,7 +31,7 @@ module ::DiscourseChatbot
         UserCustomField.create!(user_id: user_id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: current_queries)
       end
 
-      return current_queries > max_quota 
+      current_queries > max_quota
     end
 
     private

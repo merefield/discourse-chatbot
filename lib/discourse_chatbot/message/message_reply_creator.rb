@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ::DiscourseChatbot
   class MessageReplyCreator < ReplyCreator
 
@@ -6,11 +7,11 @@ module ::DiscourseChatbot
     end
 
     def create
-        puts "5. Creating a new Chat Nessage..."
+      puts "5. Creating a new Chat Nessage..."
 
         default_opts = {
           content: @message_body,
-          chat_channel:  ChatChannel.find(@topic_or_channel_id),
+          chat_channel: ChatChannel.find(@topic_or_channel_id),
           user: @author
           # TODO need a way to suppress notifications/emails?
         }
