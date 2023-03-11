@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+
+# Job is triggered to respond to Message or Post appropriately, checking user's quota.
 class ::Jobs::ChatbotReplyJob < Jobs::Base
   sidekiq_options retry: false
 
@@ -17,53 +19,53 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
 
     create_bot_reply = false
 
-    if bot_user
-      if over_quota
-        message_body = I18n.t('chatbot.errors.overquota')
-      elsif type == ::DiscourseChatbot::POST && post
-        message_body = nil
-        is_private_msg = post.topic.private_message?
+    return unless bot_user
 
-        permitted_categories = SiteSetting.chatbot_permitted_categories.split('|')
+    if over_quota
+      message_body = I18n.t('chatbot.errors.overquota')
+    elsif type == ::DiscourseChatbot::POST && post
+      message_body = nil
+      is_private_msg = post.topic.private_message?
 
-        if (is_private_msg && !SiteSetting.chatbot_permitted_in_private_messages)
-          message_body = I18n.t('chatbot.errors.forbiddeninprivatemessages')
-        elsif is_private_msg && SiteSetting.chatbot_permitted_in_private_messages || !is_private_msg && SiteSetting.chatbot_permitted_all_categories || (permitted_categories.include? post.topic.category_id.to_s)
-          create_bot_reply = true
-        else
-          if permitted_categories.size > 0
-            message_body = I18n.t('chatbot.errors.forbiddenoutsidethesecategories')
-            permitted_categories.each_with_index do |permitted_category, index|
-              if index == permitted_categories.size - 1
-                message_body += "##{Category.find_by(id:permitted_category).slug}"
-              else
-                message_body += "##{Category.find_by(id:permitted_category).slug}, "
-              end
-            end
-          else
-            message_body = I18n.t('chatbot.errors.forbiddenanycategory') 
-          end
-        end
-      elsif type == ::DiscourseChatbot::MESSAGE && message
+      permitted_categories = SiteSetting.chatbot_permitted_categories.split('|')
+
+      if (is_private_msg && !SiteSetting.chatbot_permitted_in_private_messages)
+        message_body = I18n.t('chatbot.errors.forbiddeninprivatemessages')
+      elsif is_private_msg && SiteSetting.chatbot_permitted_in_private_messages || !is_private_msg && SiteSetting.chatbot_permitted_all_categories || (permitted_categories.include? post.topic.category_id.to_s)
         create_bot_reply = true
-      end
-      if create_bot_reply
-        puts "4. Retrieving new reply message..."
-        begin
-          bot = ::DiscourseChatbot::OpenAIBot.new
-          message_body = bot.ask(opts)
-        rescue => e
-          message_body = I18n.t('chatbot.errors.general')
-          Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
+      else
+        if permitted_categories.size > 0
+          message_body = I18n.t('chatbot.errors.forbiddenoutsidethesecategories')
+          permitted_categories.each_with_index do |permitted_category, index|
+            if index == permitted_categories.size - 1
+              message_body += "##{Category.find_by(id:permitted_category).slug}"
+            else
+              message_body += "##{Category.find_by(id:permitted_category).slug}, "
+            end
+          end
+        else
+          message_body = I18n.t('chatbot.errors.forbiddenanycategory') 
         end
       end
-      opts.merge!(message_body: message_body)
-      if type == ::DiscourseChatbot::POST
-        reply_creator = ::DiscourseChatbot::PostReplyCreator.new(opts)
-      else
-        reply_creator = ::DiscourseChatbot::MessageReplyCreator.new(opts)
-      end
-      reply_creator.create
+    elsif type == ::DiscourseChatbot::MESSAGE && message
+      create_bot_reply = true
     end
+    if create_bot_reply
+      puts "4. Retrieving new reply message..."
+      begin
+        bot = ::DiscourseChatbot::OpenAIBot.new
+        message_body = bot.ask(opts)
+      rescue => e
+        message_body = I18n.t('chatbot.errors.general')
+        Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
+      end
+    end
+    opts.merge!(message_body: message_body)
+    if type == ::DiscourseChatbot::POST
+      reply_creator = ::DiscourseChatbot::PostReplyCreator.new(opts)
+    else
+      reply_creator = ::DiscourseChatbot::MessageReplyCreator.new(opts)
+    end
+    reply_creator.create
   end
 end
