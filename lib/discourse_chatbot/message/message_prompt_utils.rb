@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ::DiscourseChatbot
 
   class MessagePromptUtils < PromptUtils
@@ -16,7 +17,7 @@ module ::DiscourseChatbot
           {"role": (cm.user_id == bot_user_id ? "assistant" : "user"), "content": (cm.user_id == bot_user_id ? "#{cm.message}" : I18n.t("chatbot.prompt.post", username: username, raw: cm.message))}
         end
 
-        return messages
+        messages
       else
 
         content = message_collection.reverse.map do |cm|
@@ -27,7 +28,7 @@ module ::DiscourseChatbot
           MD
         end
 
-        return content.join
+        content.join
       end
     end
 

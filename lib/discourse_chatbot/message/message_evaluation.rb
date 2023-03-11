@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ::DiscourseChatbot
 
   class MessageEvaluation < EventEvaluation
@@ -55,9 +56,12 @@ module ::DiscourseChatbot
             over_quota: over_quota,
             message_body: message_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
           }
-          puts "3. invocation"
-          job_class = ::Jobs::ChatbotReplyJob
-          invoke_background_job(job_class, opts)
+        puts "3. invocation"
+        job_class = ::Jobs::ChatbotReplyJob
+        invoke_background_job(job_class, opts)
+        true
+      else
+        false
       end
     end
 

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ::DiscourseChatbot
 
   class EventEvaluation
@@ -30,7 +31,7 @@ module ::DiscourseChatbot
         UserCustomField.create!(user_id: user_id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: current_queries)
       end
 
-      return current_queries > max_quota 
+      current_queries > max_quota 
     end
 
     private

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 class ::Jobs::ChatbotReplyJob < Jobs::Base
   sidekiq_options retry: false
 

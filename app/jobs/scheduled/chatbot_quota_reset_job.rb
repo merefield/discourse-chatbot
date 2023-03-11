@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 class ::Jobs::ChatbotQuotaResetJob < ::Jobs::Scheduled
   sidekiq_options retry: false
 
