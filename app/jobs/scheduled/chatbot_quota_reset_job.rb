@@ -15,6 +15,6 @@ class ::Jobs::ChatbotQuotaResetJob < ::Jobs::Scheduled
         UserCustomField.create!(user_id: u.id, name: ::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD, value: current_queries)
       end
     end
-    
+
   end
 end

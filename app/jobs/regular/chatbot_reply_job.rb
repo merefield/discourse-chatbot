@@ -38,13 +38,13 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
           message_body = I18n.t('chatbot.errors.forbiddenoutsidethesecategories')
           permitted_categories.each_with_index do |permitted_category, index|
             if index == permitted_categories.size - 1
-              message_body += "##{Category.find_by(id:permitted_category).slug}"
+              message_body += "##{Category.find_by(id: permitted_category).slug}"
             else
-              message_body += "##{Category.find_by(id:permitted_category).slug}, "
+              message_body += "##{Category.find_by(id: permitted_category).slug}, "
             end
           end
         else
-          message_body = I18n.t('chatbot.errors.forbiddenanycategory') 
+          message_body = I18n.t('chatbot.errors.forbiddenanycategory')
         end
       end
     elsif type == ::DiscourseChatbot::MESSAGE && message

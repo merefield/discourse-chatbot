@@ -6,7 +6,7 @@
 # url: https://github.com/merefield/discourse-chatbot
 
 gem "httparty", '0.21.0'
-gem "ruby-openai", '3.4.0', {require: false}
+gem "ruby-openai", '3.4.0', { require: false }
 
 module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
@@ -24,9 +24,9 @@ register_svg_icon 'robot'
 
 after_initialize do
   SeedFu.fixture_paths << Rails
-  .root
-  .join("plugins", "discourse-chatbot", "db", "fixtures")
-  .to_s
+    .root
+    .join("plugins", "discourse-chatbot", "db", "fixtures")
+    .to_s
 
   %w(
     ../lib/discourse_chatbot/event_evaluation.rb

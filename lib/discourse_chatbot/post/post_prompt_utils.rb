@@ -8,12 +8,12 @@ module ::DiscourseChatbot
       bot_user_id = opts[:bot_user_id]
 
       if SiteSetting.chatbot_open_ai_model == "gpt-3.5-turbo"
-        messages = [{"role": "system", "content": I18n.t("chatbot.prompt.system")}]
-        messages << {"role": "user", "content":  I18n.t("chatbot.prompt.title", topic_title: post_collection.first.topic.title)}
-        messages << {"role": "user", "content": I18n.t("chatbot.prompt.first_post", username: post_collection.first.topic.first_post.user.username, raw: post_collection.first.topic.first_post.raw)}
+        messages = [{ "role": "system", "content": I18n.t("chatbot.prompt.system") }]
+        messages << { "role": "user", "content":  I18n.t("chatbot.prompt.title", topic_title: post_collection.first.topic.title) }
+        messages << { "role": "user", "content": I18n.t("chatbot.prompt.first_post", username: post_collection.first.topic.first_post.user.username, raw: post_collection.first.topic.first_post.raw) }
 
         messages += post_collection.reverse.map { |p|
-          {"role": (p.user_id == bot_user_id ? "assistant" : "user"), "content": (p.user_id == bot_user_id ? "#{p.raw}" : I18n.t("chatbot.prompt.post", username: p.user.username, raw: p.raw))}
+          { "role": (p.user_id == bot_user_id ? "assistant" : "user"), "content": (p.user_id == bot_user_id ? "#{p.raw}" : I18n.t("chatbot.prompt.post", username: p.user.username, raw: p.raw)) }
         }
 
         messages
@@ -25,7 +25,6 @@ module ::DiscourseChatbot
         content
       end
     end
-
 
     def self.collect_past_interactions(message_or_post_id)
       current_post = ::Post.find(message_or_post_id)

@@ -7,7 +7,7 @@ module ::DiscourseChatbot
 
     def on_submission(submission)
       puts "2. evaluation"
-      
+
       chat_message = submission
 
       user = chat_message.user

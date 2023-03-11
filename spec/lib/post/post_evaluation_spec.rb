@@ -6,7 +6,7 @@ describe ::DiscourseChatbot::PostEvaluation do
   let(:post_args) { { user: topic.user, topic: topic } }
   let(:bot_user) { Fabricate(:user) }
   let(:other_user) { Fabricate(:user) }
-  
+
   def post_with_body(body, user = nil)
     args = post_args.merge(raw: body)
     args[:user] = user if user.present?
@@ -23,7 +23,7 @@ describe ::DiscourseChatbot::PostEvaluation do
     PostCreator.create!(
       topic.user,
       title: "hello there, how are we all doing?!",
-      raw:"hello there!"
+      raw: "hello there!"
     )
 
     event_evaluation = ::DiscourseChatbot::PostEvaluation.new
@@ -38,7 +38,7 @@ describe ::DiscourseChatbot::PostEvaluation do
     PostCreator.create!(
       topic.user,
       title: "hello there, how are we all doing?!",
-      raw:"hello there @#{bot_user.username}"
+      raw: "hello there @#{bot_user.username}"
     )
 
     event_evaluation = ::DiscourseChatbot::PostEvaluation.new
@@ -53,7 +53,7 @@ describe ::DiscourseChatbot::PostEvaluation do
     PostCreator.create!(
       topic.user,
       title: "hello there, how are we all doing?!",
-      raw:"hello there @#{bot_user.username}"
+      raw: "hello there @#{bot_user.username}"
     )
     post =
     PostCreator.create!(
