@@ -7,7 +7,7 @@ export default class ContentLanguageDiscovery extends Component {
   @service currentUser;
   @service chat;
   @service router;
-  
+
   get showChatbotButton () {
     return this.currentUser &&
       this.siteSettings.chat_enabled &&
