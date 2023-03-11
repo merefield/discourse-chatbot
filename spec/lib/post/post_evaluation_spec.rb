@@ -13,7 +13,7 @@ describe ::DiscourseChatbot::PostEvaluation do
     Fabricate.build(:post, args)
   end
 
-  before(:all) do
+  before(:each) do
     SiteSetting.chatbot_enabled = true
   end
 

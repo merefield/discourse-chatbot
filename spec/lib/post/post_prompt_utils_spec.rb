@@ -12,7 +12,7 @@ describe ::DiscourseChatbot::PostPromptUtils do
   let!(:post_6) { Fabricate(:post, topic: topic, reply_to_post_number: 3) }
   let!(:post_7) { Fabricate(:post, topic: topic) }
 
-  before(:all) do
+  before(:each) do
     SiteSetting.chatbot_enabled = true
   end
 
