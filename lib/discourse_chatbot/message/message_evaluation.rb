@@ -24,14 +24,14 @@ module ::DiscourseChatbot
 
       mentions_bot_name = message_contents.downcase =~ /@#{bot_username.downcase}\b/
 
-      prior_message = ::ChatMessage.where(chat_channel_id: channel_id).second_to_last
+      prior_message = ::Chat::Message.where(chat_channel_id: channel_id).second_to_last
       replied_to_user = nil
       if in_reply_to_id
         puts "2.5 found it's a reply to a prior message"
-        replied_to_user = ::ChatMessage.find(in_reply_to_id).user
+        replied_to_user = ::Chat::Message.find(in_reply_to_id).user
       end
 
-      channel = ChatChannel.find(channel_id)
+      channel = ::Chat::Channel.find(channel_id)
       direct_chat = channel.chatable_type == DIRECT_MESSAGE
       channel_user_count = channel.user_count
       bot_chat_channel = (bot_user.user_chat_channel_memberships.where(chat_channel_id: channel_id).count > 0)
@@ -42,7 +42,7 @@ module ::DiscourseChatbot
 
         if mentions_bot_name && !bot_chat_channel
           bot_user.user_chat_channel_memberships.create!(chat_channel: channel, following: true)
-          Jobs::UpdateUserCountsForChatChannels.new.execute
+          Jobs::Chat::UpdateUserCountsForChannels.new.execute
           channel.reload
           puts "2.6 added bot to channel"
         end

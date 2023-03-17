@@ -11,13 +11,13 @@ module ::DiscourseChatbot
 
         default_opts = {
           content: @message_body,
-          chat_channel: ChatChannel.find(@topic_or_channel_id),
+          chat_channel: ::Chat::Channel.find(@topic_or_channel_id),
           user: @author
           # TODO need a way to suppress notifications/emails?
         }
 
         begin
-          new_message = Chat::ChatMessageCreator.create(default_opts)
+          new_message = ::Chat::MessageCreator.create(default_opts)
           puts "6. The message has been created successfully"
         rescue => e
           puts "Problem with the message: #{e}"
