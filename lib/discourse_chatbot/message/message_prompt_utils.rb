@@ -33,7 +33,7 @@ module ::DiscourseChatbot
     end
 
     def self.collect_past_interactions(message_or_post_id)
-      current_message = ::ChatMessage.find(message_or_post_id)
+      current_message = ::Chat::Message.find(message_or_post_id)
 
       message_collection = []
 
@@ -44,9 +44,9 @@ module ::DiscourseChatbot
       while message_collection.length < collect_amount do
 
         if current_message.in_reply_to_id
-          current_message = ::ChatMessage.find(current_message.in_reply_to_id)
+          current_message = ::Chat::Message.find(current_message.in_reply_to_id)
         else
-          prior_message = ::ChatMessage.where(chat_channel_id: current_message.chat_channel_id, deleted_at: nil).where('chat_messages.id < ?', current_message.id).last
+          prior_message = ::Chat::Message.where(chat_channel_id: current_message.chat_channel_id, deleted_at: nil).where('chat_messages.id < ?', current_message.id).last
           if prior_message.nil?
             break
           else

@@ -14,7 +14,7 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
     if type == ::DiscourseChatbot::POST
       post = ::Post.find_by(id: reply_to_message_or_post_id)
     else
-      message = ::ChatMessage.find_by(id: reply_to_message_or_post_id)
+      message = ::Chat::Message.find_by(id: reply_to_message_or_post_id)
     end
 
     create_bot_reply = false
