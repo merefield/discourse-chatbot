@@ -17,11 +17,11 @@ en:
     chatbot_high_trust_groups: "Groups considered high trust for bot interaction"
     chatbot_medium_trust_groups: "Groups considered medium trust for bot interaction"
     chatbot_low_trust_groups: "Groups considered low trust for bot interaction"
-    chatbot_request_temperature: "Numeric value within the range of 0 to 100 to determine the level of randomization for AI responses. Higher temp = more creative, lower temp = more conservative. Refer to: <a>https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature"</a>
-    chatbot_request_top_p: "Refer to: <a>https://platform.openai.com/docs/api-reference/completions/create#completions/create-top_p"</a>
-    chatbot_request_frequency_penalty:  "Refer to: <a>https://platform.openai.com/docs/api-reference/completions/create#completions/create-frequency_penalty"</a>
-    chatbot_request_presence_penalty:  "Refer to: <a>https://platform.openai.com/docs/api-reference/completions/create#completions/create-presence_penalty"</a>
-    chatbot_max_response_tokens: "Specify the maximum amount of tokens bot will use to generate a response: <a>https://openai.com/pricing<a/>"
+    chatbot_request_temperature: 'Numeric value within the range of 0 to 100 to determine the level of randomization for AI responses. Higher temp = more creative, lower temp = more conservative. Refer to: <a>https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature</a>'
+    chatbot_request_top_p: 'Refer to: <a>https://platform.openai.com/docs/api-reference/completions/create#completions/create-top_p</a>'
+    chatbot_request_frequency_penalty:  'Refer to: <a>https://platform.openai.com/docs/api-reference/completions/create#completions/create-frequency_penalty</a>'
+    chatbot_request_presence_penalty:  'Refer to: <a>https://platform.openai.com/docs/api-reference/completions/create#completions/create-presence_penalty</a>'
+    chatbot_max_response_tokens: 'Specify the maximum amount of tokens bot will use to generate a response: <a>https://openai.com/pricing<a/>'
 
   chatbot:
     bio: "Hi, I’m not a real person. I’m a bot that can discuss things with you. Don't take me too seriously.  Sometimes, I'm even right about stuff!"
