@@ -65,7 +65,7 @@ plugins:
     default: ''
   chatbot_request_temperature:
     client: false
-    default: 70
+    default: 100
     min: 0
     max: 100
   chatbot_request_top_p:
