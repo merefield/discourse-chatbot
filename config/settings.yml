@@ -83,6 +83,9 @@ plugins:
     default: 0
     min: -200
     max: 200
+  chatbot_enforce_system_role:
+    default: true
+    client: true
   chatbot_max_response_tokens:
     client: false
     default: 200
