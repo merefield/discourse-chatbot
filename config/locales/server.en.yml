@@ -21,6 +21,7 @@ en:
     chatbot_request_top_p: "Numeric value within the range of 0 to 100. Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-top_p'>API docs: top_p</a>"
     chatbot_request_frequency_penalty: "Numeric value within the range of -200 to 200. Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-frequency_penalty'>API docs: frequency_penalty</a>"
     chatbot_request_presence_penalty: "Numeric value within the range of -200 to 200. Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-presence_penalty'>API docs: presence_penalty</a>"
+    chatbot_enforce_system_role: "Enable this to add higher priority to chatbot.prompt.system."
     chatbot_max_response_tokens: "Specify the maximum amount of tokens bot will use to generate a response. Refer to: <a target='_blank' rel='noopener' href='https://openai.com/pricing'>OpenAI: Pricing</a>"
 
   chatbot:
