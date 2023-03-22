@@ -15,7 +15,7 @@ module ::DiscourseChatbot
             username = ::User.find(cm.user_id).username
             { "role": (cm.user_id == bot_user_id ? "assistant" : "user"), "content": (cm.user_id == bot_user_id ? "#{cm.message}" : I18n.t("chatbot.prompt.post", username: username, raw: cm.message)) }
 
-          messages << [{ "role": "system", "content": I18n.t("chatbot.prompt.system") }]
+          messages << { "role": "system", "content": I18n.t("chatbot.prompt.system") }
           end
 
           messages
