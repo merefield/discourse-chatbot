@@ -1,8 +1,8 @@
 en:
   site_settings:
     chatbot_enabled: "Enable the chatbot plugin"
-    chatbot_open_ai_token: 'Your Open AI token.  You can get one at <a>https://platform.openai.com/</a>'
-    chatbot_open_ai_model: 'The model to be accessed. More on supported models at <a>https://platform.openai.com/docs/models/overview</a>'
+    chatbot_open_ai_token: "Your Open AI token.  You can get one at <a target='_blank' rel='noopener' href='https://platform.openai.com/'>openai.com</a>"
+    chatbot_open_ai_model: "The model to be accessed. More on supported models at <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/models/overview'>OpenAI: Model overview</a>"
     chatbot_reply_job_time_delay: 'Number of seconds before reply job is run.  This helps prevent rate limits being hit and discourages spamming.'
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
     chatbot_permitted_in_private_messages: "Allow Chatbot to interact in Private Messages"
@@ -17,14 +17,14 @@ en:
     chatbot_high_trust_groups: "Groups considered high trust for bot interaction"
     chatbot_medium_trust_groups: "Groups considered medium trust for bot interaction"
     chatbot_low_trust_groups: "Groups considered low trust for bot interaction"
-    chatbot_request_temperature: 'Numeric value within the range of 0 to 100 to determine the level of randomization for AI responses. Higher temp = more creative, lower temp = more conservative. Refer to: <a>https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature</a>'
-    chatbot_request_top_p: 'Refer to: <a>https://platform.openai.com/docs/api-reference/completions/create#completions/create-top_p</a>'
-    chatbot_request_frequency_penalty:  'Refer to: <a>https://platform.openai.com/docs/api-reference/completions/create#completions/create-frequency_penalty</a>'
-    chatbot_request_presence_penalty:  'Refer to: <a>https://platform.openai.com/docs/api-reference/completions/create#completions/create-presence_penalty</a>'
-    chatbot_max_response_tokens: 'Specify the maximum amount of tokens bot will use to generate a response: <a>https://openai.com/pricing<a/>'
+    chatbot_request_temperature: "Numeric value within the range of 0 to 100 to determine the level of randomization for AI responses. Higher temp = more creative, lower temp = more conservative. Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-temperature/'>API docs: temperature</a>"
+    chatbot_request_top_p: "Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-top_p'>API docs: top_p</a>"
+    chatbot_request_frequency_penalty: "Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-frequency_penalty'>API docs: frequency_penalty</a>"
+    chatbot_request_presence_penalty: "Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-presence_penalty'>API docs: presence_penalty</a>"
+    chatbot_max_response_tokens: "Specify the maximum amount of tokens bot will use to generate a response. Refer to: <a target='_blank' rel='noopener' href='https://openai.com/pricing'>OpenAI: Pricing</a>"
 
   chatbot:
-    bio: "Hi, I’m not a real person. I’m a bot that can discuss things with you. Don't take me too seriously.  Sometimes, I'm even right about stuff!"
+    bio: "Hi, I’m not a real person. I’m a bot that can discuss things with you. Don't take me too seriously. Sometimes, I'm even right about stuff!"
     prompt:
       system: "You are a helpful assistant."
       title: "The subject of this conversation is %{topic_title}"
