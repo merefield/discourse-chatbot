@@ -2,7 +2,20 @@
 
 # Job is triggered to respond to Message or Post appropriately, checking user's quota.
 class ::Jobs::ChatbotReplyJob < Jobs::Base
-  sidekiq_options retry: false
+  sidekiq_options retry: 5, dead: false
+
+  sidekiq_retries_exhausted do |msg, ex|
+    message_body = I18n.t('chatbot.errors.retries')
+    opts = msg['args'].first.transform_keys(&:to_sym)
+    opts.merge!(message_body: message_body)
+    type = opts[:type]
+    if type == ::DiscourseChatbot::POST
+      reply_creator = ::DiscourseChatbot::PostReplyCreator.new(opts)
+    else
+      reply_creator = ::DiscourseChatbot::MessageReplyCreator.new(opts)
+    end
+    reply_creator.create
+  end
 
   def execute(opts)
     type = opts[:type]
@@ -56,8 +69,8 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
         bot = ::DiscourseChatbot::OpenAIBot.new
         message_body = bot.ask(opts)
       rescue => e
-        message_body = I18n.t('chatbot.errors.general')
-        Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
+        Rails.logger.error ("OpenAIBot: There was a problem, but will retry til limit: #{e}")
+        fail e
       end
     end
     opts.merge!(message_body: message_body)

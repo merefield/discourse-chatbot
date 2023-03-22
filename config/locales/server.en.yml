@@ -29,6 +29,7 @@ en:
       post: "%{username} said %{raw}"
     errors:
       general: "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"
+      retries: "I've tried working out a response for you several times, but ultimately failed.  Please contact the admin if this persists, thank you!"
       forbiddeninprivatemessages: "Use in private messages has not been permitted, please contact the admin"
       forbiddenoutsidethesecategories: "Public use of Chatbot has only been permitted in these Categories: "
       forbiddenanycategory: "Public use of Chatbot has not been enabled in any Category, please contact your admin"
