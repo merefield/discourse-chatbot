@@ -10,8 +10,9 @@ module ::DiscourseChatbot
 
       if SiteSetting.chatbot_open_ai_model == "gpt-3.5-turbo"
         if SiteSetting.chatbot_enforce_system_role == true
+          messages = []
 
-          messages = message_collection.reverse.map do |cm|
+          messages += message_collection.reverse.map do |cm|
             username = ::User.find(cm.user_id).username
             { "role": (cm.user_id == bot_user_id ? "assistant" : "user"), "content": (cm.user_id == bot_user_id ? "#{cm.message}" : I18n.t("chatbot.prompt.post", username: username, raw: cm.message)) }
 
