@@ -2,7 +2,7 @@
 
 # Job is triggered to respond to Message or Post appropriately, checking user's quota.
 class ::Jobs::ChatbotReplyJob < Jobs::Base
-  sidekiq_options retry: 0, dead: false
+  sidekiq_options retry: 5, dead: false
 
   sidekiq_retries_exhausted do |msg, ex|
     message_body = I18n.t('chatbot.errors.retries')
