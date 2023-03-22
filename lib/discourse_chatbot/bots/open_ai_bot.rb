@@ -25,11 +25,11 @@ module ::DiscourseChatbot
           parameters: {
               model: "gpt-3.5-turbo",
               messages: prompt,
+              max_tokens: SiteSetting.chatbot_max_response_tokens,
               temperature: SiteSetting.chatbot_request_temperature / 100.0,
               top_p: SiteSetting.chatbot_request_top_p / 100.0,
               frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
               presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
-
           })
 
           final_text = response.dig("choices", 0, "message", "content")
