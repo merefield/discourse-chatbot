@@ -2,10 +2,6 @@
 require "openai"
 
 module ::DiscourseChatbot
-
-  # MESSAGE = "message"
-  # POST = "post"
-
   class Bot
 
     def initialize
