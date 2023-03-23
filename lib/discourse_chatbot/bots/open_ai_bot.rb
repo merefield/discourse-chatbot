@@ -26,10 +26,12 @@ module ::DiscourseChatbot
           })
 
         if response.parsed_response["error"]
-          raise StandardError, response.parsed_response["error"]["message"]
-        rescue => e
-          Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
-          I18n.t('chatbot.errors.general')
+          begin
+            raise StandardError, response.parsed_response["error"]["message"]
+          rescue => e
+            Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
+            I18n.t('chatbot.errors.general')
+          end
         else
           response.dig("choices", 0, "message", "content")
         end
@@ -43,10 +45,12 @@ module ::DiscourseChatbot
           })
 
         if response.parsed_response["error"]
-          raise StandardError, response.parsed_response["error"]["message"]
-        rescue => e
-          Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
-          I18n.t('chatbot.errors.general')
+          begin
+            raise StandardError, response.parsed_response["error"]["message"]
+          rescue => e
+            Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
+            I18n.t('chatbot.errors.general')
+          end
         else
           response["choices"][0]["text"]
         end
