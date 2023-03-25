@@ -19,9 +19,9 @@ module ::DiscourseChatbot
 
         begin
           new_post = PostCreator.create!(@author, default_opts)
-          ::DiscourseChatbot.progress_debug_message("6. The message has been created successfully")
+          ::DiscourseChatbot.progress_debug_message("6. The Post has been created successfully")
         rescue => e
-          puts "Problem with the message: #{e}"
+          ::DiscourseChatbot.progress_debug_message("Problem with the bot Post: #{e}")
           Rails.logger.error ("AI Bot: There was a problem: #{e}")
         end
     end

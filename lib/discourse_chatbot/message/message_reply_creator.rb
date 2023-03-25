@@ -18,9 +18,9 @@ module ::DiscourseChatbot
 
         begin
           new_message = ::Chat::MessageCreator.create(default_opts)
-          ::DiscourseChatbot.progress_debug_message("6. The message has been created successfully")
+          ::DiscourseChatbot.progress_debug_message("6. The Message has been created successfully")
         rescue => e
-          puts "Problem with the message: #{e}"
+          ::DiscourseChatbot.progress_debug_message("Problem with the bot Message: #{e}")
           Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
         end
     end
