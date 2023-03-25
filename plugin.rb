@@ -77,6 +77,7 @@ after_initialize do
 
     if SiteSetting.chatbot_enabled
       ::DiscourseChatbot.progress_debug_message("1. trigger")
+
       bot_username = SiteSetting.chatbot_bot_user
       bot_user = User.find_by(username: bot_username)
 

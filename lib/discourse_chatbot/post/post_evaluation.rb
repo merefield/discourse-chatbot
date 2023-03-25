@@ -53,7 +53,9 @@ module ::DiscourseChatbot
           over_quota: over_quota,
           message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
         }
+
         ::DiscourseChatbot.progress_debug_message("3. invocation")
+
         job_class = ::Jobs::ChatbotReplyJob
         invoke_background_job(job_class, opts)
         true
