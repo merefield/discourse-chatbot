@@ -16,7 +16,7 @@ module ::DiscourseChatbot
 
   def progress_debug_message(message)
     if SiteSetting.chatbot_enable_verbose_console_response_progress_logging
-       puts message
+      puts message
     end
   end
 
