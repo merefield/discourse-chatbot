@@ -65,9 +65,24 @@ plugins:
     default: ''
   chatbot_request_temperature:
     client: false
-    default: 70
+    default: 100
     min: 0
     max: 100
+  chatbot_request_top_p:
+    client: false
+    default: 100
+    min: 0
+    max: 100
+  chatbot_request_frequency_penalty:
+    client: false
+    default: 0
+    min: -200
+    max: 200
+  chatbot_request_presence_penalty:
+    client: false
+    default: 0
+    min: -200
+    max: 200
   chatbot_max_response_tokens:
     client: false
     default: 200
