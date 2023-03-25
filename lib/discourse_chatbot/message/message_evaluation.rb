@@ -6,7 +6,7 @@ module ::DiscourseChatbot
     DIRECT_MESSAGE = "DirectMessage"
 
     def on_submission(submission)
-      puts "2. evaluation"
+      ::DiscourseChatbot.progress_debug_message("2. evaluation")
 
       chat_message = submission
 
@@ -27,7 +27,7 @@ module ::DiscourseChatbot
       prior_message = ::Chat::Message.where(chat_channel_id: channel_id).second_to_last
       replied_to_user = nil
       if in_reply_to_id
-        puts "2.5 found it's a reply to a prior message"
+        ::DiscourseChatbot.progress_debug_message("2.5 found it's a reply to a prior message")
         replied_to_user = ::Chat::Message.find(in_reply_to_id).user
       end
 
@@ -44,7 +44,7 @@ module ::DiscourseChatbot
           bot_user.user_chat_channel_memberships.create!(chat_channel: channel, following: true)
           Jobs::Chat::UpdateUserCountsForChannels.new.execute
           channel.reload
-          puts "2.6 added bot to channel"
+          ::DiscourseChatbot.progress_debug_message("2.6 added bot to channel")
         end
 
         opts = {
@@ -56,7 +56,9 @@ module ::DiscourseChatbot
             over_quota: over_quota,
             message_body: message_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
           }
-        puts "3. invocation"
+
+        ::DiscourseChatbot.progress_debug_message("3. invocation")
+
         job_class = ::Jobs::ChatbotReplyJob
         invoke_background_job(job_class, opts)
         true

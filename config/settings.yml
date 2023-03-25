@@ -90,3 +90,6 @@ plugins:
     client: true
     type: username
     default: AIBot
+  chatbot_enable_verbose_console_response_progress_logging:
+    client: false
+    default: false

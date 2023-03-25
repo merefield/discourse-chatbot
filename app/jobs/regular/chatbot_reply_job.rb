@@ -64,7 +64,7 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
       create_bot_reply = true
     end
     if create_bot_reply
-      puts "4. Retrieving new reply message..."
+      ::DiscourseChatbot.progress_debug_message("4. Retrieving new reply message...")
       begin
         bot = ::DiscourseChatbot::OpenAIBot.new
         message_body = bot.ask(opts)
