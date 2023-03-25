@@ -4,7 +4,7 @@ module ::DiscourseChatbot
   class PostEvaluation < EventEvaluation
 
     def on_submission(submission)
-      puts "2. evaluation"
+      ::DiscourseChatbot.progress_debug_message("2. evaluation")
 
       post = submission
 
@@ -53,7 +53,7 @@ module ::DiscourseChatbot
           over_quota: over_quota,
           message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
         }
-        puts "3. invocation"
+        ::DiscourseChatbot.progress_debug_message("3. invocation")
         job_class = ::Jobs::ChatbotReplyJob
         invoke_background_job(job_class, opts)
         true

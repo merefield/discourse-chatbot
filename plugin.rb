@@ -6,13 +6,21 @@
 # url: https://github.com/merefield/discourse-chatbot
 
 gem "httparty", '0.21.0'
-gem "ruby-openai", '3.4.0', { require: false }
+gem "ruby-openai", '3.7.0', { require: false }
 
 module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
   POST = "post"
   MESSAGE = "message"
   CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
+
+  def progress_debug_message(message)
+    if SiteSetting.chatbot_enable_verbose_console_response_progress_logging
+       puts message
+    end
+  end
+
+  module_function :progress_debug_message
 end
 
 require_relative "lib/discourse_chatbot/engine"
@@ -52,7 +60,8 @@ after_initialize do
     post, opts, user = params
 
     if SiteSetting.chatbot_enabled
-      puts "1. trigger"
+      ::DiscourseChatbot.progress_debug_message("1. trigger")
+
       bot_username = SiteSetting.chatbot_bot_user
       bot_user = User.find_by(username: bot_username)
 
@@ -67,7 +76,7 @@ after_initialize do
     chat_message, chat_channel, user = params
 
     if SiteSetting.chatbot_enabled
-      puts "1. trigger"
+      ::DiscourseChatbot.progress_debug_message("1. trigger")
       bot_username = SiteSetting.chatbot_bot_user
       bot_user = User.find_by(username: bot_username)
 
