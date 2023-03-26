@@ -21,6 +21,8 @@ en:
     chatbot_request_top_p: "Numeric value within the range of 0 to 100. Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-top_p'>API docs: top_p</a>"
     chatbot_request_frequency_penalty: "Numeric value within the range of -200 to 200. Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-frequency_penalty'>API docs: frequency_penalty</a>"
     chatbot_request_presence_penalty: "Numeric value within the range of -200 to 200. Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-presence_penalty'>API docs: presence_penalty</a>"
+    chatbot_enforce_system_role: "EXPERIMENTAL: Enable this to add higher priority to chatbot.prompt.system."
+    chatbot_prio_system_role: "EXPERIMENTAL: Enable to use the locale chatbot.prompt.systemprio, only works if chatbot_enforce_system_role is turned OFF. This method is less agressive versus the enforce setting."
     chatbot_max_response_tokens: "Specify the maximum amount of tokens bot will use to generate a response. Refer to: <a target='_blank' rel='noopener' href='https://openai.com/pricing'>OpenAI: Pricing</a>"
     chatbot_enable_verbose_console_response_progress_logging: "Enable response retrieval progress logging to console to help debug issues"
 
@@ -31,6 +33,7 @@ en:
       title: "The subject of this conversation is %{topic_title}"
       first_post: "The first thing someone said was %{username} who said %{raw}"
       post: "%{username} said %{raw}"
+      systemprio: "Be extremely friendly."
     errors:
       general: "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"
       retries: "I've tried working out a response for you several times, but ultimately failed.  Please contact the admin if this persists, thank you!"
