@@ -14,9 +14,10 @@ module ::DiscourseChatbot
 
         messages += post_collection.reverse.map do |p|
           post_content = p.raw
-          post_content.gsub!(/\[quote.*?\](.*?)\[\/quote\]/m,'') if SiteSetting.chatbot_strip_quotes
-          { "role": (p.user_id == bot_user_id ? "assistant" : "user"),
-           "content": (p.user_id == bot_user_id ? "#{p.raw}" : I18n.t("chatbot.prompt.post", username: p.user.username, raw: p.post_content)) }
+          post_content.gsub!(/\[quote.*?\](.*?)\[\/quote\]/m, '') if SiteSetting.chatbot_strip_quotes
+          role = (p.user_id == bot_user_id ? "assistant" : "user")
+          content = (p.user_id == bot_user_id ? "#{p.raw}" : I18n.t("chatbot.prompt.post", username: p.user.username, raw: p.post_content))
+          { "role": role , "content": content }
         end
 
         messages
