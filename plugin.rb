@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.18
+# version: 0.19
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -59,7 +59,7 @@ after_initialize do
   DiscourseEvent.on(:post_created) do |*params|
     post, opts, user = params
 
-    if SiteSetting.chatbot_enabled
+    if SiteSetting.chatbot_enabled && post.post_type == 1
       ::DiscourseChatbot.progress_debug_message("1. trigger")
 
       bot_username = SiteSetting.chatbot_bot_user

@@ -5,6 +5,7 @@ en:
     chatbot_open_ai_model: "The model to be accessed. More on supported models at <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/models/overview'>OpenAI: Model overview</a>"
     chatbot_reply_job_time_delay: 'Number of seconds before reply job is run. This helps prevent rate limits being hit and discourages spamming.'
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
+    chatbot_strip_quotes: "Determine if quotes are stripped and not sent within prompts (doesn't affect OP)"
     chatbot_permitted_in_private_messages: "Allow Chatbot to interact in Private Messages"
     chatbot_permitted_in_chat: "Allow Chatbot to interact in Chat"
     chatbot_permitted_all_categories: "Allow Chatbot to interact in any Category"

@@ -15,7 +15,7 @@ module ::DiscourseChatbot
       post_contents = post.raw.to_s
 
       # remove the 'quote' blocks
-      post_contents.gsub!(%r{\[quote.*?\][^\[]+\[/quote\]}, '')
+      post_contents.gsub!(/\[quote.*?\](.*?)\[\/quote\]/m, '')
 
       bot_username = SiteSetting.chatbot_bot_user
       bot_user = ::User.find_by(username: bot_username)

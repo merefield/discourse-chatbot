@@ -48,6 +48,9 @@ plugins:
     max: 10
     min: 1
     client: false
+  chatbot_strip_quotes:
+    default: true
+    client: false
   chatbot_open_ai_model:
     client: false
     type: enum
