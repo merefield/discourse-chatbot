@@ -59,7 +59,7 @@ after_initialize do
   DiscourseEvent.on(:post_created) do |*params|
     post, opts, user = params
 
-    if SiteSetting.chatbot_enabled
+    if SiteSetting.chatbot_enabled && post.post_type == 1
       ::DiscourseChatbot.progress_debug_message("1. trigger")
 
       bot_username = SiteSetting.chatbot_bot_user

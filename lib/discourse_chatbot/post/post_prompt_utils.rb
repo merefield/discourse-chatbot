@@ -12,9 +12,12 @@ module ::DiscourseChatbot
         messages << { "role": "user", "content":  I18n.t("chatbot.prompt.title", topic_title: post_collection.first.topic.title) }
         messages << { "role": "user", "content": I18n.t("chatbot.prompt.first_post", username: post_collection.first.topic.first_post.user.username, raw: post_collection.first.topic.first_post.raw) }
 
-        messages += post_collection.reverse.map { |p|
-          { "role": (p.user_id == bot_user_id ? "assistant" : "user"), "content": (p.user_id == bot_user_id ? "#{p.raw}" : I18n.t("chatbot.prompt.post", username: p.user.username, raw: p.raw)) }
-        }
+        messages += post_collection.reverse.map do |p|
+          post_content = p.raw
+          post_content.gsub!(/\[quote.*?\](.*?)\[\/quote\]/m,'') if SiteSetting.chatbot_strip_quotes
+          { "role": (p.user_id == bot_user_id ? "assistant" : "user"),
+           "content": (p.user_id == bot_user_id ? "#{p.raw}" : I18n.t("chatbot.prompt.post", username: p.user.username, raw: p.post_content)) }
+        end
 
         messages
       else
@@ -40,13 +43,13 @@ module ::DiscourseChatbot
           linked_post = ::Post.find_by(topic_id: current_post.topic_id, post_number: current_post.reply_to_post_number)
           unless linked_post
             break if current_post.reply_to_post_number == 1
-            current_post = ::Post.where(topic_id: current_post.topic_id, deleted_at: nil).where('post_number < ?', current_post.reply_to_post_number).last
+            current_post = ::Post.where(topic_id: current_post.topic_id, post_type: 1, deleted_at: nil).where('post_number < ?', current_post.reply_to_post_number).last
             next
           end
           current_post = linked_post
         else
           if current_post.post_number > 1
-            current_post = ::Post.where(topic_id: current_post.topic_id, deleted_at: nil).where('post_number < ?', current_post.post_number).last
+            current_post = ::Post.where(topic_id: current_post.topic_id, post_type: 1, deleted_at: nil).where('post_number < ?', current_post.post_number).last
           else
             break
           end
