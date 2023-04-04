@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.19
+# version: 0.20
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
