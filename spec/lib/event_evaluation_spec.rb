@@ -18,7 +18,7 @@ describe ::DiscourseChatbot::EventEvaluation do
     SiteSetting.chatbot_medium_trust_groups = "11|12"
     SiteSetting.chatbot_low_trust_groups = "10"
     SiteSetting.chatbot_quota_high_trust = 3
-    SiteSetting.chatbot_quota_medium_trust = 2 
+    SiteSetting.chatbot_quota_medium_trust = 2
     SiteSetting.chatbot_quota_low_trust = 1
     Group.refresh_automatic_groups!(:trust_level_3)
     event = ::DiscourseChatbot::EventEvaluation.new
@@ -31,7 +31,7 @@ describe ::DiscourseChatbot::EventEvaluation do
     SiteSetting.chatbot_medium_trust_groups = "11|12"
     SiteSetting.chatbot_low_trust_groups = "10"
     SiteSetting.chatbot_quota_high_trust = 3
-    SiteSetting.chatbot_quota_medium_trust = 2 
+    SiteSetting.chatbot_quota_medium_trust = 2
     SiteSetting.chatbot_quota_low_trust = 1
     Group.refresh_automatic_groups!(:trust_level_3)
     event = ::DiscourseChatbot::EventEvaluation.new
@@ -44,7 +44,7 @@ describe ::DiscourseChatbot::EventEvaluation do
     SiteSetting.chatbot_medium_trust_groups = "11|12"
     SiteSetting.chatbot_low_trust_groups = "0"
     SiteSetting.chatbot_quota_high_trust = 4
-    SiteSetting.chatbot_quota_medium_trust = 3 
+    SiteSetting.chatbot_quota_medium_trust = 3
     SiteSetting.chatbot_quota_low_trust = 2
     event = ::DiscourseChatbot::EventEvaluation.new
     expect(event.over_quota(normal_user.id)).to equal(false)
@@ -56,7 +56,7 @@ describe ::DiscourseChatbot::EventEvaluation do
     SiteSetting.chatbot_medium_trust_groups = "11|12"
     SiteSetting.chatbot_low_trust_groups = "0"
     SiteSetting.chatbot_quota_high_trust = 4
-    SiteSetting.chatbot_quota_medium_trust = 3 
+    SiteSetting.chatbot_quota_medium_trust = 3
     SiteSetting.chatbot_quota_low_trust = 2
     event = ::DiscourseChatbot::EventEvaluation.new
     expect(event.over_quota(normal_user.id)).to equal(true)
@@ -68,7 +68,7 @@ describe ::DiscourseChatbot::EventEvaluation do
     SiteSetting.chatbot_medium_trust_groups = ""
     SiteSetting.chatbot_low_trust_groups = ""
     SiteSetting.chatbot_quota_high_trust = 4
-    SiteSetting.chatbot_quota_medium_trust = 3 
+    SiteSetting.chatbot_quota_medium_trust = 3
     SiteSetting.chatbot_quota_low_trust = 2
     Group.refresh_automatic_groups!(:staff)
     event = ::DiscourseChatbot::EventEvaluation.new
@@ -81,7 +81,7 @@ describe ::DiscourseChatbot::EventEvaluation do
     SiteSetting.chatbot_medium_trust_groups = ""
     SiteSetting.chatbot_low_trust_groups = ""
     SiteSetting.chatbot_quota_high_trust = 4
-    SiteSetting.chatbot_quota_medium_trust = 3 
+    SiteSetting.chatbot_quota_medium_trust = 3
     SiteSetting.chatbot_quota_low_trust = 2
     Group.refresh_automatic_groups!(:staff)
     event = ::DiscourseChatbot::EventEvaluation.new
@@ -89,5 +89,3 @@ describe ::DiscourseChatbot::EventEvaluation do
   end
 
 end
-
-
