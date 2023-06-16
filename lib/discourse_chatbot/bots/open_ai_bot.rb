@@ -10,10 +10,14 @@ module ::DiscourseChatbot
     end
 
     def get_response(prompt)
-      if SiteSetting.chatbot_open_ai_model == "gpt-3.5-turbo"
+
+      model_name = SiteSetting.chatbot_open_ai_model_custom ? SiteSetting.chatbot_open_ai_model_custom_name : SiteSetting.chatbot_open_ai_model
+
+      if ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"].include?(SiteSetting.chatbot_open_ai_model) ||
+      (SiteSetting.chatbot_open_ai_model_custom == true && SiteSetting.chatbot_open_ai_model_custom_type == "chat")
         response = @client.chat(
           parameters: {
-              model: "gpt-3.5-turbo",
+              model: model_name,
               messages: prompt,
               max_tokens: SiteSetting.chatbot_max_response_tokens,
               temperature: SiteSetting.chatbot_request_temperature / 100.0,
@@ -32,7 +36,9 @@ module ::DiscourseChatbot
         else
           response.dig("choices", 0, "message", "content")
         end
-      else
+      elsif (SiteSetting.chatbot_open_ai_model_custom == true && SiteSetting.chatbot_open_ai_model_custom_type == "completions") ||
+        ["text-davinci-003", "text-davinci-002"].include?(SiteSetting.chatbot_open_ai_model)
+
         response = @client.completions(
           parameters: {
               model: SiteSetting.chatbot_open_ai_model,
