@@ -45,7 +45,7 @@ plugins:
     list_type: compact
   chatbot_max_look_behind:
     default: 5
-    max: 10
+    max: 160
     min: 1
     client: false
   chatbot_strip_quotes:
@@ -57,6 +57,9 @@ plugins:
     default: gpt-3.5-turbo
     choices:
       - gpt-3.5-turbo
+      - gpt-3.5-turbo-16k
+      - gpt-4
+      - gpt-4-32k
       - text-davinci-003
       - text-davinci-002
   chatbot_reply_job_time_delay:
@@ -66,6 +69,19 @@ plugins:
   chatbot_open_ai_token:
     client: false
     default: ''
+  chatbot_open_ai_model_custom:
+    default: false
+    client: false
+  chatbot_open_ai_model_custom_name:
+    default: ''
+    client: false
+  chatbot_open_ai_model_custom_type:
+    default: 'chat'
+    client: false
+    type: enum
+    choices:
+      - chat
+      - completions
   chatbot_request_temperature:
     client: false
     default: 100
