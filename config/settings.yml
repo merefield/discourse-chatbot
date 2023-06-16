@@ -45,7 +45,7 @@ plugins:
     list_type: compact
   chatbot_max_look_behind:
     default: 5
-    max: 10
+    max: 160
     min: 1
     client: false
   chatbot_strip_quotes:
