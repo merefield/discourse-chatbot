@@ -69,6 +69,9 @@ plugins:
   chatbot_open_ai_token:
     client: false
     default: ''
+  chatbot_azure_open_ai_token:
+    client: false
+    default: ''
   chatbot_open_ai_model_custom:
     default: false
     client: false
@@ -112,3 +115,5 @@ plugins:
   chatbot_enable_verbose_console_response_progress_logging:
     client: false
     default: false
+  chatbot_openai_gpt35_url: "https://api.openai.com/v1/chat/completions"
+  chatbot_openai_gpt4_url: "https://api.openai.com/v1/chat/completions"

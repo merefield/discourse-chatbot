@@ -6,7 +6,27 @@ module ::DiscourseChatbot
   class OpenAIBot < Bot
 
     def initialize
-      @client = ::OpenAI::Client.new(access_token: SiteSetting.chatbot_open_ai_token)
+      if SiteSetting.chatbot_open_ai_model.include?("gpt-3.5") &&
+        SiteSetting.chatbot_openai_gpt35_url.include?("azure")
+        ::OpenAI.configure do |config|
+          config.access_token = SiteSetting.chatbot_azure_open_ai_token
+          config.uri_base = SiteSetting.chatbot_openai_gpt35_url
+          config.api_type = :azure
+          config.api_version = "2023-05-15"
+        end
+        @client = ::OpenAI::Client.new
+      elsif SiteSetting.chatbot_open_ai_model.include?("gpt-4") &&
+        SiteSetting.chatbot_openai_gpt4_url.include?("azure")
+        ::OpenAI.configure do |config|
+          config.access_token = SiteSetting.chatbot_azure_open_ai_token
+          config.uri_base = SiteSetting.chatbot_openai_gpt4_url
+          config.api_type = :azure
+          config.api_version = "2023-05-15"
+        end
+        @client = ::OpenAI::Client.new
+      else
+        @client = ::OpenAI::Client.new(access_token: SiteSetting.chatbot_open_ai_token)
+      end
     end
 
     def get_response(prompt)
@@ -14,23 +34,23 @@ module ::DiscourseChatbot
       model_name = SiteSetting.chatbot_open_ai_model_custom ? SiteSetting.chatbot_open_ai_model_custom_name : SiteSetting.chatbot_open_ai_model
 
       if ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"].include?(SiteSetting.chatbot_open_ai_model) ||
-      (SiteSetting.chatbot_open_ai_model_custom == true && SiteSetting.chatbot_open_ai_model_custom_type == "chat")
+        (SiteSetting.chatbot_open_ai_model_custom == true && SiteSetting.chatbot_open_ai_model_custom_type == "chat")
         response = @client.chat(
           parameters: {
-              model: model_name,
-              messages: prompt,
-              max_tokens: SiteSetting.chatbot_max_response_tokens,
-              temperature: SiteSetting.chatbot_request_temperature / 100.0,
-              top_p: SiteSetting.chatbot_request_top_p / 100.0,
-              frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-              presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
+            model: model_name,
+            messages: prompt,
+            max_tokens: SiteSetting.chatbot_max_response_tokens,
+            temperature: SiteSetting.chatbot_request_temperature / 100.0,
+            top_p: SiteSetting.chatbot_request_top_p / 100.0,
+            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
           })
 
-        if response.parsed_response["error"]
+        if response["error"]
           begin
-            raise StandardError, response.parsed_response["error"]["message"]
+            raise StandardError, response["error"]["message"]
           rescue => e
-            Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
+            Rails.logger.error("OpenAIBot: There was a problem: #{e}")
             I18n.t('chatbot.errors.general')
           end
         else
@@ -41,20 +61,20 @@ module ::DiscourseChatbot
 
         response = @client.completions(
           parameters: {
-              model: SiteSetting.chatbot_open_ai_model,
-              prompt: prompt,
-              max_tokens: SiteSetting.chatbot_max_response_tokens,
-              temperature: SiteSetting.chatbot_request_temperature / 100.0,
-              top_p: SiteSetting.chatbot_request_top_p / 100.0,
-              frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-              presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
+            model: SiteSetting.chatbot_open_ai_model,
+            prompt: prompt,
+            max_tokens: SiteSetting.chatbot_max_response_tokens,
+            temperature: SiteSetting.chatbot_request_temperature / 100.0,
+            top_p: SiteSetting.chatbot_request_top_p / 100.0,
+            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
           })
 
-        if response.parsed_response["error"]
+        if response["error"]
           begin
-            raise StandardError, response.parsed_response["error"]["message"]
+            raise StandardError, response["error"]["message"]
           rescue => e
-            Rails.logger.error ("OpenAIBot: There was a problem: #{e}")
+            Rails.logger.error("OpenAIBot: There was a problem: #{e}")
             I18n.t('chatbot.errors.general')
           end
         else
