@@ -2,11 +2,15 @@
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
 # version: 0.22
-# authors: merefield
-# url: https://github.com/merefield/discourse-chatbot
+# authors: merefield-fokx
+# url: https://github.com/fokx/discourse-chatbot
 
-gem "httparty", '0.21.0'
-gem "ruby-openai", '3.7.0', { require: false }
+gem 'faraday-net_http', '3.0.2', {require: false }
+gem 'ruby2_keywords', '0.0.5', {require: false }
+gem 'faraday', '2.7.10', {require: false }
+gem 'multipart-post', '2.3.0', {require: false }
+gem 'faraday-multipart', '1.0.4', {require: false }
+gem "ruby-openai", '4.2.0', {require: false }
 
 module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
