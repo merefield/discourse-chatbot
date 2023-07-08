@@ -15,6 +15,7 @@ en:
     chatbot_permitted_categories: "Allow Chatbot to interact only in these Categories if not allowed to play in all"
     chatbot_bot_user: "The Chatbot User"
     chatbot_quick_access_chat_button: "Display floating button which links to direct Chat with the bot"
+    chatbot_quick_access_chat_button_only_on_homepage: "Display floating direct-bot-chat button only on homepage"
     chatbot_quota_high_trust: "The allowed number of bot responses allowed by prompting user per week - high trust groups"
     chatbot_quota_medium_trust: "The allowed number of bot responses allowed by prompting user per week - medium trust groups"
     chatbot_quota_low_trust: "The allowed number of bot responses allowed by prompting user per week - low trust groups"

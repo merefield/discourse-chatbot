@@ -11,6 +11,9 @@ plugins:
   chatbot_quick_access_chat_button:
     default: true
     client: true
+  chatbot_quick_access_chat_button_only_on_homepage:
+    default: true
+    client: true
   chatbot_permitted_all_categories:
     default: true
     client: false
