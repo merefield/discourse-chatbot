@@ -37,7 +37,7 @@ module ::DiscourseChatbot
 
       post_collection = []
 
-      accepted_post_type = SiteSetting.chatbot_include_whispers_in_post_history ? ::DiscourseChatbot::POST_TYPES_INC_WHISPERS : ::DiscourseChatbot::POST_TYPES_REGULAR_ONLY
+      accepted_post_types = SiteSetting.chatbot_include_whispers_in_post_history ? ::DiscourseChatbot::POST_TYPES_INC_WHISPERS : ::DiscourseChatbot::POST_TYPES_REGULAR_ONLY
 
       post_collection << current_post
 
@@ -48,14 +48,14 @@ module ::DiscourseChatbot
           linked_post = ::Post.find_by(topic_id: current_post.topic_id, post_number: current_post.reply_to_post_number)
           unless linked_post
             break if current_post.reply_to_post_number == 1
-            current_post = ::Post.where(topic_id: current_post.topic_id, post_type: accepted_post_type, deleted_at: nil).where('post_number < ?', current_post.reply_to_post_number).last
+            current_post = ::Post.where(topic_id: current_post.topic_id, post_type: accepted_post_types, deleted_at: nil).where('post_number < ?', current_post.reply_to_post_number).last
             next
           end
           current_post = linked_post
         else
           if current_post.post_number > 1
             # byebug
-            current_post = ::Post.where(topic_id: current_post.topic_id, post_type: accepted_post_type, deleted_at: nil).where('post_number < ?', current_post.post_number).last
+            current_post = ::Post.where(topic_id: current_post.topic_id, post_type: accepted_post_types, deleted_at: nil).where('post_number < ?', current_post.post_number).last
           else
             break
           end
