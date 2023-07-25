@@ -14,7 +14,7 @@ module ::DiscourseChatbot
   MESSAGE = "message"
   CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
   POST_TYPES_REGULAR_ONLY = [1]
-  POST_TYPES_INC_WHISPERS = [1,4]
+  POST_TYPES_INC_WHISPERS = [1, 4]
 
   def progress_debug_message(message)
     if SiteSetting.chatbot_enable_verbose_console_response_progress_logging
