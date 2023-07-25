@@ -20,7 +20,7 @@ describe ::DiscourseChatbot::PostPromptUtils do
     SiteSetting.chatbot_max_look_behind = 10
   end
 
-  it "captures the right history when one post contains a reply to the bot" do
+  it "captures the right history" do
     SiteSetting.chatbot_include_whispers_in_post_history = false
 
     past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_1.id)
@@ -35,7 +35,7 @@ describe ::DiscourseChatbot::PostPromptUtils do
     expect(past_posts.count).to equal(6)
   end
 
-  it "captures the right history when one post contains a reply to the bot and whispers are included" do
+  it "captures the right history when whispers are included" do
     SiteSetting.chatbot_include_whispers_in_post_history = true
 
     past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_1.id)
