@@ -17,8 +17,8 @@ export default class ContentLanguageDiscovery extends Component {
       this.siteSettings.chatbot_enabled &&
       this.siteSettings.chatbot_permitted_in_chat &&
       this.siteSettings.chatbot_quick_access_chat_button &&
-      (currentRouteName === `discovery.${defaultHomepage()}`
-        || !this.siteSettings.chatbot_quick_access_chat_button_only_on_homepage)
+      (currentRouteName === `discovery.${defaultHomepage()}` ||
+        !this.siteSettings.chatbot_quick_access_chat_button_only_on_homepage)
     );
   }
 
