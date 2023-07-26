@@ -7,10 +7,12 @@ en:
     chatbot_open_ai_model_custom_type: "(CUSTOM ONLY) IMPORTANT: Select which type of Open AI endpoint should be used, Chat (ChatGPT style), or Completion (Davinci style) - will break if you select wrong type"
     chatbot_open_ai_model: "(UNLESS CUSTOM) The model to be accessed. More on supported models at <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/models/overview'>OpenAI: Model overview</a>"
     chatbot_reply_job_time_delay: 'Number of seconds before reply job is run. This helps prevent rate limits being hit and discourages spamming.'
+    chatbot_include_whispers_in_post_history: "Include content of whispers in Post history bot sees (careful!)"
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
     chatbot_strip_quotes: "Determine if quotes are stripped and not sent within prompts (doesn't affect OP)"
     chatbot_permitted_in_private_messages: "Allow Chatbot to interact in Private Messages"
     chatbot_permitted_in_chat: "Allow Chatbot to interact in Chat"
+    chatbot_can_trigger_from_whisper: "Allow Chatbot to be triggered from a whisper (get creative!)"
     chatbot_permitted_all_categories: "Allow Chatbot to interact in any Category"
     chatbot_permitted_categories: "Allow Chatbot to interact only in these Categories if not allowed to play in all"
     chatbot_bot_user: "The Chatbot User"

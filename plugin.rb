@@ -13,6 +13,8 @@ module ::DiscourseChatbot
   POST = "post"
   MESSAGE = "message"
   CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
+  POST_TYPES_REGULAR_ONLY = [1]
+  POST_TYPES_INC_WHISPERS = [1, 4]
 
   def progress_debug_message(message)
     if SiteSetting.chatbot_enable_verbose_console_response_progress_logging
@@ -59,7 +61,7 @@ after_initialize do
   DiscourseEvent.on(:post_created) do |*params|
     post, opts, user = params
 
-    if SiteSetting.chatbot_enabled && post.post_type == 1
+    if SiteSetting.chatbot_enabled && (post.post_type == 1 || post.post_type == 4 && SiteSetting.chatbot_can_trigger_from_whisper)
       ::DiscourseChatbot.progress_debug_message("1. trigger")
 
       bot_username = SiteSetting.chatbot_bot_user
