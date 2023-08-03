@@ -1,6 +1,7 @@
 import Component from "@glimmer/component";
 import { inject as service } from "@ember/service";
 import { action } from "@ember/object";
+import { defaultHomepage } from "discourse/lib/utilities";
 
 export default class ContentLanguageDiscovery extends Component {
   @service siteSettings;
@@ -9,12 +10,15 @@ export default class ContentLanguageDiscovery extends Component {
   @service router;
 
   get showChatbotButton() {
+    const { currentRouteName } = this.router;
     return (
       this.currentUser &&
       this.siteSettings.chat_enabled &&
       this.siteSettings.chatbot_enabled &&
       this.siteSettings.chatbot_permitted_in_chat &&
-      this.siteSettings.chatbot_quick_access_chat_button
+      this.siteSettings.chatbot_quick_access_chat_button &&
+      (currentRouteName === `discovery.${defaultHomepage()}` ||
+        !this.siteSettings.chatbot_quick_access_chat_button_only_on_homepage)
     );
   }
 

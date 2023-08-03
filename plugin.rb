@@ -1,22 +1,21 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.22
+# version: 0.25
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
-gem 'faraday-net_http', '3.0.2', {require: false }
-gem 'ruby2_keywords', '0.0.5', {require: false }
-gem 'faraday', '2.7.10', {require: false }
-gem 'multipart-post', '2.3.0', {require: false }
-gem 'faraday-multipart', '1.0.4', {require: false }
-gem "ruby-openai", '4.2.0', {require: false }
+gem 'multipart-post', '2.3.0', { require: false }
+gem 'faraday-multipart', '1.0.4', { require: false }
+gem "ruby-openai", '4.2.0', { require: false }
 
 module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
   POST = "post"
   MESSAGE = "message"
   CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
+  POST_TYPES_REGULAR_ONLY = [1]
+  POST_TYPES_INC_WHISPERS = [1, 4]
 
   def progress_debug_message(message)
     if SiteSetting.chatbot_enable_verbose_console_response_progress_logging
@@ -63,7 +62,7 @@ after_initialize do
   DiscourseEvent.on(:post_created) do |*params|
     post, opts, user = params
 
-    if SiteSetting.chatbot_enabled && post.post_type == 1
+    if SiteSetting.chatbot_enabled && (post.post_type == 1 || post.post_type == 4 && SiteSetting.chatbot_can_trigger_from_whisper)
       ::DiscourseChatbot.progress_debug_message("1. trigger")
 
       bot_username = SiteSetting.chatbot_bot_user

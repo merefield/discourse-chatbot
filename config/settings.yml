@@ -8,7 +8,13 @@ plugins:
   chatbot_permitted_in_chat:
     default: true
     client: true
+  chatbot_can_trigger_from_whisper:
+    default: false
+    client: false
   chatbot_quick_access_chat_button:
+    default: true
+    client: true
+  chatbot_quick_access_chat_button_only_on_homepage:
     default: true
     client: true
   chatbot_permitted_all_categories:
@@ -47,6 +53,9 @@ plugins:
     default: 5
     max: 160
     min: 1
+    client: false
+  chatbot_include_whispers_in_post_history:
+    default: false
     client: false
   chatbot_strip_quotes:
     default: true
