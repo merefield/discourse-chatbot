@@ -35,9 +35,9 @@ register_svg_icon 'robot'
 
 after_initialize do
   SeedFu.fixture_paths << Rails
-                            .root
-                            .join("plugins", "discourse-chatbot", "db", "fixtures")
-                            .to_s
+    .root
+    .join("plugins", "discourse-chatbot", "db", "fixtures")
+    .to_s
 
   %w(
     ../lib/discourse_chatbot/event_evaluation.rb
