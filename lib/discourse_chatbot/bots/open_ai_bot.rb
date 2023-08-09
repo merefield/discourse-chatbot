@@ -6,7 +6,7 @@ module ::DiscourseChatbot
   class OpenAIBot < Bot
 
     def initialize
-      @client = ::OpenAI::Client.new(access_token: SiteSetting.chatbot_open_ai_token)
+      @client = ::OpenAI::Client.new(access_token: SiteSetting.chatbot_open_ai_token, uri_base: SiteSetting.chatbot_open_ai_uri_base, request_timeout: 120)
     end
 
     def get_response(prompt)
