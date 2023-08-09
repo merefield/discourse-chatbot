@@ -9,6 +9,21 @@ gem 'multipart-post', '2.3.0', { require: false }
 gem 'faraday-multipart', '1.0.4', { require: false }
 gem "ruby-openai", '4.2.0', { require: false }
 
+# Langchain dependencies
+gem 'tiktoken_ruby', '0.0.5', { require: false }
+gem 'colorize', '0.8.1', { require: false }
+gem "baran", '0.1.6', { require: false }
+# gem "langchainrb", '0.5.7'
+# Agents
+# calculator
+gem "polyglot", '0.3.5'
+gem 'treetop', '1.6.12'
+gem "eqn", '1.6.5'
+# google search
+gem "google_search_results", '2.2.0'
+
+require_relative 'vendor/langchainrb/lib/langchain.rb'
+
 module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
   POST = "post"
