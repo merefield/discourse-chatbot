@@ -88,7 +88,7 @@ module Langchain
     # autoload :ChainOfThoughtAgent, "langchain/agent/chain_of_thought_agent/chain_of_thought_agent.rb"
     # autoload :SQLQueryAgent, "langchain/agent/sql_query_agent/sql_query_agent.rb"
     require_relative "langchain/agent/base"
-    require_relative "langchain/agent/chain_of_thought_agent/chain_of_thought_agent.rb"
+    require_relative "langchain/agent/react_agent/react_agent.rb"
     require_relative "langchain/agent/sql_query_agent/sql_query_agent.rb"
   end
 
@@ -144,6 +144,7 @@ module Langchain
       # autoload :OpenAIValidator, "langchain/utils/token_length/openai_validator"
       # autoload :GooglePalmValidator, "langchain/utils/token_length/google_palm_validator"
       require_relative "langchain/utils/token_length/base_validator"
+      require_relative "langchain/utils/token_length/ai21_validator"
       require_relative "langchain/utils/token_length/token_limit_exceeded"
       require_relative "langchain/utils/token_length/openai_validator"
       require_relative "langchain/utils/token_length/google_palm_validator"
@@ -195,5 +196,19 @@ module Langchain
     require_relative "langchain/prompt/base"
     require_relative "langchain/prompt/prompt_template"
     require_relative "langchain/prompt/few_shot_prompt_template"
+  end
+
+  module ActiveRecord
+    #autoload :Hooks, "langchain/active_record/hooks"
+    require_relative "langchain/active_record/hooks"
+  end
+
+  module OutputParsers
+    # autoload :Base, "langchain/output_parsers/base"
+    # autoload :StructuredOutputParser, "langchain/output_parsers/structured"
+    # autoload :OutputFixingParser, "langchain/output_parsers/fix"
+    require_relative "langchain/output_parsers/base"
+    require_relative "langchain/output_parsers/structured"
+    require_relative "langchain/output_parsers/fix"
   end
 end

@@ -10,8 +10,7 @@ module Langchain::Vectorsearch
     #     gem "hnswlib", "~> 0.8.1"
     #
     # Usage:
-    #     hnsw = Langchain::Vectorsearch::Hnswlib.new(llm:, url:, index_name:)
-    #
+    #     hnsw = Langchain::Vectorsearch::Hnswlib.new(llm:, path_to_index:)
 
     attr_reader :client, :path_to_index
 
@@ -23,7 +22,7 @@ module Langchain::Vectorsearch
     # @return [Langchain::Vectorsearch::Hnswlib] Class instance
     #
     def initialize(llm:, path_to_index:)
-      depends_on "hnswlib"
+      # depends_on "hnswlib"
       require "hnswlib"
 
       super(llm: llm)
@@ -52,6 +51,8 @@ module Langchain::Vectorsearch
 
       client.save_index(path_to_index)
     end
+
+    # TODO: Add update_texts method
 
     #
     # Search for similar texts

@@ -17,7 +17,7 @@ module Langchain::Vectorsearch
     # @param index_name [String] The name of the index to use
     # @param llm [Object] The LLM client to use
     def initialize(url:, index_name:, llm:, api_key: nil)
-      depends_on "chroma-db"
+      # depends_on "chroma-db"
       require "chroma-db"
 
       ::Chroma.connect_host = url
@@ -32,11 +32,10 @@ module Langchain::Vectorsearch
     # Add a list of texts to the index
     # @param texts [Array] The list of texts to add
     # @return [Hash] The response from the server
-    def add_texts(texts:)
-      embeddings = Array(texts).map do |text|
+    def add_texts(texts:, ids: [])
+      embeddings = Array(texts).map.with_index do |text, i|
         ::Chroma::Resources::Embedding.new(
-          # TODO: Add support for passing your own IDs
-          id: SecureRandom.uuid,
+          id: ids[i] ? ids[i].to_s : SecureRandom.uuid,
           embedding: llm.embed(text: text),
           # TODO: Add support for passing metadata
           metadata: [], # metadatas[index],
@@ -48,10 +47,36 @@ module Langchain::Vectorsearch
       collection.add(embeddings)
     end
 
+    def update_texts(texts:, ids:)
+      embeddings = Array(texts).map.with_index do |text, i|
+        ::Chroma::Resources::Embedding.new(
+          id: ids[i].to_s,
+          embedding: llm.embed(text: text),
+          # TODO: Add support for passing metadata
+          metadata: [], # metadatas[index],
+          document: text # Do we actually need to store the whole original document?
+        )
+      end
+
+      collection.update(embeddings)
+    end
+
     # Create the collection with the default schema
     # @return [Hash] The response from the server
     def create_default_schema
       ::Chroma::Resources::Collection.create(index_name)
+    end
+
+    # Get the default schema
+    # @return [Hash] The response from the server
+    def get_default_schema
+      ::Chroma::Resources::Collection.get(index_name)
+    end
+
+    # Delete the default schema
+    # @return [Hash] The response from the server
+    def destroy_default_schema
+      ::Chroma::Resources::Collection.delete(index_name)
     end
 
     # Search for similar texts
@@ -88,8 +113,9 @@ module Langchain::Vectorsearch
 
     # Ask a question and return the answer
     # @param question [String] The question to ask
+    # @yield [String] Stream responses back one String at a time
     # @return [String] The answer to the question
-    def ask(question:)
+    def ask(question:, &block)
       search_results = similarity_search(query: question)
 
       context = search_results.map do |result|
@@ -100,7 +126,7 @@ module Langchain::Vectorsearch
 
       prompt = generate_prompt(question: question, context: context)
 
-      llm.chat(prompt: prompt)
+      llm.chat(prompt: prompt, &block)
     end
 
     private

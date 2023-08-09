@@ -21,6 +21,8 @@ gem 'treetop', '1.6.12'
 gem "eqn", '1.6.5'
 # google search
 gem "google_search_results", '2.2.0'
+# wikipedia
+gem "wikipedia-client", "1.17.0"
 
 require_relative 'vendor/langchainrb/lib/langchain.rb'
 

@@ -27,7 +27,7 @@ module Langchain::Tool
   #
   # 3. Pass the tools when Agent is instantiated.
   #
-  #     agent = Langchain::Agent::ChainOfThoughtAgent.new(
+  #     agent = Langchain::Agent::ReActAgent.new(
   #       llm: :openai, # or :cohere, :hugging_face, :google_palm or :replicate
   #       llm_api_key: ENV["OPENAI_API_KEY"],
   #       tools: ["google_search", "calculator", "wikipedia"]
@@ -46,7 +46,7 @@ module Langchain::Tool
   # 4. Implement `execute(input:)` method in your tool class
   # 5. Add your tool to the {file:README.md}
   class Base
-   # include Langchain::DependencyHelper
+    # include Langchain::DependencyHelper
 
     #
     # Returns the NAME constant of the tool

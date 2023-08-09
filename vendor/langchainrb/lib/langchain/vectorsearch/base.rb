@@ -98,14 +98,29 @@ module Langchain::Vectorsearch
       @llm = llm
     end
 
+    # Method supported by Vectorsearch DB to retrieve a default schema
+    def get_default_schema
+      raise NotImplementedError, "#{self.class.name} does not support retrieving a default schema"
+    end
+
     # Method supported by Vectorsearch DB to create a default schema
     def create_default_schema
       raise NotImplementedError, "#{self.class.name} does not support creating a default schema"
     end
 
+    # Method supported by Vectorsearch DB to delete the default schema
+    def destroy_default_schema
+      raise NotImplementedError, "#{self.class.name} does not support deleting a default schema"
+    end
+
     # Method supported by Vectorsearch DB to add a list of texts to the index
     def add_texts(...)
       raise NotImplementedError, "#{self.class.name} does not support adding texts"
+    end
+
+    # Method supported by Vectorsearch DB to update a list of texts to the index
+    def update_texts(...)
+      raise NotImplementedError, "#{self.class.name} does not support updating texts"
     end
 
     # Method supported by Vectorsearch DB to search for similar texts in the index
@@ -146,12 +161,16 @@ module Langchain::Vectorsearch
     end
 
     def add_data(paths:)
-      raise ArgumentError, "Paths must be provided" if paths.to_a.empty?
+      raise ArgumentError, "Paths must be provided" if Array(paths).empty?
 
       texts = Array(paths)
         .flatten
-        .map { |path| Langchain::Loader.new(path)&.load&.value }
-        .compact
+        .map do |path|
+          data = Langchain::Loader.new(path)&.load&.chunks
+          data.map { |chunk| chunk[:text] }
+        end
+
+      texts.flatten!
 
       add_texts(texts: texts)
     end

@@ -17,7 +17,7 @@ module Langchain::Vectorsearch
     # @param index_name [String] The name of the index to use
     # @param llm [Object] The LLM client to use
     def initialize(url:, api_key:, index_name:, llm:)
-      depends_on "qdrant-ruby"
+      # depends_on "qdrant-ruby"
       require "qdrant"
 
       @client = ::Qdrant::Client.new(
@@ -32,11 +32,12 @@ module Langchain::Vectorsearch
     # Add a list of texts to the index
     # @param texts [Array] The list of texts to add
     # @return [Hash] The response from the server
-    def add_texts(texts:)
+    def add_texts(texts:, ids: [])
       batch = {ids: [], vectors: [], payloads: []}
 
-      Array(texts).each do |text|
-        batch[:ids].push(SecureRandom.uuid)
+      Array(texts).each_with_index do |text, i|
+        id = ids[i] || SecureRandom.uuid
+        batch[:ids].push(id)
         batch[:vectors].push(llm.embed(text: text))
         batch[:payloads].push({content: text})
       end
@@ -45,6 +46,22 @@ module Langchain::Vectorsearch
         collection_name: index_name,
         batch: batch
       )
+    end
+
+    def update_texts(texts:, ids:)
+      add_texts(texts: texts, ids: ids)
+    end
+
+    # Get the default schema
+    # @return [Hash] The response from the server
+    def get_default_schema
+      client.collections.get(collection_name: index_name)
+    end
+
+    # Deletes the default schema
+    # @return [Hash] The response from the server
+    def destroy_default_schema
+      client.collections.delete(collection_name: index_name)
     end
 
     # Create the index with the default schema
@@ -83,28 +100,31 @@ module Langchain::Vectorsearch
       embedding:,
       k: 4
     )
-      client.points.search(
+      response = client.points.search(
         collection_name: index_name,
         limit: k,
         vector: embedding,
-        with_payload: true
+        with_payload: true,
+        with_vector: true
       )
+      response.dig("result")
     end
 
     # Ask a question and return the answer
     # @param question [String] The question to ask
+    # @yield [String] Stream responses back one String at a time
     # @return [String] The answer to the question
-    def ask(question:)
+    def ask(question:, &block)
       search_results = similarity_search(query: question)
 
-      context = search_results.dig("result").map do |result|
+      context = search_results.map do |result|
         result.dig("payload").to_s
       end
       context = context.join("\n---\n")
 
       prompt = generate_prompt(question: question, context: context)
 
-      llm.chat(prompt: prompt)
+      llm.chat(prompt: prompt, &block)
     end
   end
 end

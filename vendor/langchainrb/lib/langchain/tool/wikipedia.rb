@@ -18,7 +18,7 @@ module Langchain::Tool
     DESC
 
     def initialize
-      depends_on "wikipedia-client"
+      # depends_on "wikipedia-client"
       require "wikipedia"
     end
 
