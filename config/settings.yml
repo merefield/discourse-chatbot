@@ -60,6 +60,9 @@ plugins:
   chatbot_strip_quotes:
     default: true
     client: false
+  chatbot_open_ai_uri_base:
+    default: https://api.openai.com/
+    client: false
   chatbot_open_ai_model:
     client: false
     type: enum
