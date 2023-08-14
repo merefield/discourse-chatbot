@@ -6,20 +6,10 @@ module ::DiscourseChatbot
   class OpenAIBot < Bot
 
     def initialize
-      if SiteSetting.chatbot_open_ai_model.include?("gpt-3.5") &&
-        SiteSetting.chatbot_openai_gpt35_url.include?("azure")
+      if SiteSetting.chatbot_current_model_url.include?("azure")
         ::OpenAI.configure do |config|
           config.access_token = SiteSetting.chatbot_azure_open_ai_token
-          config.uri_base = SiteSetting.chatbot_openai_gpt35_url
-          config.api_type = :azure
-          config.api_version = "2023-05-15"
-        end
-        @client = ::OpenAI::Client.new
-      elsif SiteSetting.chatbot_open_ai_model.include?("gpt-4") &&
-        SiteSetting.chatbot_openai_gpt4_url.include?("azure")
-        ::OpenAI.configure do |config|
-          config.access_token = SiteSetting.chatbot_azure_open_ai_token
-          config.uri_base = SiteSetting.chatbot_openai_gpt4_url
+          config.uri_base = SiteSetting.chatbot_current_model_url
           config.api_type = :azure
           config.api_version = "2023-05-15"
         end

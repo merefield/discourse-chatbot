@@ -1,8 +1,7 @@
 en:
   site_settings:
     chatbot_enabled: "Enable the chatbot plugin"
-    chatbot_openai_gpt4_url: "Modify it if you want to use GPT 4 by Azure, e.g. https://custom-domain.openai.azure.com/openai/deployments/DEPLOYMENT)."
-    chatbot_openai_gpt35_url: "Modify it if you want to use GPT 3.5 by Azure, MUST support function calling and ideally is a GPT3.5 16K endpoint)."
+    chatbot_current_model_url: "Modify it if you want to use Azure OpenAI, e.g. https://custom-domain.openai.azure.com/openai/deployments/DEPLOYMENT)."
     chatbot_azure_open_ai_token: "Your Azure Open AI token. You can get one at <a target='_blank' rel='noopener' href='https://portal.azure.com/'>Azure Portal</a>."
     chatbot_open_ai_token: "Your Open AI token. You can get one at <a target='_blank' rel='noopener' href='https://platform.openai.com/account/api-keys/'>openai.com</a>."
     chatbot_open_ai_model_custom: "Use Custom model name (ADVANCED USERS ONLY)"
