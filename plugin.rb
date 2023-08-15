@@ -22,7 +22,9 @@ gem "eqn", '1.6.5'
 # google search
 gem "google_search_results", '2.2.0'
 # wikipedia
-gem "wikipedia-client", "1.17.0"
+gem "wikipedia-client", '1.17.0'
+# news api
+gem 'news-api', '0.2.0'
 
 require_relative 'vendor/langchainrb/lib/langchain.rb'
 
@@ -62,6 +64,12 @@ after_initialize do
     ../lib/discourse_chatbot/post/post_evaluation.rb
     ../lib/discourse_chatbot/bot.rb
     ../lib/discourse_chatbot/bots/open_ai_bot.rb
+    ../lib/discourse_chatbot/bots/open_ai_agent.rb
+    ../lib/discourse_chatbot/function.rb
+    ../lib/discourse_chatbot/functions/calculator_function.rb
+    ../lib/discourse_chatbot/functions/news_function.rb
+    ../lib/discourse_chatbot/functions/wikipedia_function.rb
+    ../lib/discourse_chatbot/functions/parser.rb
     ../lib/discourse_chatbot/prompt_utils.rb
     ../lib/discourse_chatbot/post/post_prompt_utils.rb
     ../lib/discourse_chatbot/message/message_prompt_utils.rb

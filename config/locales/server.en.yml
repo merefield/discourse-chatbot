@@ -2,6 +2,7 @@ en:
   site_settings:
     chatbot_enabled: "Enable the chatbot plugin"
     chatbot_open_ai_token: "Your Open AI token. You can get one at <a target='_blank' rel='noopener' href='https://platform.openai.com/account/api-keys/'>openai.com</a>"
+    chatbot_bot_type: "EXPERIMENTAL: To make the bot smarter, use 'agent' (but be aware this uses many more calls to the LLM increasing cost significantly!)"
     chatbot_open_ai_model_custom: "Use Custom model name (ADVANCED USERS ONLY)"
     chatbot_open_ai_model_custom_name: "(CUSTOM ONLY) Name of model"
     chatbot_open_ai_model_custom_type: "(CUSTOM ONLY) IMPORTANT: Select which type of Open AI endpoint should be used, Chat (ChatGPT style), or Completion (Davinci style) - will break if you select wrong type"
@@ -30,6 +31,7 @@ en:
     chatbot_request_presence_penalty: "Numeric value within the range of -200 to 200. Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-presence_penalty'>API docs: presence_penalty</a>"
     chatbot_max_response_tokens: "Specify the maximum amount of tokens bot will use to generate a response. Refer to: <a target='_blank' rel='noopener' href='https://openai.com/pricing'>OpenAI: Pricing</a>"
     chatbot_enable_verbose_console_response_progress_logging: "Enable response retrieval progress logging to console to help debug issues"
+    chatbot_news_api_token: "News API token (if left blank, news will never be searched)"
 
   chatbot:
     bio: "Hi, I’m not a real person. I’m a bot that can discuss things with you. Don't take me too seriously. Sometimes, I'm even right about stuff!"
