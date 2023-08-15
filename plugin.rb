@@ -69,6 +69,8 @@ after_initialize do
     ../lib/discourse_chatbot/functions/calculator_function.rb
     ../lib/discourse_chatbot/functions/news_function.rb
     ../lib/discourse_chatbot/functions/wikipedia_function.rb
+    ../lib/discourse_chatbot/functions/todays_date_function.rb
+    ../lib/discourse_chatbot/functions/google_search_function.rb
     ../lib/discourse_chatbot/functions/parser.rb
     ../lib/discourse_chatbot/prompt_utils.rb
     ../lib/discourse_chatbot/post/post_prompt_utils.rb

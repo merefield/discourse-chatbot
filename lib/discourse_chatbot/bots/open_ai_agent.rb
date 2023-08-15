@@ -29,19 +29,20 @@ module ::DiscourseChatbot
       @client = ::OpenAI::Client.new(access_token: SiteSetting.chatbot_open_ai_token)
       @model_name = SiteSetting.chatbot_open_ai_model_custom ? SiteSetting.chatbot_open_ai_model_custom_name : SiteSetting.chatbot_open_ai_model
 
-
       calculator_function = ::DiscourseChatbot::CalculatorFunction.new
       wikipedia_function = ::DiscourseChatbot::WikipediaFunction.new
       news_function = ::DiscourseChatbot::NewsFunction.new
+      google_search_function = ::DiscourseChatbot::GoogleSearchFunction.new
+      today_function = ::DiscourseChatbot::TodaysDateFunction.new
 
-      functions = [calculator_function, wikipedia_function]
+      functions = [today_function, calculator_function, wikipedia_function]
 
       functions << news_function if !SiteSetting.chatbot_news_api_token.blank?
+      functions << google_search_function if !SiteSetting.chatbot_serp_api_key.blank?
 
       @functions = parse_functions(functions)
       @func_mapping = create_func_mapping(functions)
-      @chat_history = [{'role' => 'system', 'content' => SYS_MSG}]
-      # @verbose_output = verbose_output
+      @chat_history = []
     end
 
     def parse_functions(functions)
@@ -57,6 +58,8 @@ module ::DiscourseChatbot
     def create_chat_completion(messages, use_functions = true)
       ::DiscourseChatbot.progress_debug_message <<~EOS
         I called the LLM to help me
+        ------------------------------
+        value of messages is: #{messages}
         +++++++++++++++++++++++++++++++
       EOS
       if use_functions && @functions
@@ -132,8 +135,6 @@ module ::DiscourseChatbot
         I used '#{func_name}' to help me
         +++++++++++++++++++++++++++++++++++++++
       EOS
-      # pp args_str
-      # byebug
       begin
        args = JSON.parse(args_str)
        func = @func_mapping[func_name]
@@ -163,8 +164,11 @@ module ::DiscourseChatbot
 
     def get_response(query)
       @internal_thoughts = []
-      @chat_history << {'role' => 'user', 'content' => query}
+
+      @chat_history += query
+
       res = generate_response
+
       @chat_history << res["choices"][0]["message"].to_hash
       res["choices"][0]["message"]["content"]
     end
