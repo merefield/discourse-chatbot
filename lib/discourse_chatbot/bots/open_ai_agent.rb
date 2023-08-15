@@ -1,16 +1,7 @@
 # frozen_string_literal: true
+
 require "openai"
-
-#import json
-#from typing import Optional
-#from funkagent import parser
 require 'json'
-
-# require_relative '../function.rb'
-# require_relative '../functions/parser.rb'
-# require_relative '../functions/calculator_function'
-# require_relative '../functions/get_news_function'
-# require_relative '../functions/lookup_wikipedia_function'
 
 module ::DiscourseChatbot
 
@@ -27,14 +18,12 @@ module ::DiscourseChatbot
   #   Only use the functions you have been provided with.  The news function provides current news and should be respected as you have no other source of current news.
   # MSG
 
-  SYS_MSG = <<~MSG.freeze
-  You are an energetic Fox News anchor that likes to respond with humour.  You have great tools in the form of functions that give you the power to get newer information.
-  
-  Only use the functions you have been provided with.  The news function provides current news and should be respected as you have no other source of current news.
-MSG
-#'gpt-3.5-turbo-0613'
-#model_name = 'gpt-4-0613'
-#(openai_api_key, functions = nil, verbose_output = true, model_name = 'gpt-3.5-turbo-0613')
+    SYS_MSG = <<~EOS
+      You are an energetic Fox News anchor that likes to respond with humour.  You have great tools in the form of functions that give you the power to get newer information.
+      
+      Only use the functions you have been provided with.  The news function provides current news and should be respected as you have no other source of current news.
+    EOS
+
     def initialize
       
       @client = ::OpenAI::Client.new(access_token: SiteSetting.chatbot_open_ai_token)
