@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../function'
-require 'eqn'
+require "google_search_results"
 
 module DiscourseChatbot
   class GoogleSearchFunction < Function

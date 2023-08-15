@@ -31,7 +31,7 @@ module DiscourseChatbot
 
     def process(*args)
       begin
-        super(*args)
+        #super(*args)
         Eqn::Calculator.calc(*args[0])
       rescue Eqn::ParseError, Eqn::NoVariableValueError
         "\"#{input}\" is an invalid mathematical expression"
