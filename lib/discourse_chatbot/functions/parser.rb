@@ -42,14 +42,16 @@ module ::DiscourseChatbot
         params[:"#{param[:name]}"].merge!("type": type_mapping(param[:type]).to_s)
         params[:"#{param[:name]}"].merge!("description": param[:description])
        end
+       params = JSON.parse(params.to_json)
 
-      function_json = {
+      func_json = {
         'name' => func.name,
         'description' => func.description,
         'parameters' => {
           'type' => 'object',
-          'properties' => params
-        },
+          'properties' => params,
+          'required' => func.required
+        }
       }
     end
   end

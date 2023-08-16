@@ -33,12 +33,14 @@ module ::DiscourseChatbot
       wikipedia_function = ::DiscourseChatbot::WikipediaFunction.new
       news_function = ::DiscourseChatbot::NewsFunction.new
       google_search_function = ::DiscourseChatbot::GoogleSearchFunction.new
-      today_function = ::DiscourseChatbot::TodaysDateFunction.new
-
-      functions = [today_function, calculator_function, wikipedia_function]
+      stock_data_function = ::DiscourseChatbot::StockDataFunction.new
+      # today_function = ::DiscourseChatbot::TodaysDateFunction.new
+      functions = [calculator_function, wikipedia_function]
+      # functions = [today_function, calculator_function, wikipedia_function]
 
       functions << news_function if !SiteSetting.chatbot_news_api_token.blank?
       functions << google_search_function if !SiteSetting.chatbot_serp_api_key.blank?
+      functions << stock_data_function if !SiteSetting.chatbot_marketstack_key.blank?
 
       @functions = parse_functions(functions)
       @func_mapping = create_func_mapping(functions)
@@ -135,15 +137,18 @@ module ::DiscourseChatbot
         I used '#{func_name}' to help me
         +++++++++++++++++++++++++++++++++++++++
       EOS
-      begin
+      # begin
+        # byebug
        args = JSON.parse(args_str)
+       #byebug
        func = @func_mapping[func_name]
-       res = func.process(*args.values)
+       res = func.process(args)
        res
-      rescue
-       pp args_str
-       raise "Dodgy args"
-      end
+      # rescue
+      #  #pp args_str
+      #  #raise "Dodgy args"
+      #  "There was something wrong with your function arguments"
+      # end
     end
 
     def final_thought_answer

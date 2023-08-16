@@ -134,3 +134,6 @@ plugins:
   chatbot_serp_api_key:
     client: false
     default: ''
+  chatbot_marketstack_key:
+    client: false
+    default: ''

@@ -25,8 +25,10 @@ gem "google_search_results", '2.2.0'
 gem "wikipedia-client", '1.17.0'
 # news api
 gem 'news-api', '0.2.0'
+# safe ruby
+gem "childprocess", "4.1.0"
+gem "safe_ruby", "1.0.4"
 
-require_relative 'vendor/langchainrb/lib/langchain.rb'
 
 module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
@@ -71,6 +73,7 @@ after_initialize do
     ../lib/discourse_chatbot/functions/wikipedia_function.rb
     ../lib/discourse_chatbot/functions/todays_date_function.rb
     ../lib/discourse_chatbot/functions/google_search_function.rb
+    ../lib/discourse_chatbot/functions/stock_data_function.rb
     ../lib/discourse_chatbot/functions/parser.rb
     ../lib/discourse_chatbot/prompt_utils.rb
     ../lib/discourse_chatbot/post/post_prompt_utils.rb

@@ -27,17 +27,22 @@ module DiscourseChatbot
       ]
     end
 
-    def process(*args)
+    def required
+      ['query']
+    end
+
+    def process(args)
       begin
         ::DiscourseChatbot.progress_debug_message <<~EOS
-          -------------------------------------
-          arguments for news: #{args[0]}, #{args[1]}
-          --------------------------------------
+        -------------------------------------
+        arguments for news: #{args[parameters[0][:name]]}, #{args[parameters[1][:name]]}
+        --------------------------------------
         EOS
+        super(args)
 
-        newsapi = News.new(SiteSetting.chatbot_news_api_token) #("125df0e20a6a44af924177715d64de61")   
-        all_articles = newsapi.get_everything(q: args[0],
-                                          from: args[1], #'2023-08-01',
+        newsapi = News.new(SiteSetting.chatbot_news_api_token) 
+        all_articles = newsapi.get_everything(q: args[parameters[0][:name]],
+                                          from: args[parameters[1][:name]], #'2023-08-01'
                                           language: 'en',
                                           sortBy: 'relevancy')
         #pp all_articles

@@ -28,10 +28,14 @@ module DiscourseChatbot
       ]
     end
 
-    def process(*args)
+    def required
+      ['query']
+    end
+
+    def process(args)
 
       begin
-        page = ::Wikipedia.find(args[0])
+        page = ::Wikipedia.find(args[parameters[0][:name]])
 
         page.summary
       rescue

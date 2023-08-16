@@ -25,19 +25,24 @@ module DiscourseChatbot
       [
         { name: "query", type: String, description: "search query for looking up information on the internet" } ,
       ]
-    end 
+    end
+    
+    def required
+      ['query']
+    end
 
-    def process(*args)
+    def process(args)
       begin
-        super(*args)
-        hash_results = ::GoogleSearch.new(q: args[0], serp_api_key: SiteSetting.chatbot_serp_api_key)
+        super(args)
+        hash_results = ::GoogleSearch.new(q: args[parameters[0][:name]], serp_api_key: SiteSetting.chatbot_serp_api_key)
         .get_hash
 
         hash_results.dig(:answer_box, :answer) ||
         hash_results.dig(:answer_box, :snippet) ||
         hash_results.dig(:organic_results, 0, :snippet)
+
       rescue 
-        "\"#{input}\": my search for this on the internet failed."
+        "\"#{args[parameters[0][:name]]}\": my search for this on the internet failed."
       end
     end
   end
