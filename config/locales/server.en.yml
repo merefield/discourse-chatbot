@@ -1,7 +1,9 @@
 en:
   site_settings:
     chatbot_enabled: "Enable the chatbot plugin"
-    chatbot_open_ai_token: "Your Open AI token. You can get one at <a target='_blank' rel='noopener' href='https://platform.openai.com/account/api-keys/'>openai.com</a>"
+    chatbot_azure_open_ai_model_url: "Populate it if you want to use Azure OpenAI, e.g. https://custom-domain.openai.azure.com/openai/deployments/custom-name)."
+    chatbot_azure_open_ai_token: "Your Azure Open AI token. Required if you supply Azure URL.  You can get one at <a target='_blank' rel='noopener' href='https://portal.azure.com/'>Azure Portal</a>."
+    chatbot_open_ai_token: "Your Open AI token. You can get one at <a target='_blank' rel='noopener' href='https://platform.openai.com/account/api-keys/'>openai.com</a>."
     chatbot_open_ai_model_custom: "Use Custom model name (ADVANCED USERS ONLY)"
     chatbot_open_ai_model_custom_name: "(CUSTOM ONLY) Name of model"
     chatbot_open_ai_model_custom_type: "(CUSTOM ONLY) IMPORTANT: Select which type of Open AI endpoint should be used, Chat (ChatGPT style), or Completion (Davinci style) - will break if you select wrong type"
