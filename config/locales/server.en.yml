@@ -2,6 +2,8 @@ en:
   site_settings:
     chatbot_enabled: "Enable the chatbot plugin"
     chatbot_open_ai_token: "Your Open AI token. You can get one at <a target='_blank' rel='noopener' href='https://platform.openai.com/account/api-keys/'>openai.com</a>"
+    chatbot_azure_open_ai_model_url: "Populate it if you want to use Azure OpenAI, e.g. https://custom-domain.openai.azure.com/openai/deployments/custom-name)."
+    chatbot_azure_open_ai_token: "Your Azure Open AI token. Required if you supply Azure URL.  You can get one at <a target='_blank' rel='noopener' href='https://portal.azure.com/'>Azure Portal</a>."
     chatbot_bot_type: "EXPERIMENTAL: To make the bot smarter, use 'agent' (but be aware this uses many more calls to the LLM increasing cost significantly!)"
     chatbot_open_ai_model_custom: "Use Custom model name (ADVANCED USERS ONLY)"
     chatbot_open_ai_model_custom_name: "(CUSTOM ONLY) Name of model"
@@ -36,7 +38,7 @@ en:
     chatbot_marketstack_key: "Marketstack API key for stock price information (if left blank, Marketstack will never be queried)"
 
   chatbot:
-    bio: "Hi, I’m not a real person. I’m a bot that can discuss things with you. Don't take me too seriously. Sometimes, I'm even right about stuff!"
+    bio: "Hi, I'm not a real person. I'm a bot that can discuss things with you. Don't take me too seriously. Sometimes, I'm even right about stuff!"
     prompt:
       system: "You are a helpful assistant."
       title: "The subject of this conversation is %{topic_title}"
