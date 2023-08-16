@@ -6,10 +6,10 @@ module ::DiscourseChatbot
   class OpenAIBot < Bot
 
     def initialize
-      if SiteSetting.chatbot_current_model_url.include?("azure")
+      if SiteSetting.chatbot_azure_open_ai_model_url.include?("azure")
         ::OpenAI.configure do |config|
           config.access_token = SiteSetting.chatbot_azure_open_ai_token
-          config.uri_base = SiteSetting.chatbot_current_model_url
+          config.uri_base = SiteSetting.chatbot_azure_open_ai_model_url
           config.api_type = :azure
           config.api_version = "2023-05-15"
         end
