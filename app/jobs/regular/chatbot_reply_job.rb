@@ -65,17 +65,21 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
     end
     if create_bot_reply
       ::DiscourseChatbot.progress_debug_message("4. Retrieving new reply message...")
-      #begin
-        if SiteSetting.chatbot_bot_type = "agent"
+      begin
+        # agent can only be used currently with custom model that is not in normal list
+        if SiteSetting.chatbot_bot_type == "agent" &&
+          SiteSetting.chatbot_open_ai_model_custom &&
+          SiteSetting.chatbot_open_ai_model_custom_type == "chat" &&
+          ["gpt-3.5-turbo-0613","gpt-4-0613"].include?(SiteSetting.chatbot_open_ai_model_custom_name)
           bot = ::DiscourseChatbot::OpenAIAgent.new
         else
           bot = ::DiscourseChatbot::OpenAIBot.new
         end
         message_body = bot.ask(opts)
-      # rescue => e
-      #   Rails.logger.error ("OpenAIBot: There was a problem, but will retry til limit: #{e}")
-      #   fail e
-      # end
+      rescue => e
+        Rails.logger.error ("OpenAIBot: There was a problem, but will retry til limit: #{e}")
+        fail e
+      end
     end
     opts.merge!(message_body: message_body)
     if type == ::DiscourseChatbot::POST

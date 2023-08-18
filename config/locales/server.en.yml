@@ -40,7 +40,9 @@ en:
   chatbot:
     bio: "Hi, I'm not a real person. I'm a bot that can discuss things with you. Don't take me too seriously. Sometimes, I'm even right about stuff!"
     prompt:
-      system: "You are a helpful assistant."
+      system:
+        basic: "You are a helpful assistant."
+        agent: "You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is %{current_date_time}.  Only respond to the last question, using the prior information as context, if appropriate."
       title: "The subject of this conversation is %{topic_title}"
       first_post: "The first thing someone said was %{username} who said %{raw}"
       post: "%{username} said %{raw}"

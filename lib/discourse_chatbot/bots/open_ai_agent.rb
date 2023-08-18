@@ -147,18 +147,14 @@ module ::DiscourseChatbot
         I used '#{func_name}' to help me
         +++++++++++++++++++++++++++++++++++++++
       EOS
-      # begin
-        # byebug
+      begin
        args = JSON.parse(args_str)
-       #byebug
        func = @func_mapping[func_name]
        res = func.process(args)
        res
-      # rescue
-      #  #pp args_str
-      #  #raise "Dodgy args"
-      #  "There was something wrong with your function arguments"
-      # end
+      rescue
+        "There was something wrong with your function arguments"
+      end
     end
 
     def final_thought_answer
@@ -177,10 +173,13 @@ module ::DiscourseChatbot
       final_thought
     end
 
-    def get_response(query)
+    def get_response(prompt)
+      system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.agent", current_date_time: DateTime.current) }
+      prompt.unshift(system_message)
+      byebug
       @internal_thoughts = []
 
-      @chat_history += query
+      @chat_history += prompt
 
       res = generate_response
 
@@ -188,7 +187,6 @@ module ::DiscourseChatbot
       res["choices"][0]["message"]["content"]
     end
 
-    
     def ask(opts)
       super(opts)
     end
