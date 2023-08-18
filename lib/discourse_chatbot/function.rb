@@ -28,9 +28,9 @@ module ::DiscourseChatbot
     def process(args)
       validate_parameters(args)
     end
-  
+
     private
-  
+
     def validate_parameters(*args)
       unless args.length == @required.length
         raise ArgumentError, "Expected at least #{@required.length} arguments, but got #{args.length}"
@@ -47,6 +47,8 @@ module ::DiscourseChatbot
           raise ArgumentError, "Argument #{index + 1} should be of type #{parameter[:type]}"
         end
       end
+
+      true
     end
   end
 end
