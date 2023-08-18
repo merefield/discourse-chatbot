@@ -3,81 +3,9 @@ require_relative '../../plugin_helper'
 
 describe ::DiscourseChatbot::OpenAIAgent do
   let(:agent) { ::DiscourseChatbot::OpenAIAgent.new }
-
-  let(:llm_function_response) {
-    {
-      "id"=>"chatcmpl-7oclPFxW1ggGvnk8ZY8diuWp5UULp",
-      "object"=>"chat.completion",
-      "created"=>1692299763,
-      "model"=>"gpt-4-0613",
-      "choices"=>[
-        { "index"=> 0,
-          "message"=> {
-            "role"=>"assistant",
-            "content"=> nil,
-            "function_call" => {
-              "name" => "calculate",
-              "arguments" => "{\n  \"input\": \"3 * 23.452432\"\n}"
-            }
-          },
-          "finish_reason" => "function_call"
-        }
-      ],
-      "usage" => {
-        "prompt_tokens" => 895,
-        "completion_tokens" => 20,
-        "total_tokens" => 915
-      }
-    }
-  }
-
-let(:llm_interim_response) {
-  {
-    "id" => "chatcmpl-7oclSemwPSYrzSnIyWxJYAEeV1pt2",
-    "object" => "chat.completion",
-    "created"=>1692299766,
-    "model" => "gpt-4-0613",
-    "choices" => [
-      {
-        "index" => 0,
-        "message" => {
-          "role" => "assistant",
-          "content" => "Isn't that just like a calculator - exact, precise, and no fun at all! Until we gave it colors and cute buttons, of course. Anyways, your result Merefield, is 70.357296. I hope this piece of information weighty with the solemn gravity of mathematical certainty adds a little zing to your day! What's the next riddle you've got for me?"
-          },
-        "finish_reason" => "stop"
-      }
-    ],
-    "usage" => {
-      "prompt_tokens" => 931,
-      "completion_tokens" => 83,
-      "total_tokens" => 1014
-    }
-  }
-}
-
-let(:llm_final_response) {
-  {
-    "id" => "chatcmpl-7oclZEJflBuxcLneEBE1dVIwe7KEn",
-    "object" => "chat.completion",
-    "created" => 1692299773,
-    "model" => "gpt-4-0613",
-    "choices" => [
-      {
-        "index" => 0,
-        "message" => {
-          "role" => "assistant",
-          "content" => "Well, Merefield, If you measure a fish once it's three times as impressive, isn't it? Much like 3 multiplied by 23.452432 is three times as precise and lands at a whopping 70.357296. \n\nThat's almost as many puns as I have ready for this broadcast! Keep those numbers comin' and I'll keep the humor flowin'!"
-        },
-        "finish_reason" => "stop"
-      }
-    ],
-    "usage" => {
-      "prompt_tokens" => 460,
-      "completion_tokens" => 82,
-      "total_tokens" => 542
-    }
-  }
-}
+  let(:llm_function_response) { get_chatbot_fixture("llm_function_response") }
+  let(:llm_interim_response) { get_chatbot_fixture("llm_interim_response") }
+  let(:llm_final_response) { get_chatbot_fixture("llm_final_response") }
 
   it "calls function on returning a function request from LLN" do
     DateTime.expects(:current).returns("2023-08-18T10:11:44+00:00")
