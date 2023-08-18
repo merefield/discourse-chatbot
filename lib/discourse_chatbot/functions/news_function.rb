@@ -45,12 +45,10 @@ module DiscourseChatbot
                                           from: args[parameters[1][:name]], #'2023-08-01'
                                           language: 'en',
                                           sortBy: 'relevancy')
-        #pp all_articles
         news = "The latest news about this is: "
         all_articles.each do |a|
           news += "#{a.title}.  "
         end
-        #pp news
         news
       rescue
         "ERROR: Had trouble retrieving the news!"

@@ -33,6 +33,8 @@ module DiscourseChatbot
 
     def process(args)
       begin
+        super(args)
+
         params = {
           :access_key => "#{SiteSetting.chatbot_marketstack_key}",
           :search => "#{CGI.escape(args[parameters[0][:name]])}"
@@ -60,7 +62,7 @@ module DiscourseChatbot
 
         "Ticker #{stock_data['symbol']} had a day close of #{stock_data['close'].to_s} on #{stock_data['date'].to_s}, with a high of #{stock_data['high'].to_s} and a low of #{stock_data['low'].to_s}"
       rescue
-        "ERROR: Had trouble retrieving information from Market Stack!"
+        "ERROR: Had trouble retrieving information from Market Stack for stock market information!"
       end
     end
   end

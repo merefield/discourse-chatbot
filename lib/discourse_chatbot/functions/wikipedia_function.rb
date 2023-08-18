@@ -33,13 +33,14 @@ module DiscourseChatbot
     end
 
     def process(args)
-
       begin
+        super(args)
+
         page = ::Wikipedia.find(args[parameters[0][:name]])
 
         page.summary
       rescue
-        "ERROR: Had trouble retrieving information from wikipedia!"
+        "ERROR: Had trouble retrieving information from Wikipedia!"
       end
     end
   end

@@ -34,13 +34,13 @@ module DiscourseChatbot
     def process(args)
       begin
         super(args)
+
         hash_results = ::GoogleSearch.new(q: args[parameters[0][:name]], serp_api_key: SiteSetting.chatbot_serp_api_key)
         .get_hash
 
         hash_results.dig(:answer_box, :answer) ||
         hash_results.dig(:answer_box, :snippet) ||
         hash_results.dig(:organic_results, 0, :snippet)
-
       rescue 
         "\"#{args[parameters[0][:name]]}\": my search for this on the internet failed."
       end
