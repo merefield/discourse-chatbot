@@ -1,0 +1,24 @@
+{
+  "id" : "chatcmpl-7oclPFxW1ggGvnk8ZY8diuWp5UULp",
+  "object": "chat.completion",
+  "created": 1692299763,
+  "model": "gpt-4-0613",
+  "choices": [
+    { "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "function_call": {
+          "name": "calculate",
+          "arguments": "{\n  \"input\": \"3 * 23.452432\"\n}"
+        }
+      },
+      "finish_reason": "function_call"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 895,
+    "completion_tokens": 20,
+    "total_tokens": 915
+  }
+}

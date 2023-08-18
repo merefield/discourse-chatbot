@@ -66,7 +66,14 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
     if create_bot_reply
       ::DiscourseChatbot.progress_debug_message("4. Retrieving new reply message...")
       begin
-        bot = ::DiscourseChatbot::OpenAIBot.new
+        # agent can only be used currently with 0613 series model
+        if SiteSetting.chatbot_bot_type == "agent" &&
+          (["gpt-3.5-turbo-0613", "gpt-4-0613"].include?(SiteSetting.chatbot_open_ai_model) ||
+          SiteSetting.chatbot_open_ai_model_custom)
+          bot = ::DiscourseChatbot::OpenAIAgent.new
+        else
+          bot = ::DiscourseChatbot::OpenAIBot.new
+        end
         message_body = bot.ask(opts)
       rescue => e
         Rails.logger.error ("OpenAIBot: There was a problem, but will retry til limit: #{e}")

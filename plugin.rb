@@ -1,13 +1,22 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.26
+# version: 0.27
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
 gem 'multipart-post', '2.3.0', { require: false }
 gem 'faraday-multipart', '1.0.4', { require: false }
 gem "ruby-openai", '4.2.0', { require: false }
+# google search
+gem "google_search_results", '2.2.0'
+# wikipedia
+gem "wikipedia-client", '1.17.0'
+# news api
+gem 'news-api', '0.2.0'
+# safe ruby for calculations and date functions
+gem "childprocess", "4.1.0"
+gem "safe_ruby", "1.0.4"
 
 module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
@@ -45,6 +54,14 @@ after_initialize do
     ../lib/discourse_chatbot/post/post_evaluation.rb
     ../lib/discourse_chatbot/bot.rb
     ../lib/discourse_chatbot/bots/open_ai_bot.rb
+    ../lib/discourse_chatbot/bots/open_ai_agent.rb
+    ../lib/discourse_chatbot/function.rb
+    ../lib/discourse_chatbot/functions/calculator_function.rb
+    ../lib/discourse_chatbot/functions/news_function.rb
+    ../lib/discourse_chatbot/functions/wikipedia_function.rb
+    ../lib/discourse_chatbot/functions/google_search_function.rb
+    ../lib/discourse_chatbot/functions/stock_data_function.rb
+    ../lib/discourse_chatbot/functions/parser.rb
     ../lib/discourse_chatbot/prompt_utils.rb
     ../lib/discourse_chatbot/post/post_prompt_utils.rb
     ../lib/discourse_chatbot/message/message_prompt_utils.rb
