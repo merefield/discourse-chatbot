@@ -1,7 +1,5 @@
 # frozen_string_literal: true
-
 require "openai"
-require 'json'
 
 module ::DiscourseChatbot
 
@@ -118,7 +116,7 @@ module ::DiscourseChatbot
       func_name = first_message["function_call"]["name"]
       args_str = first_message["function_call"]["arguments"]
       result = call_function(func_name, args_str)
-      res_msg = {'role' => 'assistant', 'content' => "The answer is #{result}."}
+      res_msg = { 'role' => 'assistant', 'content' => "The answer is #{result}." }
       @internal_thoughts << res_msg
     end
 
@@ -129,12 +127,12 @@ module ::DiscourseChatbot
         +++++++++++++++++++++++++++++++++++++++
       EOS
       begin
-       args = JSON.parse(args_str)
-       func = @func_mapping[func_name]
-       res = func.process(args)
-       res
-      rescue
-        "There was something wrong with your function arguments"
+        args = JSON.parse(args_str)
+        func = @func_mapping[func_name]
+        res = func.process(args)
+        res
+       rescue
+         "There was something wrong with your function arguments"
       end
     end
 

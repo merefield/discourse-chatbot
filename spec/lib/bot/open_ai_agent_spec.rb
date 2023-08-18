@@ -10,11 +10,11 @@ describe ::DiscourseChatbot::OpenAIAgent do
   it "calls function on returning a function request from LLN" do
     DateTime.expects(:current).returns("2023-08-18T10:11:44+00:00")
 
-    system_entry = {:role=>"system", :content=>"You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is 2023-08-18T10:11:44+00:00.  Only respond to the last question, using the prior information as context, if appropriate."}
+    system_entry = { role: "system", content: "You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is 2023-08-18T10:11:44+00:00.  Only respond to the last question, using the prior information as context, if appropriate." }
 
-    query = [{ "role": "user", "content" => "what is 3 * 23.452432?"}]
-    second_query = [system_entry, {:role => "user", "content" => "what is 3 * 23.452432?"}, {"role" => "assistant", "content" => nil, "function_call" => {"name" => "calculate", "arguments" => "{\n  \"input\": \"3 * 23.452432\"\n}"}}, {"role" => "assistant", "content" => "The answer is 70.357296."}]
-    final_query = [system_entry, {:role => "user", "content" => "what is 3 * 23.452432?"}, {"role" => "assistant", "content" => "To answer the question I will use these step by step instructions.\n\nI will use the calculate function to calculate the answer with arguments {\n  \"input\": \"3 * 23.452432\"\n}.\n\nThe answer is 70.357296.\n\n Based on the above, I will now answer the question, this message will only be seen by me so answer with the assumption with that the user has not seen this message."}]
+    query = [{ "role": "user", "content" => "what is 3 * 23.452432?" }]
+    second_query = [system_entry, { :role => "user", "content" => "what is 3 * 23.452432?" }, { "role" => "assistant", "content" => nil, "function_call" => { "name" => "calculate", "arguments" => "{\n  \"input\": \"3 * 23.452432\"\n}" } }, { "role" => "assistant", "content" => "The answer is 70.357296." }]
+    final_query = [system_entry, { :role => "user", "content" => "what is 3 * 23.452432?" }, { "role" => "assistant", "content" => "To answer the question I will use these step by step instructions.\n\nI will use the calculate function to calculate the answer with arguments {\n  \"input\": \"3 * 23.452432\"\n}.\n\nThe answer is 70.357296.\n\n Based on the above, I will now answer the question, this message will only be seen by me so answer with the assumption with that the user has not seen this message." }]
 
     ::DiscourseChatbot::OpenAIAgent.any_instance.expects(:create_chat_completion).with(query).returns(llm_function_response)
     ::DiscourseChatbot::OpenAIAgent.any_instance.expects(:create_chat_completion).with(second_query).returns(llm_interim_response)

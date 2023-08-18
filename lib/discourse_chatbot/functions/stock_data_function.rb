@@ -7,7 +7,7 @@ require 'net/http'
 require 'json'
 
 module DiscourseChatbot
-  
+
   class StockDataFunction < Function
     def name
       'stock_data'
@@ -17,7 +17,7 @@ module DiscourseChatbot
       <<~EOS
         An API for MarketStack stock data
 
-        You need to call it using the stock ticker.  
+        You need to call it using the stock ticker.#{'  '}
       EOS
     end
 
@@ -36,8 +36,8 @@ module DiscourseChatbot
         super(args)
 
         params = {
-          :access_key => "#{SiteSetting.chatbot_marketstack_key}",
-          :search => "#{CGI.escape(args[parameters[0][:name]])}"
+          access_key: "#{SiteSetting.chatbot_marketstack_key}",
+          search: "#{CGI.escape(args[parameters[0][:name]])}"
         }
         uri = URI("http://api.marketstack.com/v1/tickers?")
 
@@ -50,8 +50,8 @@ module DiscourseChatbot
         uri = URI("http://api.marketstack.com/v1/eod/latest")
 
         params = {
-          :access_key => "#{SiteSetting.chatbot_marketstack_key}",
-          :symbols => "#{ticker}"
+          access_key: "#{SiteSetting.chatbot_marketstack_key}",
+          symbols: "#{ticker}"
         }
 
         uri.query = URI.encode_www_form(params)

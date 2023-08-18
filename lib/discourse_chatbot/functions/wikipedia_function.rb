@@ -4,9 +4,9 @@ require_relative '../function'
 require 'wikipedia-client'
 
 module DiscourseChatbot
-  
+
   class WikipediaFunction < Function
-    
+
     def name
       'wikipedia'
     end

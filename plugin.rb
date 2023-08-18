@@ -18,7 +18,6 @@ gem 'news-api', '0.2.0'
 gem "childprocess", "4.1.0"
 gem "safe_ruby", "1.0.4"
 
-
 module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
   POST = "post"

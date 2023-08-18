@@ -68,7 +68,7 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
       begin
         # agent can only be used currently with 0613 series model
         if SiteSetting.chatbot_bot_type == "agent" &&
-          (["gpt-3.5-turbo-0613","gpt-4-0613"].include?(SiteSetting.chatbot_open_ai_model) ||
+          (["gpt-3.5-turbo-0613", "gpt-4-0613"].include?(SiteSetting.chatbot_open_ai_model) ||
           SiteSetting.chatbot_open_ai_model_custom)
           bot = ::DiscourseChatbot::OpenAIAgent.new
         else

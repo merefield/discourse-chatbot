@@ -35,10 +35,10 @@ module ::DiscourseChatbot
     end
 
     def self.func_to_json(func)
-       params = {}
+      params = {}
        func.parameters.each do |param|
-        params.merge!("#{param[:name]}": {})
-        
+         params.merge!("#{param[:name]}": {})
+
         params[:"#{param[:name]}"].merge!("type": type_mapping(param[:type]).to_s)
         params[:"#{param[:name]}"].merge!("description": param[:description])
        end

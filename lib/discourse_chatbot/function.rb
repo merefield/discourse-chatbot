@@ -24,7 +24,7 @@ module ::DiscourseChatbot
       @parameters = parameters
       @required = required
     end
-  
+
     def process(args)
       validate_parameters(args)
     end
@@ -39,7 +39,7 @@ module ::DiscourseChatbot
       @required.each do |required|
         if !args.find { |arg| required == arg.each_key.first }
           raise ArgumentError, "Expected '#{required}' to be included in the arguments because it is required, but is missing"
-        end 
+        end
       end
 
       args.each do |arg|

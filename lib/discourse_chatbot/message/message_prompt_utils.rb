@@ -11,7 +11,7 @@ module ::DiscourseChatbot
       # if ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"].include?(SiteSetting.chatbot_open_ai_model) ||
       #   (SiteSetting.chatbot_open_ai_model_custom == true && SiteSetting.chatbot_open_ai_model_custom_type == "chat")
 
-        #messages = [{ "role": "system", "content": I18n.t("chatbot.prompt.system") }]
+      #messages = [{ "role": "system", "content": I18n.t("chatbot.prompt.system") }]
       messages = []
 
       messages += message_collection.reverse.map do |cm|

@@ -7,7 +7,7 @@ module ::DiscourseChatbot
       post_collection = collect_past_interactions(opts[:reply_to_message_or_post_id])
       bot_user_id = opts[:bot_user_id]
 
-        #messages = [{ "role": "system", "content": I18n.t("chatbot.prompt.system") }]
+      #messages = [{ "role": "system", "content": I18n.t("chatbot.prompt.system") }]
       messages = [{ "role": "user", "content":  I18n.t("chatbot.prompt.title", topic_title: post_collection.first.topic.title) }]
       messages << { "role": "user", "content": I18n.t("chatbot.prompt.first_post", username: post_collection.first.topic.first_post.user.username, raw: post_collection.first.topic.first_post.raw) }
 
