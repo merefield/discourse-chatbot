@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ::DiscourseChatbot
   class Function
     attr_reader :name, :description, :parameters, :required
