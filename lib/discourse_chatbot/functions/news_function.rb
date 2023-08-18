@@ -14,7 +14,7 @@ module DiscourseChatbot
       <<~EOS
         A wrapper around the News API.
 
-        Useful for when you need to answer questions about current events in the news, current events or affairs
+        Useful for when you need to answer questions about current events in the news, current events or affairs.
 
         Input should be a search query and a date from which to search news, so if the request is today, the search should be for todays date'
       EOS

@@ -33,9 +33,9 @@ en:
     chatbot_request_presence_penalty: "Numeric value within the range of -200 to 200. Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-presence_penalty'>API docs: presence_penalty</a>"
     chatbot_max_response_tokens: "Specify the maximum amount of tokens bot will use to generate a response. Refer to: <a target='_blank' rel='noopener' href='https://openai.com/pricing'>OpenAI: Pricing</a>"
     chatbot_enable_verbose_console_response_progress_logging: "Enable response retrieval progress logging to console to help debug issues"
-    chatbot_news_api_token: "News API token for news (if left blank, news will never be searched)"
-    chatbot_serp_api_key: "Serp API token for google search (if left blank, google will never be searched)"
-    chatbot_marketstack_key: "Marketstack API key for stock price information (if left blank, Marketstack will never be queried)"
+    chatbot_news_api_token: "News API token for news (if left blank, news will never be searched)<a target='_blank' rel='noopener' href='https://newsapi.org/'>Get one at NewsAPI.org</a>"
+    chatbot_serp_api_key: "Serp API token for google search (if left blank, google will never be searched). <a target='_blank' rel='noopener' href='https://serpapi.com/'>Get one at SerpAPI.com</a>"
+    chatbot_marketstack_key: "Marketstack API key for stock price information (if left blank, Marketstack will never be queried).<a target='_blank' rel='noopener' href='https://marketstack.com/'>Get one at MarketStack.com</a>"
 
   chatbot:
     bio: "Hi, I'm not a real person. I'm a bot that can discuss things with you. Don't take me too seriously. Sometimes, I'm even right about stuff!"
