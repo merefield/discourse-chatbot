@@ -24,6 +24,6 @@ describe ::DiscourseChatbot::Function do
   it "doesn't throw an exception for arguments including the required parameter" do
     args = {'query' => 'Botswana'} # required 'query'
 
-    expect { news.send(:validate_parameters, args) }.not_to raise_error(ArgumentError)
+    expect { news.send(:validate_parameters, args) }.not_to raise_error
   end
 end
