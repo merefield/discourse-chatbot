@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative '../function'
-require 'news-api'
 
 module DiscourseChatbot
   class NewsFunction < Function
@@ -40,14 +39,27 @@ module DiscourseChatbot
         EOS
         super(args)
 
-        newsapi = News.new(SiteSetting.chatbot_news_api_token)
-        all_articles = newsapi.get_everything(q: args[parameters[0][:name]],
-                                              from: args[parameters[1][:name]], #'2023-08-01'
-                                              language: 'en',
-                                              sortBy: 'relevancy')
+        conn_params = {}
+
+        conn_params = args[parameters[1][:name]].blank? ?
+          { q: "#{args[parameters[0][:name]]}", language: 'en', sortBy: 'relevancy' } :
+          { q: "#{args[parameters[0][:name]]}", language: 'en', sortBy: 'relevancy', start_date: "#{args[parameters[1][:name]]}" }
+
+        conn = Faraday.new(
+          url: 'https://newsapi.org',
+          params: conn_params,
+          headers: { 'X-Api-Key' => "#{SiteSetting.chatbot_news_api_token}" }
+        )
+
+        response = conn.get('/v2/everything')
+
+        response_body = JSON.parse(response.body)
+
+        all_articles = response_body["articles"]
+
         news = "The latest news about this is: "
         all_articles.each do |a|
-          news += "#{a.title}.  "
+          news += "#{a["title"]}.  "
         end
         news
       rescue
