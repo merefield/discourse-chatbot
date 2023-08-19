@@ -15,15 +15,14 @@ module DiscourseChatbot
 
     def description
       <<~EOS
-        An API for MarketStack stock data
-
-        You need to call it using the stock ticker.#{'  '}
+        An API for MarketStack stock data.  You need to call it using the stock ticker.  You can optionally also provide a specific date.
       EOS
     end
 
     def parameters
       [
        { name: 'ticker', type: String, description: "ticker for share or stock query" },
+       { name: 'date', type: String, description: "date for data in format YYYY-MM-DD" }
       ]
     end
 
@@ -46,8 +45,7 @@ module DiscourseChatbot
         api_response = JSON.parse(json)
 
         ticker = api_response['data'][0]['symbol']
-
-        uri = URI("http://api.marketstack.com/v1/eod/latest")
+        uri = args[parameters[1][:name]].blank? ?  URI("http://api.marketstack.com/v1/eod/latest") : URI("http://api.marketstack.com/v1/eod/#{args[parameters[1][:name]]}")
 
         params = {
           access_key: "#{SiteSetting.chatbot_marketstack_key}",
