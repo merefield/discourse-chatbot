@@ -45,7 +45,7 @@ module DiscourseChatbot
         api_response = JSON.parse(json)
 
         ticker = api_response['data'][0]['symbol']
-        uri = args[parameters[1][:name]].blank? ?  URI("http://api.marketstack.com/v1/eod/latest") : URI("http://api.marketstack.com/v1/eod/#{args[parameters[1][:name]]}")
+        uri = args[parameters[1][:name]].blank? ? URI("http://api.marketstack.com/v1/eod/latest") : URI("http://api.marketstack.com/v1/eod/#{args[parameters[1][:name]]}")
 
         params = {
           access_key: "#{SiteSetting.chatbot_marketstack_key}",
