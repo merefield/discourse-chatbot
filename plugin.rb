@@ -48,6 +48,10 @@ after_initialize do
 
   %w(
     ../lib/discourse_chatbot/event_evaluation.rb
+    ../app/models/embedding.rb
+    ../lib/discourse_chatbot/embedding_process.rb
+    ../lib/tasks/chatbot.rake
+    ../app/jobs/regular/chatbot_post_embedding_job.rb
     ../lib/discourse_chatbot/message/message_evaluation.rb
     ../lib/discourse_chatbot/post/post_evaluation.rb
     ../lib/discourse_chatbot/bot.rb
