@@ -75,7 +75,7 @@ en:
 
             Input should be a search query.
 
-            Outputs text from the Post and a url you can provide the user with to link them to the relevant Post.
+            Outputs text from the Post and a url link to it you can provide the user.
           parameters:
             query: "search query for looking up information on the forum"
           answer: "The top Post on the forum with related information can be accessed here: %{url} and the text is %{raw}"
@@ -121,7 +121,18 @@ en:
             Input should be a search query
           parameters:
             query: "query string for wikipedia search"
+          answer: "The relevant wikipedia page has the following summary: '%{summary}' and the article can be found at this url link: %{url}"
           error: "ERROR: Had trouble retrieving information from Wikipedia!"
+      agent:
+        handle_function_call:
+          answer: "The answer is %{result}."
+        call_function:
+          error: "There was something wrong with your function arguments"
+        final_thought_answer:
+          opener: "To answer the question I will use these step by step instructions.\n\n"
+          thought_declaration: "I will use the %{function_name} function to calculate the answer with arguments %{arguments}.\n\n"
+          final_thought: "%{thoughts} Based on the above, I will now answer the question, this message will only be seen by me so answer with the assumption with that the user has not seen this message."
+        
     errors:
       general: "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"
       retries: "I've tried working out a response for you several times, but ultimately failed.  Please contact the admin if this persists, thank you!"

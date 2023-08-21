@@ -118,7 +118,7 @@ module ::DiscourseChatbot
       func_name = first_message["function_call"]["name"]
       args_str = first_message["function_call"]["arguments"]
       result = call_function(func_name, args_str)
-      res_msg = { 'role' => 'assistant', 'content' => "The answer is #{result}." }
+      res_msg = { 'role' => 'assistant', 'content' => I18n.t("chatbot.prompt.agent.handle_function_call.answer", result: result) }
       @internal_thoughts << res_msg
     end
 
@@ -134,23 +134,25 @@ module ::DiscourseChatbot
         res = func.process(args)
         res
        rescue
-         "There was something wrong with your function arguments"
+         I18n.t("chatbot.prompt.agent.call_function.error")
       end
     end
 
     def final_thought_answer
-      thoughts = "To answer the question I will use these step by step instructions.\n\n"
+      thoughts = I18n.t("chatbot.prompt.agent.final_thought_answer.opener")
       @internal_thoughts.each do |thought|
         if thought.key?('function_call')
-          thoughts += "I will use the #{thought['function_call']['name']} function to calculate the answer with arguments #{thought['function_call']['arguments']}.\n\n"
+          thoughts += I18n.t("chatbot.prompt.agent.final_thought_answer.function_declaration", function_name: thought['function_call']['name'], arguments: thought['function_call']['arguments'])
         else
           thoughts += "#{thought['content']}\n\n"
         end
       end
+
       final_thought = {
         'role' => 'assistant',
-        'content' => "#{thoughts} Based on the above, I will now answer the question, this message will only be seen by me so answer with the assumption with that the user has not seen this message."
+        'content' => I18n.t("chatbot.prompt.agent.final_thought_answer.final_thought", thoughts: thoughts)
       }
+
       final_thought
     end
 
