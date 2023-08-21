@@ -31,13 +31,17 @@ module DiscourseChatbot
         post_embedding = ::DiscourseChatbot::EmbeddingProcess.new
         results = post_embedding.semantic_search(query)
 
-        top_result = results[0].to_i
+        top_results = results[0..2]
+          
+        response = I18n.t("chatbot.prompt.function.forum_search.answer_summary")
 
-        top_post = ::Post.find(top_result)
-        url = "https://localhost:4200/t/slug/#{top_post.topic_id}/#{top_post.post_number}"
-        raw = top_post.raw
-
-        I18n.t("chatbot.prompt.function.forum_search.answer", url: url, raw: raw)
+        top_results.each_with_index do |result, index|
+          current_post = ::Post.find(result.to_i)
+          url = "#{Discourse.current_hostname}/t/slug/#{current_post.topic_id}/#{current_post.post_number}"
+          raw = current_post.raw
+          response += I18n.t("chatbot.prompt.function.forum_search.answer", url: url, raw: raw, rank: index + 1)
+        end
+        response
       rescue
         I18n.t("chatbot.prompt.function.forum_search.error", query: args[parameters[0][:name]])
       end
