@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 desc "Update embeddings for each post"
 task "chatbot:refresh_embeddings", %i[delay] => :environment do |_, args|
   ENV["RAILS_DB"] ? refresh_embeddings(args) : refresh_embeddings_all_sites(args)
@@ -37,7 +38,7 @@ task "chatbot:refresh_embeddings_match", %i[pattern type delay] => [:environment
 end
 
 def refresh_embeddings_all_sites(args)
-  RailsMultisite::ConnectionManagement.each_connection { |db| refresh_embeddings(args)}
+  RailsMultisite::ConnectionManagement.each_connection { |db| refresh_embeddings(args) }
 end
 
 def refresh_embeddings(args)
@@ -54,7 +55,7 @@ def refresh_embeddings(args)
     total = Post.count
     refreshed = 0
     batch = 1000
-    
+
     (0..(total - 1).abs).step(batch) do |i|
       Post
         .order(id: :desc)

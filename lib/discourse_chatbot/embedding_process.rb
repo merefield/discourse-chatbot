@@ -31,7 +31,7 @@ module ::DiscourseChatbot
 
        embedding_vector = response.dig("data", 0, "embedding")
 
-       ::DiscourseChatbot::Embedding.upsert({post_id: post_id, embedding: embedding_vector}, on_duplicate: :update, unique_by: :post_id)
+       ::DiscourseChatbot::Embedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
     end
 
     def semantic_search(query)
@@ -45,8 +45,8 @@ module ::DiscourseChatbot
        query_vector = response.dig("data", 0, "embedding")
 
        begin
-        search_result_post_ids =
-          DB.query(<<~SQL, query_embedding: query_vector, limit: 8).map(
+         search_result_post_ids =
+           DB.query(<<~SQL, query_embedding: query_vector, limit: 8).map(
               SELECT
                 post_id
               FROM
@@ -55,13 +55,13 @@ module ::DiscourseChatbot
                embedding::real[] <-> array[:query_embedding]
               LIMIT :limit
             SQL
-            &:post_id
+             &:post_id
+           )
+        rescue PG::Error => e
+          Rails.logger.error(
+            "Error #{e} querying embeddings for search #{query}",
           )
-       rescue PG::Error => e
-         Rails.logger.error(
-           "Error #{e} querying embeddings for search #{query}",
-         )
-        raise MissingEmbeddingError
+         raise MissingEmbeddingError
        end
        search_result_post_ids
     end

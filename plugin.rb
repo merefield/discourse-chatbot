@@ -82,7 +82,7 @@ after_initialize do
   DiscourseEvent.on(:post_created) do |*params|
     post, opts, user = params
 
-    if SiteSetting.chatbot_enabled 
+    if SiteSetting.chatbot_enabled
       if post.post_type == 1
         job_class = ::Jobs::ChatbotPostEmbeddingJob
         job_class.perform_async(post.as_json)
@@ -113,7 +113,7 @@ after_initialize do
 
   DiscourseEvent.on(:post_recovered) do |*params|
     post, opts = params
-  
+
     if SiteSetting.chatbot_enabled && post.post_type == 1
       job_class = ::Jobs::ChatbotPostEmbeddingJob
       job_class.perform_async(post.as_json)
@@ -125,7 +125,7 @@ after_initialize do
 
     if SiteSetting.chatbot_enabled && post.post_type == 1
       job_class = ::Jobs::ChatbotPostEmbeddingDeleteJob
-      job_class.perform_async(post.as_json) 
+      job_class.perform_async(post.as_json)
     end
   end
 

@@ -10,19 +10,12 @@ module DiscourseChatbot
     end
 
     def description
-      <<~EOS
-        Search the local forum for information that may help you answer the question.  Especially useful when the forum specialises in the subject matter of the query.
-        Searching the local forum is preferable to searching google or the internet and should be considered higher priority.
-
-        Input should be a search query.
-
-        Outputs text from the Post and a url you can provide the user with to link them to the relevant Post.
-      EOS
+      I18n.t("chatbot.prompt.function.forum_search.description")
     end
 
     def parameters
       [
-        { name: "query", type: String, description: "search query for looking up information on the forum" } ,
+        { name: "query", type: String, description: I18n.t("chatbot.prompt.function.forum_search.parameters.query") } ,
       ]
     end
 
@@ -44,9 +37,9 @@ module DiscourseChatbot
         url = "https://localhost:4200/t/slug/#{top_post.topic_id}/#{top_post.post_number}"
         raw = top_post.raw
 
-        "The top Post on the forum with related information can be accessed here: #{url} and the text is #{raw}"
+        I18n.t("chatbot.prompt.function.forum_search.answer", url: url, raw: raw)
       rescue
-        "\"#{args[parameters[0][:name]]}\": my search for this on the forum failed."
+        I18n.t("chatbot.prompt.function.forum_search.error", query: args[parameters[0][:name]])
       end
     end
   end

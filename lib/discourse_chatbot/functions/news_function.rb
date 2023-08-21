@@ -10,19 +10,13 @@ module DiscourseChatbot
     end
 
     def description
-      <<~EOS
-        A wrapper around the News API.
-
-        Useful for when you need to answer questions about current events in the news, current events or affairs.
-
-        Input should be a search query and a date from which to search news, so if the request is today, the search should be for todays date'
-      EOS
+      I18n.t("chatbot.prompt.function.news.description")
     end
 
     def parameters
       [
-        { name: 'query', type: String, description: "query string for searching current news and events" },
-        { name: 'start_date', type: String, description: "start date from which to search for news in format YYYY-MM-DD" }
+        { name: 'query', type: String, description: I18n.t("chatbot.prompt.function.news.parameters.query") },
+        { name: 'start_date', type: String, description: I18n.t("chatbot.prompt.function.news.parameters.start_date") }
       ]
     end
 
@@ -57,13 +51,13 @@ module DiscourseChatbot
 
         all_articles = response_body["articles"]
 
-        news = "The latest news about this is: "
+        news = I18n.t("chatbot.prompt.function.news.answer")
         all_articles.each do |a|
           news += "#{a["title"]}.  "
         end
         news
       rescue
-        "ERROR: Had trouble retrieving the news!"
+        I18n.t("chatbot.prompt.function.news.error")
       end
     end
   end

@@ -46,6 +46,82 @@ en:
       title: "The subject of this conversation is %{topic_title}"
       first_post: "The first thing someone said was %{username} who said %{raw}"
       post: "%{username} said %{raw}"
+      function:
+        calculator:
+          description: |
+            Useful for getting the result of a math expression.  It is a general purpose calculator.  It works with Ruby expressions.
+
+            You can retrieve the current date from it too and using the core Ruby Time method to calculate dates.
+
+            The input to this tool should be a valid mathematical expression that could be executed by the base Ruby programming language with no extensions.
+
+            Be certain to prefix any functions with 'Math.'
+
+            Usage:
+              Action Input: 1 + 1
+              Action Input: 3 * 2 / 4
+              Action Input: 9 - 7
+              Action Input: Time.now - 2 * 24 * 60 * 60
+              Action Input: Math.cbrt(13) + Math.cbrt(12)
+              Action Input: Math.sqrt(8)
+              Action Input: (4.1 + 2.3) / (2.0 - 5.6) * 3
+          parameters:
+            input: the mathematical expression you need to process and get the answer to. Make sure it is Ruby compatible.
+          error: "'%{parameter}' is an invalid mathematical expression, make sure if you are trying to calculate dates use Ruby Time class"
+        forum_search:
+          description: |
+            Search the local forum for information that may help you answer the question.  Especially useful when the forum specialises in the subject matter of the query.
+            Searching the local forum is preferable to searching google or the internet and should be considered higher priority.  It is quicker and cheaper.
+
+            Input should be a search query.
+
+            Outputs text from the Post and a url you can provide the user with to link them to the relevant Post.
+          parameters:
+            query: "search query for looking up information on the forum"
+          answer: "The top Post on the forum with related information can be accessed here: %{url} and the text is %{raw}"
+          error:  "'%{query}': my search for this on the forum failed."
+        google_search:
+          description: |
+            A wrapper around Google Search.
+
+            Useful for when you need to answer questions about current events.
+            Always one of the first options when you need to find information on internet.
+
+            Input should be a search query.
+          parameters:
+            query: "search query for looking up information on the internet"
+          error: "%{query}: my search for this on the internet failed."
+        news:
+          description: |
+            A wrapper around the News API.
+
+            Useful for when you need to answer questions about current events in the news, current events or affairs.
+
+            Input should be a search query and a date from which to search news, so if the request is today, the search should be for todays date
+          parameters:
+            query: "query string for searching current news and events"
+            start_date: "start date from which to search for news in format YYYY-MM-DD"
+          answer: "The latest news about this is: "
+          error: "ERROR: Had trouble retrieving the news!"
+        stock_data:
+          description: |
+            An API for MarketStack stock data.  You need to call it using the stock ticker.  You can optionally also provide a specific date.
+          parameters:
+            ticker: "ticker for share or stock query"
+            date: "date for data in format YYYY-MM-DD"
+          answer: "Ticker %{ticker} had a day close of %{close} on %{date}, with a high of %{high} and a low of %{low}"
+          error: "ERROR: Had trouble retrieving information from Market Stack for stock market information!"
+        wikipedia:
+          description: |
+            A wrapper around Wikipedia.
+
+            Useful for when you need to answer general questions about
+            people, places, companies, facts, historical events, or other subjects.
+
+            Input should be a search query
+          parameters:
+            query: "query string for wikipedia search"
+          error: "ERROR: Had trouble retrieving information from Wikipedia!"
     errors:
       general: "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"
       retries: "I've tried working out a response for you several times, but ultimately failed.  Please contact the admin if this persists, thank you!"
