@@ -6,16 +6,23 @@ module ::DiscourseChatbot
   class OpenAIAgent < Bot
 
     def initialize
-      if !SiteSetting.chatbot_open_ai_model_custom_url.blank?
+      if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
         ::OpenAI.configure do |config|
           config.access_token = SiteSetting.chatbot_open_ai_token
           config.uri_base = SiteSetting.chatbot_open_ai_model_custom_url
           config.api_type = :azure
-          config.api_version = "2023-05-15"
+          config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
         end
-        @client = ::OpenAI::Client.new
       else
-        @client = ::OpenAI::Client.new(access_token: SiteSetting.chatbot_open_ai_token)
+        if !SiteSetting.chatbot_open_ai_model_custom_url.blank?
+          ::OpenAI.configure do |config|
+            config.access_token = SiteSetting.chatbot_open_ai_token
+            config.uri_base = SiteSetting.chatbot_open_ai_model_custom_url
+          end
+          @client = ::OpenAI::Client.new
+        else
+          @client = ::OpenAI::Client.new(access_token: SiteSetting.chatbot_open_ai_token)
+        end
       end
 
       @model_name = SiteSetting.chatbot_open_ai_model_custom ? SiteSetting.chatbot_open_ai_model_custom_name : SiteSetting.chatbot_open_ai_model
@@ -131,8 +138,8 @@ module ::DiscourseChatbot
         func = @func_mapping[func_name]
         res = func.process(args)
         res
-       rescue
-         "There was something wrong with your function arguments"
+      rescue
+        "There was something wrong with your function arguments"
       end
     end
 

@@ -94,6 +94,12 @@ plugins:
   chatbot_open_ai_model_custom_url:
     client: false
     default: ''
+  chatbot_open_ai_model_custom_api_type:
+    client: false
+    default: ''
+  chatbot_open_ai_model_custom_api_version:
+    client: false
+    default: '2023-05-15'
   chatbot_request_temperature:
     client: false
     default: 100
