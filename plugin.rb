@@ -62,6 +62,7 @@ after_initialize do
     ../lib/discourse_chatbot/functions/news_function.rb
     ../lib/discourse_chatbot/functions/wikipedia_function.rb
     ../lib/discourse_chatbot/functions/google_search_function.rb
+    ../lib/discourse_chatbot/functions/forum_search_function.rb
     ../lib/discourse_chatbot/functions/stock_data_function.rb
     ../lib/discourse_chatbot/functions/parser.rb
     ../lib/discourse_chatbot/prompt_utils.rb
@@ -81,16 +82,50 @@ after_initialize do
   DiscourseEvent.on(:post_created) do |*params|
     post, opts, user = params
 
-    if SiteSetting.chatbot_enabled && (post.post_type == 1 || post.post_type == 4 && SiteSetting.chatbot_can_trigger_from_whisper)
-      ::DiscourseChatbot.progress_debug_message("1. trigger")
-
-      bot_username = SiteSetting.chatbot_bot_user
-      bot_user = User.find_by(username: bot_username)
-
-      if bot_user && (user.id != bot_user.id)
-        event_evaluation = ::DiscourseChatbot::PostEvaluation.new
-        event_evaluation.on_submission(post)
+    if SiteSetting.chatbot_enabled 
+      if post.post_type == 1
+        job_class = ::Jobs::ChatbotPostEmbeddingJob
+        job_class.perform_async(post.as_json)
       end
+
+      if (post.post_type == 1 || post.post_type == 4 && SiteSetting.chatbot_can_trigger_from_whisper)
+        ::DiscourseChatbot.progress_debug_message("1. trigger")
+
+        bot_username = SiteSetting.chatbot_bot_user
+        bot_user = User.find_by(username: bot_username)
+
+        if bot_user && (user.id != bot_user.id)
+          event_evaluation = ::DiscourseChatbot::PostEvaluation.new
+          event_evaluation.on_submission(post)
+        end
+      end
+    end
+  end
+
+  DiscourseEvent.on(:post_edited) do |*params|
+    post, opts = params
+
+    if SiteSetting.chatbot_enabled && post.post_type == 1
+      job_class = ::Jobs::ChatbotPostEmbeddingJob
+      job_class.perform_async(post.as_json)
+    end
+  end
+
+  DiscourseEvent.on(:post_recovered) do |*params|
+    post, opts = params
+  
+    if SiteSetting.chatbot_enabled && post.post_type == 1
+      job_class = ::Jobs::ChatbotPostEmbeddingJob
+      job_class.perform_async(post.as_json)
+    end
+  end
+
+  DiscourseEvent.on(:post_destroyed) do |*params|
+    post, opts, user = params
+
+    if SiteSetting.chatbot_enabled && post.post_type == 1
+      job_class = ::Jobs::ChatbotPostEmbeddingDeleteJob
+      job_class.perform_async(post.as_json) 
     end
   end
 

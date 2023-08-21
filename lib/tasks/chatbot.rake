@@ -36,12 +36,19 @@ task "chatbot:refresh_embeddings_match", %i[pattern type delay] => [:environment
   puts "", "#{refreshed} posts done!", ""
 end
 
-def refresh_embeddings_all_sites(opts)
-  RailsMultisite::ConnectionManagement.each_connection { |db| refresh_embeddings(opts)}
+def refresh_embeddings_all_sites(args)
+  RailsMultisite::ConnectionManagement.each_connection { |db| refresh_embeddings(args)}
 end
 
-def refresh_embeddings(opts)
+def refresh_embeddings(args)
   puts "Refreshing embeddings for all posts for '#{RailsMultisite::ConnectionManagement.current_db}'"
+
+  delay = args[:delay]&.to_i
+
+  if delay && delay < 1
+    puts "ERROR: delay parameter should be an integer and greater than 0"
+    exit 1
+  end
 
   begin
     total = Post.count

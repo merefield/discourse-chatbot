@@ -24,8 +24,10 @@ module ::DiscourseChatbot
       wikipedia_function = ::DiscourseChatbot::WikipediaFunction.new
       news_function = ::DiscourseChatbot::NewsFunction.new
       google_search_function = ::DiscourseChatbot::GoogleSearchFunction.new
+      forum_search_function = ::DiscourseChatbot::ForumSearchFunction.new
       stock_data_function = ::DiscourseChatbot::StockDataFunction.new
-      functions = [calculator_function, wikipedia_function]
+
+      functions = [calculator_function, wikipedia_function, forum_search_function]
 
       functions << news_function if !SiteSetting.chatbot_news_api_token.blank?
       functions << google_search_function if !SiteSetting.chatbot_serp_api_key.blank?
