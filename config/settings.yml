@@ -85,18 +85,15 @@ plugins:
     choices:
       - normal
       - agent
-  chatbot_azure_open_ai_token:
-    client: false
-    default: ''
-  chatbot_azure_open_ai_model_url:
-    client: false
-    default: ''
   chatbot_open_ai_model_custom:
     default: false
     client: false
   chatbot_open_ai_model_custom_name:
     default: ''
     client: false
+  chatbot_open_ai_model_custom_url:
+    client: false
+    default: ''
   chatbot_request_temperature:
     client: false
     default: 100
