@@ -31,7 +31,7 @@ module DiscourseChatbot
 
         page = ::Wikipedia.find(args[parameters[0][:name]])
 
-        page.summary
+        I18n.t("chatbot.prompt.function.wikipedia.answer", summary: page.summary, url: page.fullurl)
       rescue
         I18n.t("chatbot.prompt.function.wikipedia.error")
       end
