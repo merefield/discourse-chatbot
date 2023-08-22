@@ -4,6 +4,7 @@ require "openai"
 module ::DiscourseChatbot
 
   EMBEDDING_MODEL = "text-embedding-ada-002".freeze
+  CHAR_LIMIT = 32000
 
   class EmbeddingProcess
 
@@ -22,23 +23,35 @@ module ::DiscourseChatbot
     end
 
     def upsert_embedding(post_id)
-      response = @client.embeddings(
-        parameters: {
-          model: EMBEDDING_MODEL,
-          input: ::Post.find(post_id).raw
-        }
-       )
+      benchmark_user = User.where(trust_level: 1, active: true, admin: false, suspended_at: nil).last
+      if benchmark_user.nil?
+        raise StandardError, "No benchmark user exists for Post embedding suitability check, please add a basic user"
+      end
+      benchmark_user_guardian = Guardian.new(benchmark_user)
 
-       embedding_vector = response.dig("data", 0, "embedding")
+      post = ::Post.find_by(id: post_id)
 
-       ::DiscourseChatbot::Embedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
+      return if post.nil?
+
+      if benchmark_user_guardian.can_see?(post)
+        response = @client.embeddings(
+          parameters: {
+            model: EMBEDDING_MODEL,
+            input: post.raw[0..CHAR_LIMIT]
+          }
+        )
+
+        embedding_vector = response.dig("data", 0, "embedding")
+
+        ::DiscourseChatbot::Embedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
+      end
     end
 
     def semantic_search(query)
       response = @client.embeddings(
         parameters: {
           model: EMBEDDING_MODEL,
-          input: query
+          input: query[0..CHAR_LIMIT]
         }
        )
 
