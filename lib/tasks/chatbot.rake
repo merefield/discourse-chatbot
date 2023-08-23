@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 desc "Update embeddings for each post"
-task "chatbot:refresh_embeddings", %i[delay] => :environment do |_, args|
+task "chatbot:refresh_embeddings", %i[missing_only delay] => :environment do |_, args|
   ENV["RAILS_DB"] ? refresh_embeddings(args) : refresh_embeddings_all_sites(args)
 end
 
@@ -42,9 +42,16 @@ def refresh_embeddings_all_sites(args)
 end
 
 def refresh_embeddings(args)
-  puts "Refreshing embeddings for all posts for '#{RailsMultisite::ConnectionManagement.current_db}'"
+  puts "-" * 50
+  puts "Refreshing embeddings for posts for '#{RailsMultisite::ConnectionManagement.current_db}'"
+  puts "-" * 50
 
+  missing_only = args[:missing_only]&.to_i
   delay = args[:delay]&.to_i
+
+  puts "for missing only" if !missing_only.to_i.zero?
+  puts "with a delay of #{delay} second(s) between API calls" if !delay.to_i.zero?
+  puts "-" * 50
 
   if delay && delay < 1
     puts "ERROR: delay parameter should be an integer and greater than 0"
@@ -62,10 +69,12 @@ def refresh_embeddings(args)
         .offset(i)
         .limit(batch)
         .each do |post|
-          post_embedding = ::DiscourseChatbot::EmbeddingProcess.new
-          post_embedding.upsert_embedding(post.id)
+          if !missing_only.to_i.zero? && ::DiscourseChatbot::Embedding.find_by(post_id: post.id).nil? || missing_only.to_i.zero?
+            post_embedding = ::DiscourseChatbot::EmbeddingProcess.new
+            post_embedding.upsert_embedding(post.id)
+            sleep(delay) if delay
+          end
           print_status(refreshed += 1, total)
-          sleep(delay) if delay
         end
     end
   end
