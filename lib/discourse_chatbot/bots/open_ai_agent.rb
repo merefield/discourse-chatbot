@@ -130,7 +130,7 @@ module ::DiscourseChatbot
       thoughts = I18n.t("chatbot.prompt.agent.final_thought_answer.opener")
       @internal_thoughts.each do |thought|
         if thought.key?('function_call')
-          thoughts += I18n.t("chatbot.prompt.agent.final_thought_answer.function_declaration", function_name: thought['function_call']['name'], arguments: thought['function_call']['arguments'])
+          thoughts += I18n.t("chatbot.prompt.agent.final_thought_answer.thought_declaration", function_name: thought['function_call']['name'], arguments: thought['function_call']['arguments'])
         else
           thoughts += "#{thought['content']}\n\n"
         end
