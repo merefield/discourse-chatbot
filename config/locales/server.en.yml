@@ -79,7 +79,7 @@ en:
           parameters:
             query: "search query for looking up information on the forum"
           answer_summary: "The top three posts on the forum related to this query are, best match first:\n\n"
-          answer: "Number %{rank}: the post is at this link url: %{url} and the text is '%{raw}'.\n\n"
+          answer: "Number %{rank}: the post is at this web address: %{url}, it was written by '%{username}' on %{date} and the text is '%{raw}'.\n\n"
           error:  "'%{query}': my search for this on the forum failed."
         google_search:
           description: |
