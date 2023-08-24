@@ -3,7 +3,7 @@ require "openai"
 
 module ::DiscourseChatbot
 
-  class OpenAiBotBase < Bot
+  class OpenAIBotBase < Bot
     def initialize
       if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
         ::OpenAI.configure do |config|

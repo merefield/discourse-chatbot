@@ -3,7 +3,7 @@ require "openai"
 
 module ::DiscourseChatbot
 
-  class OpenAIBot < OpenAiBotBase
+  class OpenAIBot < OpenAIBotBase
 
     def initialize
       super
