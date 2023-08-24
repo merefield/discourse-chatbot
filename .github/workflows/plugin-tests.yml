@@ -61,7 +61,7 @@ jobs:
 
       - name: Install pg_embeddings
          run: |
-           sudo apt apt-get -y install -y postgresql-server-dev-13
+           sudo apt-get -y install -y postgresql-server-dev-13
            git clone https://github.com/neondatabase/pg_embedding.git
            cd pg_embedding
            make
