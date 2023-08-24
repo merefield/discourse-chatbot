@@ -3,12 +3,10 @@ require "openai"
 
 module ::DiscourseChatbot
 
-  class OpenAIAgent < Bot
+  class OpenAiAgent < OpenAiBotBase
 
     def initialize
       super
-
-      @model_name = SiteSetting.chatbot_open_ai_model_custom ? SiteSetting.chatbot_open_ai_model_custom_name : SiteSetting.chatbot_open_ai_model
 
       calculator_function = ::DiscourseChatbot::CalculatorFunction.new
       wikipedia_function = ::DiscourseChatbot::WikipediaFunction.new
