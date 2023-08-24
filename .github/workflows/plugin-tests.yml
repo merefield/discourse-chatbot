@@ -59,6 +59,14 @@ jobs:
           sudo -E -u postgres script/start_test_db.rb
           sudo -u postgres psql -c "CREATE ROLE $PGUSER LOGIN SUPERUSER PASSWORD '$PGPASSWORD';"
 
+      - name: Install pg_embeddings
+         run: |
+           sudo apt apt-get -y install -y postgresql-server-dev-13
+           git clone https://github.com/neondatabase/pg_embedding.git
+           cd pg_embedding
+           make
+           make install
+
       - name: Bundler cache
         uses: actions/cache@v3
         with:
