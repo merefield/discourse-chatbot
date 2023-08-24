@@ -32,7 +32,7 @@ module DiscourseChatbot
         results = post_embedding.semantic_search(query)
 
         top_results = results[0..2]
-          
+
         response = I18n.t("chatbot.prompt.function.forum_search.answer_summary")
 
         top_results.each_with_index do |result, index|
