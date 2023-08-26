@@ -3,9 +3,6 @@ require "openai"
 
 module ::DiscourseChatbot
 
-  EMBEDDING_MODEL = "text-embedding-ada-002".freeze
-  CHAR_LIMIT = 32000
-
   class EmbeddingProcess
 
     def initialize
@@ -36,8 +33,8 @@ module ::DiscourseChatbot
       if benchmark_user_guardian.can_see?(post)
         response = @client.embeddings(
           parameters: {
-            model: EMBEDDING_MODEL,
-            input: post.raw[0..CHAR_LIMIT]
+            model: ::DiscourseChatbot::EMBEDDING_MODEL,
+            input: post.raw[0..::DiscourseChatbot::EMBEDDING_CHAR_LIMIT]
           }
         )
 
@@ -50,8 +47,8 @@ module ::DiscourseChatbot
     def semantic_search(query)
       response = @client.embeddings(
         parameters: {
-          model: EMBEDDING_MODEL,
-          input: query[0..CHAR_LIMIT]
+          model: ::DiscourseChatbot::EMBEDDING_MODEL,
+          input: query[0..::DiscourseChatbot::EMBEDDING_CHAR_LIMIT]
         }
        )
 
