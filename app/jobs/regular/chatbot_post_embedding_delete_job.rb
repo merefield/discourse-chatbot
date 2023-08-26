@@ -10,7 +10,7 @@ class ::Jobs::ChatbotPostEmbeddingDeleteJob < Jobs::Base
 
       ::DiscourseChatbot.progress_debug_message("101. Deleting a Post Embedding for Post id: #{post_id}")
 
-      ::DiscourseChatbot::Embedding.find_by(post_id: post_id).destroy!
+      ::DiscourseChatbot::PostEmbedding.find_by(post_id: post_id).destroy!
     rescue => e
       Rails.logger.error ("OpenAIBot Post Embedding: There was a problem, but will retry til limit: #{e}")
     end

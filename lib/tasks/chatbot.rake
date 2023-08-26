@@ -28,7 +28,7 @@ task "chatbot:refresh_embeddings_match", %i[pattern type delay] => [:environment
   total = search.count
 
   search.find_each do |post|
-    post_embedding = ::DiscourseChatbot::EmbeddingProcess.new
+    post_embedding = ::DiscourseChatbot::PostEmbeddingProcess.new
     post_embedding.upsert_embedding(post.id)
     print_status(refreshed += 1, total)
     sleep(delay) if delay
@@ -69,8 +69,8 @@ def refresh_embeddings(args)
         .offset(i)
         .limit(batch)
         .each do |post|
-          if !missing_only.to_i.zero? && ::DiscourseChatbot::Embedding.find_by(post_id: post.id).nil? || missing_only.to_i.zero?
-            post_embedding = ::DiscourseChatbot::EmbeddingProcess.new
+          if !missing_only.to_i.zero? && ::DiscourseChatbot::PostEmbedding.find_by(post_id: post.id).nil? || missing_only.to_i.zero?
+            post_embedding = ::DiscourseChatbot::PostEmbeddingProcess.new
             post_embedding.upsert_embedding(post.id)
             sleep(delay) if delay
           end

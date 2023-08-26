@@ -43,7 +43,7 @@ module ::DiscourseChatbot
 
         embedding_vector = response.dig("data", 0, "embedding")
 
-        ::DiscourseChatbot::Embedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
+        ::DiscourseChatbot::PostEmbedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
       end
     end
 

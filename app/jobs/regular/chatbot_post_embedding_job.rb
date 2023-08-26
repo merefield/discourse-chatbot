@@ -10,7 +10,7 @@ class ::Jobs::ChatbotPostEmbeddingJob < Jobs::Base
 
       ::DiscourseChatbot.progress_debug_message("100. Creating/updating a Post Embedding for Post id: #{post_id}")
 
-      post_embedding = ::DiscourseChatbot::EmbeddingProcess.new
+      post_embedding = ::DiscourseChatbot::PostEmbeddingProcess.new
 
       post_embedding.upsert_embedding(post_id)
     rescue => e

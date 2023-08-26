@@ -28,7 +28,7 @@ module DiscourseChatbot
         super(args)
         query = args[parameters[0][:name]]
 
-        post_embedding = ::DiscourseChatbot::EmbeddingProcess.new
+        post_embedding = ::DiscourseChatbot::PostEmbeddingProcess.new
         results = post_embedding.semantic_search(query)
 
         top_results = results[0..2]
