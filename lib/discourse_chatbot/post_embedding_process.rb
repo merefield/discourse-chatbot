@@ -6,17 +6,22 @@ module ::DiscourseChatbot
   class PostEmbeddingProcess
 
     def initialize
-      if SiteSetting.chatbot_azure_open_ai_model_url.include?("azure")
-        ::OpenAI.configure do |config|
-          config.access_token = SiteSetting.chatbot_azure_open_ai_token
-          config.uri_base = SiteSetting.chatbot_azure_open_ai_model_url
-          config.api_type = :azure
-          config.api_version = "2023-05-15"
-        end
-        @client = ::OpenAI::Client.new
-      else
-        @client = ::OpenAI::Client.new(access_token: SiteSetting.chatbot_open_ai_token)
+      ::OpenAI.configure do |config|
+        config.access_token = SiteSetting.chatbot_open_ai_token
       end
+      if !SiteSetting.chatbot_open_ai_model_custom_url.blank?
+        ::OpenAI.configure do |config|
+          config.uri_base = SiteSetting.chatbot_open_ai_model_custom_url
+        end
+      end
+      if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
+        ::OpenAI.configure do |config|
+          config.api_type = :azure
+          config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
+        end
+      end
+      @model_name = ::DiscourseChatbot::EMBEDDING_MODEL
+      @client = ::OpenAI::Client.new
     end
 
     def upsert_embedding(post_id)
@@ -33,7 +38,7 @@ module ::DiscourseChatbot
       if benchmark_user_guardian.can_see?(post)
         response = @client.embeddings(
           parameters: {
-            model: ::DiscourseChatbot::EMBEDDING_MODEL,
+            model: @model_name,
             input: post.raw[0..::DiscourseChatbot::EMBEDDING_CHAR_LIMIT]
           }
         )
@@ -47,7 +52,7 @@ module ::DiscourseChatbot
     def semantic_search(query)
       response = @client.embeddings(
         parameters: {
-          model: ::DiscourseChatbot::EMBEDDING_MODEL,
+          model: @model_name,
           input: query[0..::DiscourseChatbot::EMBEDDING_CHAR_LIMIT]
         }
        )
