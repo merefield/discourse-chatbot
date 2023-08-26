@@ -3,7 +3,7 @@ require "openai"
 
 module ::DiscourseChatbot
 
-  class EmbeddingProcess
+  class PostEmbeddingProcess
 
     def initialize
       if SiteSetting.chatbot_azure_open_ai_model_url.include?("azure")
