@@ -65,7 +65,7 @@ module ::DiscourseChatbot
               SELECT
                 post_id
               FROM
-                chatbot_embeddings
+                chatbot_post_embeddings
               ORDER BY
                embedding::real[] <-> array[:query_embedding]
               LIMIT :limit
