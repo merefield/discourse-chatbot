@@ -61,7 +61,7 @@ module ::DiscourseChatbot
 
        begin
          search_result_post_ids =
-           DB.query(<<~SQL, query_embedding: query_vector, limit: 8).map(
+           DB.query(<<~SQL, query_embedding: query_vector, limit: 10).map(
               SELECT
                 post_id
               FROM

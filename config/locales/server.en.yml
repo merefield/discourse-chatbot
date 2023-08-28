@@ -74,12 +74,13 @@ en:
             Search the local forum for information that may help you answer the question.  Especially useful when the forum specialises in the subject matter of the query.
             Searching the local forum is preferable to searching google or the internet and should be considered higher priority.  It is quicker and cheaper.
 
-            Input should be a search query.
+            Input should be a search query.  You can optionally also specify the number of posts you wish returned from your query.
 
-            Outputs text from the Post and a url link to it you can provide the user.
+            Outputs text from the Post and a url link to it you can provide the user.  When presenting the url in your reply, do not embed in an anchor, just write the straight link.
           parameters:
             query: "search query for looking up information on the forum"
-          answer_summary: "The top three posts on the forum related to this query are, best match first:\n\n"
+            number_of_posts: "specify the number of posts you want returned from your query"
+          answer_summary: "The top %{number_of_posts} posts on the forum related to this query are, best match first:\n\n"
           answer: "Number %{rank}: the post is at this web address: %{url}, it was written by '%{username}' on %{date} and the text is '%{raw}'.\n\n"
           error:  "'%{query}': my search for this on the forum failed."
         google_search:
