@@ -129,6 +129,11 @@ plugins:
     client: true
     type: username
     default: AIBot
+  chatbot_embeddings_benchmark_user_trust_level: 
+    client: false
+    default: 1
+    min: 0
+    max: 4
   chatbot_enable_verbose_console_response_progress_logging:
     client: false
     default: false

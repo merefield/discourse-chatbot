@@ -25,7 +25,7 @@ module ::DiscourseChatbot
     end
 
     def upsert_embedding(post_id)
-      benchmark_user = User.where(trust_level: 1, active: true, admin: false, suspended_at: nil).last
+      benchmark_user = User.where(trust_level: SiteSetting.chatbot_embeddings_benchmark_user_trust_level, active: true, admin: false, suspended_at: nil).last
       if benchmark_user.nil?
         raise StandardError, "No benchmark user exists for Post embedding suitability check, please add a basic user"
       end
