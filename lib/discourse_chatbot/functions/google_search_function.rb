@@ -11,19 +11,12 @@ module DiscourseChatbot
     end
 
     def description
-      <<~EOS
-        A wrapper around Google Search.
-
-        Useful for when you need to answer questions about current events.
-        Always one of the first options when you need to find information on internet.
-
-        Input should be a search query.
-      EOS
+      I18n.t("chatbot.prompt.function.google_search.description")
     end
 
     def parameters
       [
-        { name: "query", type: String, description: "search query for looking up information on the internet" } ,
+        { name: "query", type: String, description:  I18n.t("chatbot.prompt.function.google_search.parameters.query") } ,
       ]
     end
 
@@ -42,7 +35,7 @@ module DiscourseChatbot
         hash_results.dig(:answer_box, :snippet) ||
         hash_results.dig(:organic_results, 0, :snippet)
       rescue
-        "\"#{args[parameters[0][:name]]}\": my search for this on the internet failed."
+        I18n.t("chatbot.prompt.function.google_search.error", query: args[parameters[0][:name]])
       end
     end
   end

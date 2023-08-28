@@ -14,15 +14,13 @@ module DiscourseChatbot
     end
 
     def description
-      <<~EOS
-        An API for MarketStack stock data.  You need to call it using the stock ticker.  You can optionally also provide a specific date.
-      EOS
+      I18n.t("chatbot.prompt.function.stock_data.description")
     end
 
     def parameters
       [
-       { name: 'ticker', type: String, description: "ticker for share or stock query" },
-       { name: 'date', type: String, description: "date for data in format YYYY-MM-DD" }
+       { name: 'ticker', type: String, description: I18n.t("chatbot.prompt.function.stock_data.parameters.ticker") },
+       { name: 'date', type: String, description: I18n.t("chatbot.prompt.function.stock_data.parameters.date") }
       ]
     end
 
@@ -58,9 +56,9 @@ module DiscourseChatbot
 
         stock_data = api_response['data'][0]
 
-        "Ticker #{stock_data['symbol']} had a day close of #{stock_data['close'].to_s} on #{stock_data['date'].to_s}, with a high of #{stock_data['high'].to_s} and a low of #{stock_data['low'].to_s}"
+        I18n.t("chatbot.prompt.function.stock_data.answer", ticker: stock_data['symbol'], close: stock_data['close'].to_s, date: stock_data['date'].to_s, high: stock_data['high'].to_s, low: stock_data['low'].to_s)
       rescue
-        "ERROR: Had trouble retrieving information from Market Stack for stock market information!"
+        I18n.t("chatbot.prompt.function.stock_data.error")
       end
     end
   end

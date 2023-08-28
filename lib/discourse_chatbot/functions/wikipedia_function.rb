@@ -12,19 +12,12 @@ module DiscourseChatbot
     end
 
     def description
-      <<~EOS
-        A wrapper around Wikipedia.
-
-        Useful for when you need to answer general questions about
-        people, places, companies, facts, historical events, or other subjects.
-
-        Input should be a search query
-      EOS
+      I18n.t("chatbot.prompt.function.wikipedia.description")
     end
 
     def parameters
       [
-       { name: 'query', type: String, description: "query string for wikipedia search" }
+       { name: 'query', type: String, description: I18n.t("chatbot.prompt.function.wikipedia.parameters.query") }
       ]
     end
 
@@ -38,9 +31,9 @@ module DiscourseChatbot
 
         page = ::Wikipedia.find(args[parameters[0][:name]])
 
-        page.summary
+        I18n.t("chatbot.prompt.function.wikipedia.answer", summary: page.summary, url: page.fullurl)
       rescue
-        "ERROR: Had trouble retrieving information from Wikipedia!"
+        I18n.t("chatbot.prompt.function.wikipedia.error")
       end
     end
   end
