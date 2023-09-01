@@ -45,26 +45,26 @@ module ::DiscourseChatbot
 
         embedding_vector = response.dig("data", 0, "embedding")
         if !DB.query_single("SELECT 1 FROM pg_available_extensions WHERE name = 'embedding';").empty?
-          ::DiscourseChatbot::PgembeddingPostEmbedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
+          ::DiscourseChatbot::PostEmbeddingPgembedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
         else
-          ::DiscourseChatbot::PgvectorPostEmbedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
+          ::DiscourseChatbot::PostEmbeddingPgvector.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
         end
       end
     end
 
     def destroy(post_id)
       if !DB.query_single("SELECT 1 FROM pg_available_extensions WHERE name = 'embedding';").empty?
-        ::DiscourseChatbot::PgembeddingPostEmbedding.find_by(post_id: post_id).destroy!
+        ::DiscourseChatbot::PostEmbeddingPgembedding.find_by(post_id: post_id).destroy!
       else
-        ::DiscourseChatbot::PgvectorPostEmbedding.find_by(post_id: post_id).destroy!
+        ::DiscourseChatbot::PostEmbeddingPgvector.find_by(post_id: post_id).destroy!
       end
     end
 
     def find(post_id)
       if !DB.query_single("SELECT 1 FROM pg_available_extensions WHERE name = 'embedding';").empty?
-        ::DiscourseChatbot::PgembeddingPostEmbedding.find_by(post_id: post_id)
+        ::DiscourseChatbot::PostEmbeddingPgembedding.find_by(post_id: post_id)
       else
-        ::DiscourseChatbot::PgvectorPostEmbedding.find_by(post_id: post_id)
+        ::DiscourseChatbot::PostEmbeddingPgvector.find_by(post_id: post_id)
       end
     end
 

@@ -2,7 +2,7 @@
 
 module ::DiscourseChatbot
 
-  class PgembeddingPostEmbedding < ActiveRecord::Base
+  class PostEmbeddingPgembedding < ActiveRecord::Base
     self.table_name = 'chatbot_post_embeddings'
 
     validates :post_id, presence: true, uniqueness: true
