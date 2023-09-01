@@ -27,9 +27,10 @@ task "chatbot:refresh_embeddings_match", %i[pattern type delay] => [:environment
   refreshed = 0
   total = search.count
 
+  post_embedding_process = ::DiscourseChatbot::PostEmbeddingProcess.new
+
   search.find_each do |post|
-    post_embedding = ::DiscourseChatbot::PostEmbeddingProcess.new
-    post_embedding.upsert_embedding(post.id)
+    post_embedding_process.upsert(post.id)
     print_status(refreshed += 1, total)
     sleep(delay) if delay
   end
@@ -63,15 +64,16 @@ def refresh_embeddings(args)
     refreshed = 0
     batch = 1000
 
+    post_embedding_process = ::DiscourseChatbot::PostEmbeddingProcess.new
+
     (0..(total - 1).abs).step(batch) do |i|
       Post
         .order(id: :desc)
         .offset(i)
         .limit(batch)
         .each do |post|
-          if !missing_only.to_i.zero? && ::DiscourseChatbot::PostEmbedding.find_by(post_id: post.id).nil? || missing_only.to_i.zero?
-            post_embedding = ::DiscourseChatbot::PostEmbeddingProcess.new
-            post_embedding.upsert_embedding(post.id)
+          if !missing_only.to_i.zero? && post_embedding_process.find(post.id).nil? || missing_only.to_i.zero?
+            post_embedding_process.upsert(post.id)
             sleep(delay) if delay
           end
           print_status(refreshed += 1, total)

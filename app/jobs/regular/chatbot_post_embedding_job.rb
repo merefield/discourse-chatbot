@@ -12,7 +12,7 @@ class ::Jobs::ChatbotPostEmbeddingJob < Jobs::Base
 
       post_embedding = ::DiscourseChatbot::PostEmbeddingProcess.new
 
-      post_embedding.upsert_embedding(post_id)
+      post_embedding.upsert(post_id)
     rescue => e
       Rails.logger.error ("OpenAIBot Post Embedding: There was a problem, but will retry til limit: #{e}")
     end

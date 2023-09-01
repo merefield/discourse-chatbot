@@ -51,8 +51,7 @@ after_initialize do
 
   %w(
     ../lib/discourse_chatbot/event_evaluation.rb
-    ../app/models/post_embedding.rb
-    ../app/models/post_embedding_pgembeddings.rb
+    ../app/models/post_embedding_pgembedding.rb
     ../app/models/post_embedding_pgvector.rb
     ../lib/discourse_chatbot/post_embedding_process.rb
     ../app/jobs/regular/chatbot_post_embedding_job.rb

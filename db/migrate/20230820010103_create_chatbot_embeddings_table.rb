@@ -5,8 +5,9 @@ class CreateChatbotEmbeddingsTable < ActiveRecord::Migration[7.0]
     begin
       create_table :chatbot_embeddings do |t|
         t.integer :post_id, null: false, index: { unique: true }, foreign_key: true
-          t.column :embedding, "real[]", null: false
-          t.timestamps
+        t.column :embedding, "real[]", null: false
+        t.timestamps
+      end
     rescue Exception => e
       STDERR.puts "---------------------------------DISCOURSE CHATBOT WARNING-----------------------------------------"
       STDERR.puts " Discourse Chatbot performs best with the pgembedding extension on the PostgreSQL database."

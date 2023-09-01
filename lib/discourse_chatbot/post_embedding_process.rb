@@ -24,7 +24,7 @@ module ::DiscourseChatbot
       @client = ::OpenAI::Client.new
     end
 
-    def upsert_embedding(post_id)
+    def upsert(post_id)
       benchmark_user = User.where(trust_level: 1, active: true, admin: false, suspended_at: nil).last
       if benchmark_user.nil?
         raise StandardError, "No benchmark user exists for Post embedding suitability check, please add a basic user"
@@ -49,6 +49,22 @@ module ::DiscourseChatbot
         else
           ::DiscourseChatbot::PgvectorPostEmbedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
         end
+      end
+    end
+
+    def destroy(post_id)
+      if !DB.query_single("SELECT 1 FROM pg_available_extensions WHERE name = 'embedding';").empty?
+        ::DiscourseChatbot::PgembeddingPostEmbedding.find_by(post_id: post_id).destroy!
+      else
+        ::DiscourseChatbot::PgvectorPostEmbedding.find_by(post_id: post_id).destroy!
+      end
+    end
+
+    def find(post_id)
+      if !DB.query_single("SELECT 1 FROM pg_available_extensions WHERE name = 'embedding';").empty?
+        ::DiscourseChatbot::PgembeddingPostEmbedding.find_by(post_id: post_id)
+      else
+        ::DiscourseChatbot::PgvectorPostEmbedding.find_by(post_id: post_id)
       end
     end
 
