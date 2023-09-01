@@ -63,9 +63,9 @@ module ::DiscourseChatbot
       query_vector = response.dig("data", 0, "embedding")
 
       begin
-        if !DB.query_single("SELECT 1 FROM pg_available_extensions WHERE name = 'embedding';").empty?
-         search_result_post_ids =
-           DB.query(<<~SQL, query_embedding: query_vector, limit: 10).map(
+         if !DB.query_single("SELECT 1 FROM pg_available_extensions WHERE name = 'embedding';").empty?
+           search_result_post_ids =
+             DB.query(<<~SQL, query_embedding: query_vector, limit: 10).map(
                SELECT
                  post_id
                FROM
@@ -74,11 +74,11 @@ module ::DiscourseChatbot
                  embedding::real[] <-> array[:query_embedding]
                LIMIT :limit
                SQL
-               &:post_id
-           )
-        else
-          search_result_post_ids =
-            DB.query(<<~SQL, query_embedding: query_vector, limit: 10).map(
+                 &:post_id
+             )
+         else
+           search_result_post_ids =
+             DB.query(<<~SQL, query_embedding: query_vector, limit: 10).map(
                SELECT
                  post_id
                FROM
@@ -87,14 +87,14 @@ module ::DiscourseChatbot
                  embedding <-> array[:query_embedding]
                LIMIT :limit
              SQL
-             &:post_id
-            )
-        end
-        rescue PG::Error => e
-          Rails.logger.error(
-            "Error #{e} querying embeddings for search #{query}",
-          )
-         raise MissingEmbeddingError
+              &:post_id
+             )
+         end
+         rescue PG::Error => e
+           Rails.logger.error(
+             "Error #{e} querying embeddings for search #{query}",
+           )
+          raise MissingEmbeddingError
        end
        search_result_post_ids
     end
