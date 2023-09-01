@@ -44,8 +44,11 @@ module ::DiscourseChatbot
         )
 
         embedding_vector = response.dig("data", 0, "embedding")
-
-        ::DiscourseChatbot::PostEmbedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
+        if !DB.query_single("SELECT 1 FROM pg_available_extensions WHERE name = 'embedding';").empty?
+          ::DiscourseChatbot::PgembeddingPostEmbedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
+        else
+          ::DiscourseChatbot::PgvectorPostEmbedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
+        end
       end
     end
 
@@ -57,21 +60,36 @@ module ::DiscourseChatbot
         }
        )
 
-       query_vector = response.dig("data", 0, "embedding")
+      query_vector = response.dig("data", 0, "embedding")
 
-       begin
+      begin
+        if !DB.query_single("SELECT 1 FROM pg_available_extensions WHERE name = 'embedding';").empty?
          search_result_post_ids =
            DB.query(<<~SQL, query_embedding: query_vector, limit: 10).map(
-              SELECT
-                post_id
-              FROM
-                chatbot_post_embeddings
-              ORDER BY
-               embedding::real[] <-> array[:query_embedding]
-              LIMIT :limit
-            SQL
-             &:post_id
+               SELECT
+                 post_id
+               FROM
+                 chatbot_post_embeddings
+               ORDER BY
+                 embedding::real[] <-> array[:query_embedding]
+               LIMIT :limit
+               SQL
+               &:post_id
            )
+        else
+          search_result_post_ids =
+            DB.query(<<~SQL, query_embedding: query_vector, limit: 10).map(
+               SELECT
+                 post_id
+               FROM
+                 chatbot_pgvector_post_embeddings
+               ORDER BY
+                 embedding <-> array[:query_embedding]
+               LIMIT :limit
+             SQL
+             &:post_id
+            )
+        end
         rescue PG::Error => e
           Rails.logger.error(
             "Error #{e} querying embeddings for search #{query}",

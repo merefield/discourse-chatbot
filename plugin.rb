@@ -25,6 +25,7 @@ module ::DiscourseChatbot
   POST_TYPES_INC_WHISPERS = [1, 4]
   EMBEDDING_MODEL = "text-embedding-ada-002".freeze
   EMBEDDING_CHAR_LIMIT = 32000
+  EMBEDDING_DIMENSIONS = 1536
 
   def progress_debug_message(message)
     if SiteSetting.chatbot_enable_verbose_console_response_progress_logging
@@ -50,7 +51,9 @@ after_initialize do
 
   %w(
     ../lib/discourse_chatbot/event_evaluation.rb
-    ../app/models/embedding.rb
+    ../app/models/post_embedding.rb
+    ../app/models/post_embedding_pgembeddings.rb
+    ../app/models/post_embedding_pgvector.rb
     ../lib/discourse_chatbot/post_embedding_process.rb
     ../app/jobs/regular/chatbot_post_embedding_job.rb
     ../lib/discourse_chatbot/message/message_evaluation.rb
