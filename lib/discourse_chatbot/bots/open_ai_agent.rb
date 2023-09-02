@@ -106,7 +106,7 @@ module ::DiscourseChatbot
       func_name = first_message["function_call"]["name"]
       args_str = first_message["function_call"]["arguments"]
       result = call_function(func_name, args_str)
-      res_msg = { 'role' => 'assistant', 'content' => I18n.t("chatbot.prompt.agent.handle_function_call.answer", result: result) }
+      res_msg = { 'role' => 'function', 'name' => func_name, 'content' => I18n.t("chatbot.prompt.agent.handle_function_call.answer", result: result) }
       @internal_thoughts << res_msg
     end
 
