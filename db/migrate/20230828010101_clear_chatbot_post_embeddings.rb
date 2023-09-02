@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class ClearChatbotEmbeddings < ActiveRecord::Migration[7.0]
+class ClearChatbotPostEmbeddings < ActiveRecord::Migration[7.0]
   def up
     ::DiscourseChatbot::PostEmbedding.delete_all
     STDERR.puts "------------------------------DISCOURSE CHATBOT NOTICE----------------------------------"
