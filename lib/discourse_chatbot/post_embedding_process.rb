@@ -35,7 +35,7 @@ module ::DiscourseChatbot
 
       return if post.nil?
 
-      if benchmark_user_guardian.can_see?(post)
+      if benchmark_user_guardian.can_see?(post) && Topic.find(post.topic_id).archetype != Archetype.private_message
         response = @client.embeddings(
           parameters: {
             model: @model_name,
