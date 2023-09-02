@@ -31,8 +31,8 @@ module DiscourseChatbot
         number_of_posts = args[parameters[1][:name]].blank? ? 3 : args[parameters[1][:name]]
         number_of_posts = number_of_posts > 10 ? 10 : number_of_posts
 
-        post_embedding = ::DiscourseChatbot::PostEmbeddingProcess.new
-        results = post_embedding.semantic_search(query)
+        process_post_embedding = ::DiscourseChatbot::PostEmbeddingProcess.new
+        results = process_post_embedding.semantic_search(query)
 
         top_results = results[0..(number_of_posts - 1)]
 

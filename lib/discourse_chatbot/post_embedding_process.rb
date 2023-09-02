@@ -22,20 +22,26 @@ module ::DiscourseChatbot
       end
       @model_name = ::DiscourseChatbot::EMBEDDING_MODEL
       @client = ::OpenAI::Client.new
-    end
 
-    def upsert_embedding(post_id)
-      benchmark_user = User.where(trust_level: SiteSetting.chatbot_embeddings_benchmark_user_trust_level, active: true, admin: false, suspended_at: nil).last
+      allowed_groups = ["everyone", "trust_level_0", "trust_level_1", "trust_level_2", "trust_level_3", "trust_level_4"]
+      allowed_group_ids = Group.where(name: allowed_groups).pluck(:id)
+      barred_group_ids = Group.where.not(name: allowed_groups).pluck(:id)
+      unsuitable_users = GroupUser.where(group_id: barred_group_ids).pluck(:user_id).uniq
+      safe_users = User.where.not(id: unsuitable_users).distinct.pluck(:id)
+      benchmark_user = User.where(id: safe_users).where(trust_level: SiteSetting.chatbot_embeddings_benchmark_user_trust_level, active: true, admin: false, suspended_at: nil).last
       if benchmark_user.nil?
         raise StandardError, "No benchmark user exists for Post embedding suitability check, please add a basic user"
       end
-      benchmark_user_guardian = Guardian.new(benchmark_user)
+      @benchmark_user_guardian = Guardian.new(benchmark_user)
+    end
 
+    def upsert(post_id)
       post = ::Post.find_by(id: post_id)
 
-      return if post.nil?
+      return if post.nil? || Topic.find(post.topic_id).archetype == Archetype.private_message
+      return if @benchmark_user_guardian.nil?
 
-      if benchmark_user_guardian.can_see?(post)
+      if @benchmark_user_guardian.can_see?(post)
         response = @client.embeddings(
           parameters: {
             model: @model_name,
