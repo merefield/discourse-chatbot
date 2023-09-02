@@ -23,11 +23,10 @@ module ::DiscourseChatbot
       @model_name = ::DiscourseChatbot::EMBEDDING_MODEL
       @client = ::OpenAI::Client.new
 
-      allowed_groups = ["everyone", "trust_level_0", "trust_level_1", "trust_level_2", "trust_level_3", "trust_level_4"]
-      allowed_group_ids = Group.where(name: allowed_groups).pluck(:id)
-      barred_group_ids = Group.where.not(name: allowed_groups).pluck(:id)
-      unsuitable_users = GroupUser.where(group_id: barred_group_ids).pluck(:user_id).uniq
-      safe_users = User.where.not(id: unsuitable_users).distinct.pluck(:id)
+      allowed_group_ids = [0, 10, 11, 12, 13, 14]  # automated groups only
+      barred_group_ids = Group.where.not(id: allowed_group_ids).pluck(:id) # no custom groups
+      unsuitable_users = GroupUser.where(group_id: barred_group_ids).pluck(:user_id).uniq # don't choose someone with in a custom group
+      safe_users = User.where.not(id: unsuitable_users).distinct.pluck(:id) # exclude them and find a suitable vanilla, junior user
       benchmark_user = User.where(id: safe_users).where(trust_level: SiteSetting.chatbot_embeddings_benchmark_user_trust_level, active: true, admin: false, suspended_at: nil).last
       if benchmark_user.nil?
         raise StandardError, "No benchmark user exists for Post embedding suitability check, please add a basic user"
