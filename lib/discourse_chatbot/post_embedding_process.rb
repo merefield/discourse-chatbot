@@ -39,7 +39,8 @@ module ::DiscourseChatbot
       post = ::Post.find_by(id: post_id)
       topic = ::Topic.find_by(id: post.topic_id)
 
-      return if post.nil? || topic.archetype == Archetype.private_message
+      return if post.nil? || topic.nil?
+      return if topic.archetype == Archetype.private_message
       return if @benchmark_user_guardian.nil?
 
       if @benchmark_user_guardian.can_see?(post)
