@@ -11,11 +11,11 @@ plugins:
   chatbot_can_trigger_from_whisper:
     default: false
     client: false
-  chatbot_quick_access_chat_button:
+  chatbot_quick_access_talk_button:
     default: true
     client: true
-  chatbot_quick_access_chat_button_only_on_homepage:
-    default: true
+  chatbot_quick_access_talk_in_private_message:
+    default: false
     client: true
   chatbot_permitted_all_categories:
     default: true
@@ -128,7 +128,7 @@ plugins:
   chatbot_bot_user:
     client: true
     type: username
-    default: AIBot
+    default: Chatbot
   chatbot_embeddings_benchmark_user_trust_level: 
     client: false
     default: 1

@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-chatbot_name = 'AIBot'
+chatbot_name = 'Chatbot'
 group_name = "ai_bot_group"
 group_full_name = "AI Bots"
 
