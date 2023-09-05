@@ -122,9 +122,11 @@ Compared to bot interactions, embeddings are not expensive to create, but do wat
 
 NB Embeddings are only created for Posts and only those Posts for which a Trust Level One user would have access.  This seemed like a reasonable compromise.  It will not create embeddings for posts from Trust Level 2+ only accessible content.
 
-## Model considerations
+## Bot Type and Model considerations
 
-Take a moment to read through the entire set of Plugin settings.  The `chatbot bot type` setting is key to behaviour.
+Take a moment to read through the entire set of Plugin settings.  The `chatbot bot type` setting is key.
+
+Agent mode is superior but will make more calls to the API, potentially increasing cost.  That said, the reduction in its propensity to ultimately output 'hallucinations' may facilitate you being able to drop down from GPT-4 to GPT-3.5 and you may end up spending less despite the significant increase in usefulness and reliability of the output.  GPT 3.5 is also a better fit for the Agent type based on response times.  A potential win-win! Experiment!
 
 For Chatbot to work in Chat you must have Chat enabled.
 
