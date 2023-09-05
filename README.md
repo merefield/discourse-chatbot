@@ -136,7 +136,7 @@ You must get a [token](https://platform.openai.com/account/api-keys) from [https
 
 There is an automated part of the setup: upon addition to a Discourse, the plugin currently sets up a AI bot user with the following attributes
 
-* Name: 'AIBot'
+* Name: 'Chatbot'
 * User Id: -4
 * Bio: "Hi, I’m not a real person. I’m a bot that can discuss things with you. Don't take me too seriously.  Sometimes, I'm even right about stuff!"
 * Group Name: "ai_bot_group"

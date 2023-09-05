@@ -128,7 +128,7 @@ plugins:
   chatbot_bot_user:
     client: true
     type: username
-    default: AIBot
+    default: Chatbot
   chatbot_embeddings_benchmark_user_trust_level: 
     client: false
     default: 1
