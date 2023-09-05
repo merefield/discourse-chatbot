@@ -1,4 +1,6 @@
 en:
   js:
     chatbot:
-      title_capitalized: "Talk to AIBot"
+      title_capitalized: "Talk to Chatbot"
+      pm_prefix: "A Discussion with Chatbot"
+
