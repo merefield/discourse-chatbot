@@ -26,6 +26,14 @@ There are two modes:
 
 - Normal bot mode can sometimes make mistakes, but is cheaper to run because it makes fewer calls to the Large Language Model:
 
+### :biohazard: **Bot access and privacy :biohazard:
+
+This bot can be used in public spaces on your forum.  To make the bot especially useful there is the new (currently experimental) Agent mode.  This is not set by default.
+
+In this mode the bot is, by default, privy to all content a Trust Level 1 user would see.  Thus, if interacted with in a public facing Topic, there is a possibility the bot could  "leak" information if you tend to gate content at the Trust Level 0 or 1 level via Category permissions.  This level was chosen because through experience most sites usually do not gate sensitive content at low trust levels but it depends on your specific needs. This can be eliminated by only using the bot in normal mode or mitigated with moderation of course.
+
+You can see that this setup is a compromise.  In order to make the bot useful it needs to be knowledgeable about the content on your site.  Currently it is not possible for the bot to selectively read members only content and share that only with members which some admins might find limiting but there is no way to easily solve the that whilst the bot is able to talk in public. Contact me if you have special needs and would like to sponsor some work in this space. Bot permissioning with semantic search is a non-trivial problem.  The system is currently optimised for speed.  NB Private Messages are never read by the bot.
+
 # FYI's
 
 * May not work on mulit-site installs (not explicitly tested), but PR welcome to improve support :+1: 
@@ -114,11 +122,11 @@ Compared to bot interactions, embeddings are not expensive to create, but do wat
 
 NB Embeddings are only created for Posts and only those Posts for which a Trust Level One user would have access.  This seemed like a reasonable compromise.  It will not create embeddings for posts from Trust Level 2+ only accessible content.
 
-## Model considerations
+## Bot Type and Model considerations
 
-In order to use the bot in agent mode you _must_ select one of the `0613` variants for the setting `chatbot_open_ai_model` otherwise the agent will not function correctly.
+Take a moment to read through the entire set of Plugin settings.  The `chatbot bot type` setting is key.
 
-Take a moment to read through the entire set of Plugin settings.  The Bot type setting is key.
+Agent mode is superior but will make more calls to the API, potentially increasing cost.  That said, the reduction in its propensity to ultimately output 'hallucinations' may facilitate you being able to drop down from GPT-4 to GPT-3.5 and you may end up spending less despite the significant increase in usefulness and reliability of the output.  GPT 3.5 is also a better fit for the Agent type based on response times.  A potential win-win! Experiment!
 
 For Chatbot to work in Chat you must have Chat enabled.
 
