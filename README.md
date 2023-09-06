@@ -77,7 +77,7 @@ Now needs the following added to `app.yml` in the `after_code:` section _before_
     - exec:
         cd: $home
         cmd:
-          - apt-get -y install -y postgresql-server-dev-13
+          - apt-get -y install -y postgresql-server-dev-${PG_MAJOR}
     - exec:
         cd: $home/tmp
         cmd:
@@ -85,18 +85,16 @@ Now needs the following added to `app.yml` in the `after_code:` section _before_
     - exec:
         cd: $home/tmp/pg_embedding
         cmd:
-          - make PG_CONFIG=/usr/lib/postgresql/13/bin/pg_config
+          - make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config
     - exec:
         cd: $home/tmp/pg_embedding
         cmd:
-          - make PG_CONFIG=/usr/lib/postgresql/13/bin/pg_config install
+          - make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config install
     - exec:
         cd: $home
         cmd:
           - su postgres -c 'psql discourse -c "create extension if not exists embedding;"'
 ```
-
-replacing `13` for all (3) instances with version number of postgres you are running (if not `13`)
 
 This is necessary to add the `pg_embeddings` extension.
 
