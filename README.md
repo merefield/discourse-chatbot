@@ -45,7 +45,7 @@ You can see that this setup is a compromise.  In order to make the bot useful it
 
 ## Intro
 
-Be patient, it's worth it.
+Be patient, it's worth it.  Also be aware there are some special steps involved in uninstalling this plugin, see the guide below.
 
 ## Required changes to app.yml
 
@@ -183,6 +183,24 @@ The bot supports Chat Messages and Topic Posts, including Private Messages (if c
 You can prompt the bot to respond by replying to it, or @ mentioning it. You can set how far the bot looks behind to get context for a response. The bigger the value the more costly will be each call.
 
 There's a floating quick chat button that connects you immediately to the bot. Its styling is a little experimental (modifying some z-index values of your base forum on mobile) and it may clash on some pages. This can be disabled in settings.  PR welcome to improve how it behaves.
+
+# Uninstalling the plugin - Important!
+
+Because of the custom index installed for the plugin, removing the plugin requires additional work than simply removing those lines you added to app.yml.  Your site will not function if you do not follow these steps as the container will fail to start properly.
+
+1. Ensure you have all the setup in place [as described in "Setup"](https://meta.discourse.org/t/discourse-chatbot-now-smarter-than-chatgpt/256652#setup-4), ie the additional script in the `after_code` section and the plugin cloned and have rebuilt at least once since adding those.   Complete them and rebuild if you missed any.  (this is the plugin installed state).
+2. _Before you remove these things_ do the following:
+    - `./launcher enter app`
+    - `rake db:migrate:down VERSION=20230826010103` - reverses an index rename
+    - `rake db:migrate:down VERSION=20230826010101` - reverses table name change
+    - `rake db:migrate:down VERSION=20230820010105` - drops the index
+    - `exit`
+3. Now remove the app.yml edits you added to install the app (`after_code` script section and clone)
+4. Immediately rebuild with `./launcher rebuild app`.
+
+The site should now work without Chatbot.
+
+The only actions that should be needed to re-install is to follow the original install instructions.
 
 **Disclaimer**: I'm *not* responsible for what the bot responds with. Consider the plugin to be at Beta stage and things could go wrong. It will improve with feedback.  But not necessarily the bots response :rofl:  Please understand the pro's and con's of a LLM and what they are and aren't capable of and their limitations.  They are very good at creating convincing text but can often be factually wrong.
 
