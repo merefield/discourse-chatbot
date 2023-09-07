@@ -46,7 +46,7 @@ module ::DiscourseChatbot
 
         if mentions_bot_name && !bot_chat_channel
           bot_user.user_chat_channel_memberships.create!(chat_channel: channel, following: true)
-          ::Jobs::Chat::UpdateChannelUserCount.new.execute(chat_channel_id: channel.id)
+          Jobs::Chat::UpdateChannelUserCount.new.execute(chat_channel_id: channel.id)
           channel.reload
           ::DiscourseChatbot.progress_debug_message("2.6 added bot to channel")
         end
