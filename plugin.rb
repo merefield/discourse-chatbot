@@ -8,7 +8,6 @@
 gem 'multipart-post', '2.3.0', { require: false }
 gem 'faraday-multipart', '1.0.4', { require: false }
 gem "ruby-openai", '5.1.0', { require: false }
-
 # google search
 gem "google_search_results", '2.2.0'
 # wikipedia
