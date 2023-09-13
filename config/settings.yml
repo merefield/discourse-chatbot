@@ -4,7 +4,7 @@ plugins:
     client: true
   chatbot_permitted_in_private_messages:
     default: true
-    client: false
+    client: true
   chatbot_permitted_in_chat:
     default: true
     client: true

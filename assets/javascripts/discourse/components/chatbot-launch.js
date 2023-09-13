@@ -16,11 +16,13 @@ export default class ContentLanguageDiscovery extends Component {
     const { currentRouteName } = this.router;
     return (
       this.currentUser &&
-      this.siteSettings.chat_enabled &&
       this.siteSettings.chatbot_enabled &&
-      this.siteSettings.chatbot_permitted_in_chat &&
+      currentRouteName === `discovery.${defaultHomepage()}` &&
       this.siteSettings.chatbot_quick_access_talk_button &&
-      currentRouteName === `discovery.${defaultHomepage()}`
+      ((this.siteSettings.chat_enabled &&
+        this.siteSettings.chatbot_permitted_in_chat) ||
+        (this.siteSettings.chatbot_permitted_in_private_messages &&
+          this.siteSettings.chatbot_quick_access_talk_in_private_message))
     );
   }
 
