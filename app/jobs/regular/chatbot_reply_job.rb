@@ -42,6 +42,9 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
 
       permitted_categories = SiteSetting.chatbot_permitted_categories.split('|')
 
+      presence = PresenceChannel.new("/discourse-presence/reply/#{post.topic.id}")
+      presence.present(user_id: bot_user_id, client_id: "12345")
+
       if (is_private_msg && !SiteSetting.chatbot_permitted_in_private_messages)
         message_body = I18n.t('chatbot.errors.forbiddeninprivatemessages')
       elsif is_private_msg && SiteSetting.chatbot_permitted_in_private_messages || !is_private_msg && SiteSetting.chatbot_permitted_all_categories || (permitted_categories.include? post.topic.category_id.to_s)
@@ -62,6 +65,9 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
       end
     elsif type == ::DiscourseChatbot::MESSAGE && message
       create_bot_reply = true
+
+      presence = PresenceChannel.new("/chat-reply/#{message.chat_channel_id}")
+      presence.present(user_id: bot_user_id, client_id: "12345")
     end
     if create_bot_reply
       ::DiscourseChatbot.progress_debug_message("4. Retrieving new reply message...")
