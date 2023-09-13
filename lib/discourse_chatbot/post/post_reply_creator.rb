@@ -21,8 +21,12 @@ module ::DiscourseChatbot
         begin
           new_post = PostCreator.create!(@author, default_opts)
 
-          presence = PresenceChannel.new("/discourse-presence/reply/#{@topic_or_channel_id}")
-          presence.leave(user_id:  @author.id, client_id: "12345")
+          is_private_msg = new_post.topic.private_message?
+
+          if is_private_msg
+            presence = PresenceChannel.new("/discourse-presence/reply/#{@topic_or_channel_id}")
+            presence.leave(user_id: @author.id, client_id: "12345")
+          end
 
           ::DiscourseChatbot.progress_debug_message("6. The Post has been created successfully")
         rescue => e
