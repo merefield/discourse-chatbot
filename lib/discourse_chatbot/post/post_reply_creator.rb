@@ -20,6 +20,10 @@ module ::DiscourseChatbot
 
         begin
           new_post = PostCreator.create!(@author, default_opts)
+
+          presence = PresenceChannel.new("/discourse-presence/reply/#{@topic_or_channel_id}")
+          presence.leave(user_id:  @author.id, client_id: "12345")
+
           ::DiscourseChatbot.progress_debug_message("6. The Post has been created successfully")
         rescue => e
           ::DiscourseChatbot.progress_debug_message("Problem with the bot Post: #{e}")
