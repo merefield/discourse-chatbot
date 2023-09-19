@@ -20,6 +20,6 @@ describe ::DiscourseChatbot::OpenAIAgent do
     ::DiscourseChatbot::OpenAIAgent.any_instance.expects(:create_chat_completion).with(second_query).returns(llm_interim_response)
     ::DiscourseChatbot::OpenAIAgent.any_instance.expects(:create_chat_completion).with(final_query, false).returns(llm_final_response)
 
-    expect(agent.get_response(query)).to eq(llm_final_response["choices"][0]["message"]["content"])
+    expect(agent.get_response(query)[:reply]).to eq(llm_final_response["choices"][0]["message"]["content"])
   end
 end
