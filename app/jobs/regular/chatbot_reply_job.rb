@@ -39,6 +39,7 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
     elsif type == ::DiscourseChatbot::POST && post
       message_body = nil
       is_private_msg = post.topic.private_message?
+      opts.merge!(is_private_msg: is_private_msg)
 
       permitted_categories = SiteSetting.chatbot_permitted_categories.split('|')
 
@@ -79,13 +80,13 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
         else
           bot = ::DiscourseChatbot::OpenAIBot.new
         end
-        message_body = bot.ask(opts)
+        reply_and_thoughts = bot.ask(opts)
       rescue => e
         Rails.logger.error ("OpenAIBot: There was a problem, but will retry til limit: #{e}")
         fail e
       end
     end
-    opts.merge!(message_body: message_body)
+    opts.merge!(reply_and_thoughts)
     if type == ::DiscourseChatbot::POST
       reply_creator = ::DiscourseChatbot::PostReplyCreator.new(opts)
     else

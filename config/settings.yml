@@ -5,6 +5,9 @@ plugins:
   chatbot_permitted_in_private_messages:
     default: true
     client: true
+  chatbot_include_inner_thoughts_in_private_messages:
+    default: false
+    client: false
   chatbot_permitted_in_chat:
     default: true
     client: true

@@ -80,10 +80,10 @@ module ::DiscourseChatbot
           # Iteration: #{iteration}
           -------------------------------
         EOS
-        res = create_chat_completion(@chat_history + @internal_thoughts)
+        res = create_chat_completion(@chat_history + @inner_thoughts)
         finish_reason = res["choices"][0]["finish_reason"]
 
-        if finish_reason == 'stop' || @internal_thoughts.length > 5
+        if finish_reason == 'stop' || @inner_thoughts.length > 5
           final_thought = final_thought_answer
           final_res = create_chat_completion(
             @chat_history + [final_thought],
@@ -102,12 +102,12 @@ module ::DiscourseChatbot
 
     def handle_function_call(res)
       first_message = res["choices"][0]["message"]
-      @internal_thoughts << first_message.to_hash
+      @inner_thoughts << first_message.to_hash
       func_name = first_message["function_call"]["name"]
       args_str = first_message["function_call"]["arguments"]
       result = call_function(func_name, args_str)
       res_msg = { 'role' => 'function', 'name' => func_name, 'content' => I18n.t("chatbot.prompt.agent.handle_function_call.answer", result: result) }
-      @internal_thoughts << res_msg
+      @inner_thoughts << res_msg
     end
 
     def call_function(func_name, args_str)
@@ -128,7 +128,7 @@ module ::DiscourseChatbot
 
     def final_thought_answer
       thoughts = I18n.t("chatbot.prompt.agent.final_thought_answer.opener")
-      @internal_thoughts.each do |thought|
+      @inner_thoughts.each do |thought|
         if thought.key?('function_call')
           thoughts += I18n.t("chatbot.prompt.agent.final_thought_answer.thought_declaration", function_name: thought['function_call']['name'], arguments: thought['function_call']['arguments'])
         else
@@ -148,14 +148,16 @@ module ::DiscourseChatbot
       system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.agent", current_date_time: DateTime.current) }
       prompt.unshift(system_message)
 
-      @internal_thoughts = []
+      @inner_thoughts = []
 
       @chat_history += prompt
 
       res = generate_response
 
-      @chat_history << res["choices"][0]["message"].to_hash
-      res["choices"][0]["message"]["content"]
+      {
+        reply: res["choices"][0]["message"]["content"],
+        inner_thoughts: @inner_thoughts.to_s
+      }
     end
 
     def ask(opts)
