@@ -15,6 +15,7 @@ en:
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
     chatbot_strip_quotes: "Determine if quotes are stripped and not sent within prompts (doesn't affect OP)"
     chatbot_permitted_in_private_messages: "Allow Chatbot to interact in Private Messages"
+    chatbot_include_inner_thoughts_in_private_messages: "EXPERIMENTAL: Get Chatbot to post its background thinking on Private Messages (Agent only)"
     chatbot_permitted_in_chat: "Allow Chatbot to interact in Chat"
     chatbot_can_trigger_from_whisper: "Allow Chatbot to be triggered from a whisper (get creative!)"
     chatbot_permitted_all_categories: "Allow Chatbot to interact in any Category"

@@ -9,30 +9,36 @@ module ::DiscourseChatbot
     def create
       ::DiscourseChatbot.progress_debug_message("5. Creating a new Post...")
 
+      begin
         default_opts = {
-          raw: @message_body,
           topic_id: @topic_or_channel_id,
           post_alert_options: { skip_send_email: true },
           skip_validations: true
         }
 
-        default_opts.merge!(reply_to_post_number: @reply_to_post_number) unless SiteSetting.chatbot_can_trigger_from_whisper
+        if SiteSetting.chatbot_bot_type == "agent" && SiteSetting.chatbot_include_inner_thoughts_in_private_messages && @is_private_msg
+          default_opts.merge!(raw: '[details="Inner Thoughts"]<br/>' + @inner_thoughts + '<br/>[/details]')
 
-        begin
           new_post = PostCreator.create!(@author, default_opts)
-
-          is_private_msg = new_post.topic.private_message?
-
-          if is_private_msg
-            presence = PresenceChannel.new("/discourse-presence/reply/#{@topic_or_channel_id}")
-            presence.leave(user_id: @author.id, client_id: "12345")
-          end
-
-          ::DiscourseChatbot.progress_debug_message("6. The Post has been created successfully")
-        rescue => e
-          ::DiscourseChatbot.progress_debug_message("Problem with the bot Post: #{e}")
-          Rails.logger.error ("AI Bot: There was a problem: #{e}")
         end
+
+        default_opts.merge!(reply_to_post_number: @reply_to_post_number) unless SiteSetting.chatbot_can_trigger_from_whisper
+        default_opts.merge!(raw: @message_body)
+
+        new_post = PostCreator.create!(@author, default_opts)
+
+        is_private_msg = new_post.topic.private_message?
+
+        if is_private_msg
+          presence = PresenceChannel.new("/discourse-presence/reply/#{@topic_or_channel_id}")
+          presence.leave(user_id: @author.id, client_id: "12345")
+        end
+
+        ::DiscourseChatbot.progress_debug_message("6. The Post has been created successfully")
+      rescue => e
+        ::DiscourseChatbot.progress_debug_message("Problem with the bot Post: #{e}")
+        Rails.logger.error ("AI Bot: There was a problem: #{e}")
+      end
     end
   end
 end
