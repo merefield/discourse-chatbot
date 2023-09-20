@@ -33,7 +33,7 @@ module ::DiscourseChatbot
         end
       else
         {
-          reply: res["choices"][0]["message"]["content"],
+          reply: response.dig("choices", 0, "message", "content"),
           inner_thoughts: nil
         }
       end
