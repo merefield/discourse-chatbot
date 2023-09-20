@@ -32,7 +32,10 @@ module ::DiscourseChatbot
           I18n.t('chatbot.errors.general')
         end
       else
-        response.dig("choices", 0, "message", "content")
+        {
+          reply: res["choices"][0]["message"]["content"],
+          inner_thoughts: nil
+        }
       end
     end
 
