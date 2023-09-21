@@ -43,9 +43,11 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
 
       permitted_categories = SiteSetting.chatbot_permitted_categories.split('|')
 
-      if is_private_msg
+      begin
         presence = PresenceChannel.new("/discourse-presence/reply/#{post.topic.id}")
         presence.present(user_id: bot_user_id, client_id: "12345")
+      rescue
+        # ignore issues with permissions related to communicating presence
       end
 
       if (is_private_msg && !SiteSetting.chatbot_permitted_in_private_messages)
