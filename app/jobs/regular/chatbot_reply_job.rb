@@ -83,12 +83,12 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
           bot = ::DiscourseChatbot::OpenAIBot.new
         end
         reply_and_thoughts = bot.ask(opts)
+        opts.merge!(reply_and_thoughts)
       rescue => e
         Rails.logger.error ("OpenAIBot: There was a problem, but will retry til limit: #{e}")
         fail e
       end
     end
-    opts.merge!(reply_and_thoughts)
     if type == ::DiscourseChatbot::POST
       reply_creator = ::DiscourseChatbot::PostReplyCreator.new(opts)
     else
