@@ -5,9 +5,12 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
   sidekiq_options retry: 5, dead: false
 
   sidekiq_retries_exhausted do |msg, ex|
-    message_body = I18n.t('chatbot.errors.retries')
+    reply_and_thoughts = {
+      reply: I18n.t('chatbot.errors.retries'),
+      inner_thoughts: nil
+    }
     opts = msg['args'].first.transform_keys(&:to_sym)
-    opts.merge!(message_body: message_body)
+    opts.merge!(reply_and_thoughts)
     type = opts[:type]
     if type == ::DiscourseChatbot::POST
       reply_creator = ::DiscourseChatbot::PostReplyCreator.new(opts)
@@ -32,12 +35,16 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
 
     create_bot_reply = false
 
+    reply_and_thoughts = {
+      reply: "",
+      inner_thoughts: nil
+    }
+
     return unless bot_user
 
     if over_quota
-      message_body = I18n.t('chatbot.errors.overquota')
+      reply_and_thoughts[:reply] = I18n.t('chatbot.errors.overquota')
     elsif type == ::DiscourseChatbot::POST && post
-      message_body = nil
       is_private_msg = post.topic.private_message?
       opts.merge!(is_private_msg: is_private_msg)
 
@@ -51,21 +58,21 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
       end
 
       if (is_private_msg && !SiteSetting.chatbot_permitted_in_private_messages)
-        message_body = I18n.t('chatbot.errors.forbiddeninprivatemessages')
+        reply_and_thoughts[:reply] = I18n.t('chatbot.errors.forbiddeninprivatemessages')
       elsif is_private_msg && SiteSetting.chatbot_permitted_in_private_messages || !is_private_msg && SiteSetting.chatbot_permitted_all_categories || (permitted_categories.include? post.topic.category_id.to_s)
         create_bot_reply = true
       else
         if permitted_categories.size > 0
-          message_body = I18n.t('chatbot.errors.forbiddenoutsidethesecategories')
+          reply_and_thoughts[:reply] = I18n.t('chatbot.errors.forbiddenoutsidethesecategories')
           permitted_categories.each_with_index do |permitted_category, index|
             if index == permitted_categories.size - 1
-              message_body += "##{Category.find_by(id: permitted_category).slug}"
+              reply_and_thoughts[:reply] += "##{Category.find_by(id: permitted_category).slug}"
             else
-              message_body += "##{Category.find_by(id: permitted_category).slug}, "
+              reply_and_thoughts[:reply] += "##{Category.find_by(id: permitted_category).slug}, "
             end
           end
         else
-          message_body = I18n.t('chatbot.errors.forbiddenanycategory')
+          reply_and_thoughts[:reply] = I18n.t('chatbot.errors.forbiddenanycategory')
         end
       end
     elsif type == ::DiscourseChatbot::MESSAGE && message
@@ -83,12 +90,12 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
           bot = ::DiscourseChatbot::OpenAIBot.new
         end
         reply_and_thoughts = bot.ask(opts)
-        opts.merge!(reply_and_thoughts)
       rescue => e
         Rails.logger.error ("OpenAIBot: There was a problem, but will retry til limit: #{e}")
         fail e
       end
     end
+    opts.merge!(reply_and_thoughts)
     if type == ::DiscourseChatbot::POST
       reply_creator = ::DiscourseChatbot::PostReplyCreator.new(opts)
     else
