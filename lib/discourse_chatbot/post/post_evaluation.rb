@@ -10,7 +10,6 @@ module ::DiscourseChatbot
 
       user = post.user
       topic = post.topic
-      over_quota = over_quota(user.id)
 
       post_contents = post.raw.to_s
 
@@ -52,7 +51,7 @@ module ::DiscourseChatbot
           reply_to_message_or_post_id: post.id,
           original_post_number: post.post_number,
           topic_or_channel_id: topic.id,
-          over_quota: over_quota,
+          over_quota: over_quota(user.id),
           message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
         }
 
