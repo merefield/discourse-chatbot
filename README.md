@@ -49,56 +49,13 @@ Be patient, it's worth it.  Also be aware there are some special steps involved 
 
 ## Required changes to app.yml
 
-This new update brings forum search which requires embeddings and parts of the changes represent a breaking change so listen up!
+~~This new update brings forum search which requires embeddings and parts of the changes represent a breaking change so listen up!
 
 I use the Postgres extension known as  [pg_embeddings](https://github.com/neondatabase/pg_embedding).  This promises vector searches 20x the speed of `pgvector` but requires bespoke additions to the build script in `app.yml`.
 
-Now needs the following added to `app.yml` in the `after_code:` section _before_ the plugins are cloned.
+Now needs the following added to `app.yml` in the `after_code:` section _before_ the plugins are cloned.~~
 
-(NB you may be able to _omit_ the first three commands if your server can see the `postgresql-server-dev-x` package)
-
-```
-    - exec:
-        cd: $home
-        cmd:
-          - sudo apt-get install wget ca-certificates
-    - exec:
-        cd: $home
-        cmd:
-          - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-    - exec:
-        cd: $home
-        cmd:
-          - sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
-    - exec:
-        cd: $home
-        cmd:
-          - apt-get update
-    - exec:
-        cd: $home
-        cmd:
-          - apt-get -y install -y postgresql-server-dev-${PG_MAJOR}
-    - exec:
-        cd: $home/tmp
-        cmd:
-          - git clone https://github.com/neondatabase/pg_embedding.git
-    - exec:
-        cd: $home/tmp/pg_embedding
-        cmd:
-          - make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config
-    - exec:
-        cd: $home/tmp/pg_embedding
-        cmd:
-          - make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config install
-    - exec:
-        cd: $home
-        cmd:
-          - su postgres -c 'psql discourse -c "create extension if not exists embedding;"'
-```
-
-This is necessary to add the `pg_embeddings` extension.
-
-It is required even if you are not using the agent functionality.
+This is no longer required as `pgvector``, which ships with a standard Discourse build, now supports fast HNSW indexing.
 
 ## Creating the Embeddings
 
