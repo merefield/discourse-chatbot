@@ -3,7 +3,7 @@
 class EnableEmbeddingExtension < ActiveRecord::Migration[7.0]
   def change
     begin
-      enable_extension :embedding
+      enable_extension :embedding, if_exists: true
     rescue Exception => e
       STDERR.puts "----------------------------DISCOURSE CHATBOT ERROR----------------------------------"
       STDERR.puts " Discourse Chatbot now requires the embedding extension on the PostgreSQL database."

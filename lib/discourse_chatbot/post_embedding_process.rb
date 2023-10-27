@@ -52,7 +52,7 @@ module ::DiscourseChatbot
 
         embedding_vector = response.dig("data", 0, "embedding")
 
-        ::DiscourseChatbot::PostEmbedding.upsert({ post_id: post_id, embedding: embedding_vector }, on_duplicate: :update, unique_by: :post_id)
+        ::DiscourseChatbot::PostEmbedding.upsert({ post_id: post_id, embedding: "#{embedding_vector}" }, on_duplicate: :update, unique_by: :post_id)
       end
     end
 
@@ -74,7 +74,7 @@ module ::DiscourseChatbot
               FROM
                 chatbot_post_embeddings
               ORDER BY
-               embedding <-> array[:query_embedding]
+               embedding <-> '[:query_embedding]'
               LIMIT :limit
             SQL
              &:post_id
