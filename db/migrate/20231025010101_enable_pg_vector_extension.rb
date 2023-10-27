@@ -4,9 +4,6 @@ class EnablePgVectorExtension < ActiveRecord::Migration[7.0]
   def change
     begin
       enable_extension :vector
-      execute <<-SQL
-        ALTER EXTENSION vector UPDATE TO '0.5.1';
-      SQL
     rescue Exception => e
       if DB.query_single("SELECT 1 FROM pg_available_extensions WHERE name = 'vector';").empty?
         STDERR.puts "----------------------------------DISCOURSE CHATBOT ERROR----------------------------------------"
