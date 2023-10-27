@@ -49,13 +49,9 @@ Be patient, it's worth it.  Also be aware there are some special steps involved 
 
 ## Required changes to app.yml
 
-This new update brings forum search which requires embeddings and parts of the changes represent a breaking change so listen up!
+These additions were required for the `pgembeddings` extension which is now deprecated in favour of using `pgvector` which is available automatically within the standard install. 
 
-I use the Postgres extension known as  [pg_embeddings](https://github.com/neondatabase/pg_embedding).  This promises vector searches 20x the speed of `pgvector` but requires bespoke additions to the build script in `app.yml`.
-
-Now needs the following added to `app.yml` in the `after_code:` section _before_ the plugins are cloned.
-
-(NB you may be able to _omit_ the first three commands if your server can see the `postgresql-server-dev-x` package)
+Regardless of whether you've installed this plugin before these lines are required to be run in at least ONCE, then you can remove them and they won't be required for all further builds.  Note the new lines at the end that support the migration to pgvector.
 
 ```
     - exec:
@@ -94,11 +90,19 @@ Now needs the following added to `app.yml` in the `after_code:` section _before_
         cd: $home
         cmd:
           - su postgres -c 'psql discourse -c "create extension if not exists embedding;"'
+    - exec:
+        cd: $home
+        cmd:
+          - su postgres -c 'psql discourse -c "DROP INDEX IF EXISTS hnsw_index_on_chatbot_post_embeddings;"'
+    - exec:
+        cd: $home
+        cmd:
+          - su postgres -c 'psql discourse -c "DROP EXTENSION IF EXISTS embedding;"'
+    - exec:
+        cd: $home
+        cmd:
+          - su postgres -c 'psql discourse -c "ALTER EXTENSION vector UPDATE TO \"0.5.1\";"' 
 ```
-
-This is necessary to add the `pg_embeddings` extension.
-
-It is required even if you are not using the agent functionality.
 
 ## Creating the Embeddings
 
