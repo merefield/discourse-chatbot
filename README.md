@@ -49,9 +49,29 @@ Be patient, it's worth it.  Also be aware there are some special steps involved 
 
 ## Required changes to app.yml
 
-These additions were required for the `pgembeddings` extension which is now deprecated in favour of using `pgvector` which is available automatically within the standard install. 
+These additions were required for the `pgembeddings` extension which is now deprecated in favour of using `pgvector` which is available as standard within the standard install.
 
-Regardless of whether you've installed this plugin before these lines are required to be run in at least ONCE, then you can remove them and they won't be required for all further builds.  Note the new lines at the end that support the migration to pgvector.
+It is important to follow the right path here depending on whether you've previously installed Chatbot or not.
+
+Note, because the (current) lastest version of `pgvector` is now required (>= 0.5.1), new installs require a minor command added to ensure you have the latest version installed.
+
+### I've never installed Chatbot before
+
+Please add the following to app.yml in the `after_code:` section but before the plugins are cloned:
+
+```
+    - exec:
+        cd: $home
+        cmd:
+          - su postgres -c 'psql discourse -c "ALTER EXTENSION vector UPDATE;"' 
+```
+
+After one succcesful build with the plugin, you should be able to remove these additional lines and should be able to rebuild afterwards without issue.
+
+### I've already installed Chatbot before/have it installed
+
+Please add/ensure you have the following in app.yml in the `after_code:` section but before the plugins are cloned (note that there are three new commands than before):
+
 
 ```
     - exec:
@@ -101,8 +121,10 @@ Regardless of whether you've installed this plugin before these lines are requir
     - exec:
         cd: $home
         cmd:
-          - su postgres -c 'psql discourse -c "ALTER EXTENSION vector UPDATE TO \"0.5.1\";"' 
+          - su postgres -c 'psql discourse -c "ALTER EXTENSION vector UPDATE;"' 
 ```
+
+After one succcesful build with the plugin, you should be able to remove these additional lines and should be able to rebuild afterwards without issue.
 
 ## Creating the Embeddings
 
