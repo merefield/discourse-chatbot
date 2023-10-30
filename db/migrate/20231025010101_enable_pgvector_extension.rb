@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class EnablePgVectorExtension < ActiveRecord::Migration[7.0]
+class EnablePgvectorExtension < ActiveRecord::Migration[7.0]
   def change
     begin
       enable_extension :vector
