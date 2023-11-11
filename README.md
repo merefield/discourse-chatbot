@@ -49,13 +49,29 @@ Be patient, it's worth it.  Also be aware there are some special steps involved 
 
 ## Required changes to app.yml
 
-This new update brings forum search which requires embeddings and parts of the changes represent a breaking change so listen up!
+These additions were required for the `pgembeddings` extension which is now deprecated in favour of using `pgvector` which is available as standard within the standard install.
 
-I use the Postgres extension known as  [pg_embeddings](https://github.com/neondatabase/pg_embedding).  This promises vector searches 20x the speed of `pgvector` but requires bespoke additions to the build script in `app.yml`.
+It is important to follow the right path here depending on whether you've previously installed Chatbot or not.
 
-Now needs the following added to `app.yml` in the `after_code:` section _before_ the plugins are cloned.
+Note, because the (current) lastest version of `pgvector` is now required (>= 0.5.1), new installs require a minor command added to ensure you have the latest version installed.
 
-(NB you may be able to _omit_ the first three commands if your server can see the `postgresql-server-dev-x` package)
+### I've never installed Chatbot before
+
+Please add the following to app.yml in the `after_code:` section but before the plugins are cloned:
+
+```
+    - exec:
+        cd: $home
+        cmd:
+          - su postgres -c 'psql discourse -c "ALTER EXTENSION vector UPDATE;"' 
+```
+
+After one succcesful build with the plugin, you should be able to remove these additional lines and should be able to rebuild afterwards without issue.
+
+### I've already installed Chatbot before/have it installed
+
+Please add/ensure you have the following in app.yml in the `after_code:` section but before the plugins are cloned (note that there are three new commands than before):
+
 
 ```
     - exec:
@@ -94,11 +110,21 @@ Now needs the following added to `app.yml` in the `after_code:` section _before_
         cd: $home
         cmd:
           - su postgres -c 'psql discourse -c "create extension if not exists embedding;"'
+    - exec:
+        cd: $home
+        cmd:
+          - su postgres -c 'psql discourse -c "DROP INDEX IF EXISTS hnsw_index_on_chatbot_post_embeddings;"'
+    - exec:
+        cd: $home
+        cmd:
+          - su postgres -c 'psql discourse -c "DROP EXTENSION IF EXISTS embedding;"'
+    - exec:
+        cd: $home
+        cmd:
+          - su postgres -c 'psql discourse -c "ALTER EXTENSION vector UPDATE;"' 
 ```
 
-This is necessary to add the `pg_embeddings` extension.
-
-It is required even if you are not using the agent functionality.
+After one succcesful build with the plugin, you should be able to remove these additional lines and should be able to rebuild afterwards without issue.
 
 ## Creating the Embeddings
 
