@@ -32,7 +32,7 @@ export default class ContentLanguageDiscovery extends Component {
   }
 
   @action
-  getBotUser () {
+  getBotUser() {
     User.findByUsername(this.siteSettings.chatbot_bot_user, {}).then((user) => {
       this.botUser = user;
     });
@@ -42,7 +42,7 @@ export default class ContentLanguageDiscovery extends Component {
     return this.siteSettings.chatbot_quick_access_bot_user_icon === "";
   }
 
-  get chatbotLaunchIcon () {
+  get chatbotLaunchIcon() {
     return this.siteSettings.chatbot_quick_access_bot_user_icon;
   }
 

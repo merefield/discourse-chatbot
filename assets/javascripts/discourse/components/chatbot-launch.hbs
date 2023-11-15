@@ -1,5 +1,6 @@
 {{#if this.showChatbotButton}}
-  <DButton {{did-insert this.getBotUser}}
+  <DButton
+    {{did-insert this.getBotUser}}
     @id="chatbot-btn"
     @class="btn-primary chatbot-btn"
     @action={{action this.startChatting}}
