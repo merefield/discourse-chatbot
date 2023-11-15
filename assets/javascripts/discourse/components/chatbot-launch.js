@@ -35,7 +35,7 @@ export default class ContentLanguageDiscovery extends Component {
   getBotUser () {
     User.findByUsername(this.siteSettings.chatbot_bot_user, {}).then((user) => {
       this.botUser = user;
-    })
+    });
   }
 
   get chatbotLaunchUseAvatar() {
