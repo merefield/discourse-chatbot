@@ -6,7 +6,6 @@ import Composer from "discourse/models/composer";
 import I18n from "I18n";
 import User from "discourse/models/user";
 import { tracked } from "@glimmer/tracking";
-//import { findById } from "discourse/models/user";
 
 export default class ContentLanguageDiscovery extends Component {
   @service siteSettings;
