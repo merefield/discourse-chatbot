@@ -37,7 +37,7 @@
     color: var(--secondary);
     display: inline-block;
     transition: all 0.3s;
-    margin: 0 0.25em;
+    margin: 0 0.7em;
   }
 
   &:not(:hover):not(:active):not(:focus) {
@@ -46,7 +46,7 @@
       width: 0;
       margin: 0;
     }
-    .d-icon {
+    .d-icon, .avatar {
       margin: 0 0.25em;
     }
   }
