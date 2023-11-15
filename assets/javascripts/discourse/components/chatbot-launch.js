@@ -4,6 +4,9 @@ import { action } from "@ember/object";
 import { defaultHomepage } from "discourse/lib/utilities";
 import Composer from "discourse/models/composer";
 import I18n from "I18n";
+import User from "discourse/models/user";
+import { tracked } from "@glimmer/tracking";
+//import { findById } from "discourse/models/user";
 
 export default class ContentLanguageDiscovery extends Component {
   @service siteSettings;
@@ -11,6 +14,8 @@ export default class ContentLanguageDiscovery extends Component {
   @service chat;
   @service router;
   @service composer;
+
+  @tracked botUser = null;
 
   get showChatbotButton() {
     const { currentRouteName } = this.router;
@@ -24,6 +29,21 @@ export default class ContentLanguageDiscovery extends Component {
         (this.siteSettings.chatbot_permitted_in_private_messages &&
           this.siteSettings.chatbot_quick_access_talk_in_private_message))
     );
+  }
+
+  @action
+  getBotUser() {
+    User.findByUsername(this.siteSettings.chatbot_bot_user, {}).then((user) => {
+      this.botUser = user;
+    });
+  }
+
+  get chatbotLaunchUseAvatar() {
+    return this.siteSettings.chatbot_quick_access_bot_user_icon === "";
+  }
+
+  get chatbotLaunchIcon() {
+    return this.siteSettings.chatbot_quick_access_bot_user_icon;
   }
 
   @action

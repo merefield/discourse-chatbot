@@ -17,6 +17,9 @@ plugins:
   chatbot_quick_access_talk_button:
     default: true
     client: true
+  chatbot_quick_access_bot_user_icon: 
+      client: true
+      default: robot
   chatbot_quick_access_talk_in_private_message:
     default: false
     client: true
