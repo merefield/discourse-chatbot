@@ -34,7 +34,7 @@ module ::DiscourseChatbot
     private
 
     def validate_parameters(*args)
-      unless args.length == @required.length
+      unless args.length >= @required.length
         raise ArgumentError, "Expected at least #{@required.length} arguments, but got #{args.length}"
       end
 
