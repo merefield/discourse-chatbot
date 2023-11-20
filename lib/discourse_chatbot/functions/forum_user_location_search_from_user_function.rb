@@ -31,7 +31,8 @@ module DiscourseChatbot
       begin
         super(args)
         query = args[parameters[0][:name]]
-        distance = args[parameters[1][:name]].blank ? 500 : args[parameters[1][:name]]
+
+        distance = args[parameters[1][:name]].blank? ? 500 : args[parameters[1][:name]]
         number_of_users = args[parameters[2][:name]].blank? ? 3 : args[parameters[2][:name]]
         number_of_users = number_of_users > 16 ? 16 : number_of_users
 
