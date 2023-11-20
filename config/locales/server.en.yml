@@ -86,18 +86,33 @@ en:
           answer_summary: "The top %{number_of_posts} posts on the forum related to this query are, best match first:\n\n"
           answer: "Number %{rank}: the post is at this web address: %{url}, it was written by '%{username}' on %{date} and the text is '%{raw}'.\n\n"
           error:  "'%{query}': my search for this on the forum failed."
-        forum_user_location_search:
+        forum_user_location_search_from_location:
           description: |
-            Search the local forum for users that are located close to target query (either another username or coordinates).
+            Search the local forum for users that are located close to the specified coordinates.
 
-            Input should be either a username or a two element array of longitude and latitude each in decimals.  You can optionally also specify the maximum number of users you wish returned from your query.
+            Input should be a two element array of longitude and latitude each in decimals.  You can optionally also specify the maximum distance from the coordinates and the maximum number of users you wish returned from your query.
 
             Outputs the usernames of users found in proximity. When responding with these usernames, use the @ symbol prefix (as if you were mentioning them).
           parameters:
             username: "target username"
             coords: "target location in latitude and longitude"
+            distance: "maximum distance from target in kilometres (km)"
             number_of_posts: "specify the number of users you want returned from your query"
-          answer_summary: "The closest %{number_of_users} users are:\n\n"
+          answer_summary: "The users within %{distance} kilometres of %{query} are:\n\n"
+          answer: "Number %{rank}: @%{username}'.\n\n"
+          error:  "'%{query}': my search for users in proximity to this target failed."
+        forum_user_location_search_from_user:
+          description: |
+            Search the local forum for users that are located close to specified user.
+
+            Input should be a username.  You can optionally also specify the maximum distance from the user and the maximum number of users you wish returned from your query.
+
+            Outputs the usernames of users found in proximity. When responding with these usernames, use the @ symbol prefix (as if you were mentioning them).
+          parameters:
+            username: "target username"
+            distance: "maximum distance from target in kilometres (km)"
+            number_of_posts: "specify the number of users you want returned from your query"
+          answer_summary: "The users within %{distance} kilometres of %{query} are:\n\n"
           answer: "Number %{rank}: @%{username}'.\n\n"
           error:  "'%{query}': my search for users in proximity to this target failed."
         google_search:

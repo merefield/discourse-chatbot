@@ -65,7 +65,8 @@ after_initialize do
     ../lib/discourse_chatbot/functions/wikipedia_function.rb
     ../lib/discourse_chatbot/functions/google_search_function.rb
     ../lib/discourse_chatbot/functions/forum_search_function.rb
-    ../lib/discourse_chatbot/functions/forum_user_location_search_function.rb
+    ../lib/discourse_chatbot/functions/forum_user_location_search_from_location_function.rb
+    ../lib/discourse_chatbot/functions/forum_user_location_search_from_user_function.rb
     ../lib/discourse_chatbot/functions/stock_data_function.rb
     ../lib/discourse_chatbot/functions/parser.rb
     ../lib/discourse_chatbot/prompt_utils.rb
