@@ -5,7 +5,8 @@ require_relative '../function'
 module DiscourseChatbot
   class ForumUserLocationSearchFromLocationFunction < Function
 
-    REGEX_PATTERN = "(\[)?-?\d*.?\d*,\s?-?\d*.?\d*(\])?"
+    ALT_REGEX_PATTERN = "(\[)?-?\d*.?\d*,\s?-?\d*.?\d*(\])?"
+    REGEX_PATTERN = "^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$"
 
     def name
       'local_forum_user_location_search_from_location'
@@ -31,18 +32,15 @@ module DiscourseChatbot
       begin
         super(args)
         query = args[parameters[0][:name]]
-        distance = args[parameters[1][:name]].blank ? 500 : args[parameters[1][:name]]
+        distance = args[parameters[1][:name]].blank? ? 5000 : args[parameters[1][:name]]
         number_of_users = args[parameters[2][:name]].blank? ? 3 : args[parameters[2][:name]]
         number_of_users = number_of_users > 16 ? 16 : number_of_users
 
         results = []
 
-        if REGEX_PATTERN.match?(query)
-          coords = query.split(/\D+/).reject(&:empty?).map(&:to_i)
+        if query.match?(/^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/)
+          coords = query.split(/, /).reject(&:empty?).map(&:to_i)
           results = ::Locations::UserLocationProcess.search_from_location(coords[0], coords[1], distance)
-        else
-          user_id = User.find_by(username: query).id
-          results = ::Locations::UserLocationProcess.search_from_user_location(user_id, distance)
         end
 
         response = I18n.t("chatbot.prompt.function.forum_user_location_search_from_location.answer_summary", distance: distance, query: query)

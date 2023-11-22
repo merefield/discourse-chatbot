@@ -16,17 +16,23 @@ module ::DiscourseChatbot
       stock_data_function = ::DiscourseChatbot::StockDataFunction.new
       user_location_search_from_user_function = nil
       user_location_search_from_location_function = nil
+      user_location_distance_from_location_function = nil
+      get_coords_of_location_function = nil
 
       if defined?(Locations) == 'constant' && Locations.class == Module &&
          defined?(::Locations::UserLocation) == 'constant' &&  ::Locations::UserLocation.class == Class && ::Locations::UserLocation.count > 0
          user_location_search_from_location_function = ::DiscourseChatbot::ForumUserLocationSearchFromLocationFunction.new
          user_location_search_from_user_function = ::DiscourseChatbot::ForumUserLocationSearchFromUserFunction.new
+         get_coords_of_location_function = ::DiscourseChatbot::GetCoordsOfLocationDescriptionFunction.new
+         user_location_distance_from_location_function = ::DiscourseChatbot::ForumUserLocationDistanceFromLocationFunction.new
       end
 
       functions = [calculator_function, wikipedia_function, forum_search_function]
 
       functions << user_location_search_from_location_function if user_location_search_from_location_function
       functions << user_location_search_from_user_function if user_location_search_from_user_function
+      functions << get_coords_of_location_function if get_coords_of_location_function
+      functions << user_location_distance_from_location_function if user_location_distance_from_location_function
       functions << news_function if !SiteSetting.chatbot_news_api_token.blank?
       functions << google_search_function if !SiteSetting.chatbot_serp_api_key.blank?
       functions << stock_data_function if !SiteSetting.chatbot_marketstack_key.blank?
