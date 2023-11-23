@@ -9,9 +9,9 @@ module ::DiscourseChatbot
       ::OpenAI.configure do |config|
         config.access_token = SiteSetting.chatbot_open_ai_token
       end
-      if !SiteSetting.chatbot_open_ai_model_custom_url.blank?
+      if !SiteSetting.chatbot_open_ai_embeddings_model_custom_url.blank?
         ::OpenAI.configure do |config|
-          config.uri_base = SiteSetting.chatbot_open_ai_model_custom_url
+          config.uri_base = SiteSetting.chatbot_open_ai_embeddings_model_custom_url
         end
       end
       if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"

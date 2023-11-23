@@ -99,6 +99,9 @@ plugins:
   chatbot_open_ai_model_custom_url:
     client: false
     default: ''
+  chatbot_open_ai_embeddings_model_custom_url:
+    client: false
+    default: ''
   chatbot_open_ai_model_custom_api_type:
     client: false
     default: ''
