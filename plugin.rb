@@ -75,6 +75,8 @@ after_initialize do
     ../lib/discourse_chatbot/message/message_reply_creator.rb
     ../app/jobs/regular/chatbot_reply_job.rb
     ../app/jobs/scheduled/chatbot_quota_reset_job.rb
+    ../config/routes.rb
+    ../app/controllers/chatbot_controller.rb
   ).each do |path|
     load File.expand_path(path, __FILE__)
   end

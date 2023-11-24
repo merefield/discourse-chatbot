@@ -6,6 +6,8 @@ import Composer from "discourse/models/composer";
 import I18n from "I18n";
 import User from "discourse/models/user";
 import { tracked } from "@glimmer/tracking";
+import { ajax } from "discourse/lib/ajax";
+import DiscourseURL from "discourse/lib/url";
 
 export default class ContentLanguageDiscovery extends Component {
   @service siteSettings;
@@ -46,26 +48,35 @@ export default class ContentLanguageDiscovery extends Component {
   }
 
   @action
-  startChatting() {
-    if (!this.siteSettings.chatbot_quick_access_talk_in_private_message) {
-      this.chat
-        .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
-        .then((chatChannel) => {
-          this.router.transitionTo("chat.channel", ...chatChannel.routeModels);
-        });
-    } else {
-      this.composer.focusComposer({
-        fallbackToNewTopic: true,
-        openOpts: {
-          action: Composer.PRIVATE_MESSAGE,
-          recipients: this.siteSettings.chatbot_bot_user,
-          topicTitle: I18n.t("chatbot.pm_prefix"),
-          archetypeId: "private_message",
-          draftKey: Composer.NEW_PRIVATE_MESSAGE_KEY,
-          hasGroups: false,
-          warningsDisabled: true,
-        },
+  async startChatting() {
+    if (this.siteSettings.chatbot_kicks_off) {
+
+      let result = await ajax('/chatbot/start_bot_convo', {
+        type: "POST",
       });
+
+      DiscourseURL.redirectTo(`/t/${result.topic_id}`);
+    } else {
+      if (!this.siteSettings.chatbot_quick_access_talk_in_private_message) {
+        this.chat
+          .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
+          .then((chatChannel) => {
+            this.router.transitionTo("chat.channel", ...chatChannel.routeModels);
+          });
+      } else {
+        this.composer.focusComposer({
+          fallbackToNewTopic: true,
+          openOpts: {
+            action: Composer.PRIVATE_MESSAGE,
+            recipients: this.siteSettings.chatbot_bot_user,
+            topicTitle: I18n.t("chatbot.pm_prefix"),
+            archetypeId: "private_message",
+            draftKey: Composer.NEW_PRIVATE_MESSAGE_KEY,
+            hasGroups: false,
+            warningsDisabled: true,
+          },
+        });
+      }
     }
   }
 }
