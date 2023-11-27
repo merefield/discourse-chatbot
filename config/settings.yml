@@ -77,8 +77,9 @@ plugins:
       - gpt-4-32k
   chatbot_reply_job_time_delay:
     client: false
-    default: 3
-    min: 1
+    default: 1
+    min: 0
+    max: 3
   chatbot_open_ai_token:
     client: false
     default: ''
@@ -96,6 +97,9 @@ plugins:
     default: ''
     client: false
   chatbot_open_ai_model_custom_url:
+    client: false
+    default: ''
+  chatbot_open_ai_embeddings_model_custom_url:
     client: false
     default: ''
   chatbot_open_ai_model_custom_api_type:

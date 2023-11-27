@@ -9,9 +9,9 @@ module ::DiscourseChatbot
       ::OpenAI.configure do |config|
         config.access_token = SiteSetting.chatbot_open_ai_token
       end
-      if !SiteSetting.chatbot_open_ai_model_custom_url.blank?
+      if !SiteSetting.chatbot_open_ai_embeddings_model_custom_url.blank?
         ::OpenAI.configure do |config|
-          config.uri_base = SiteSetting.chatbot_open_ai_model_custom_url
+          config.uri_base = SiteSetting.chatbot_open_ai_embeddings_model_custom_url
         end
       end
       if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
@@ -49,6 +49,14 @@ module ::DiscourseChatbot
             input: post.raw[0..::DiscourseChatbot::EMBEDDING_CHAR_LIMIT]
           }
         )
+
+        if response.dig("error")
+          error_text = "ERROR when trying to create Embedding for post id '#{post.id}' in topic id '#{topic.id}': #{response.dig("error", "message")}"
+          puts "\n\n#{error_text}\n\n"
+
+          Rails.logger.error("Chatbot: #{error_text}")
+          return
+        end
 
         embedding_vector = response.dig("data", 0, "embedding")
 
