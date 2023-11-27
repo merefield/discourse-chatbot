@@ -50,6 +50,11 @@ module ::DiscourseChatbot
           }
         )
 
+        if response.dig("error")
+          puts "\n\nERROR for post id '#{post.id}' in topic id '#{topic.id}': #{response.dig("error", "message")}\n\n"
+          return
+        end
+
         embedding_vector = response.dig("data", 0, "embedding")
 
         ::DiscourseChatbot::PostEmbedding.upsert({ post_id: post_id, embedding: "#{embedding_vector}" }, on_duplicate: :update, unique_by: :post_id)
