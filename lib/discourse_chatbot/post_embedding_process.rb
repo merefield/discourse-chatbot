@@ -45,7 +45,7 @@ module ::DiscourseChatbot
       if @benchmark_user_guardian.can_see?(post)
         response = @client.embeddings(
           parameters: {
-            model: '', #@model_name,
+            model: @model_name,
             input: post.raw[0..::DiscourseChatbot::EMBEDDING_CHAR_LIMIT]
           }
         )
