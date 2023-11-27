@@ -45,13 +45,16 @@ module ::DiscourseChatbot
       if @benchmark_user_guardian.can_see?(post)
         response = @client.embeddings(
           parameters: {
-            model: @model_name,
+            model: '', #@model_name,
             input: post.raw[0..::DiscourseChatbot::EMBEDDING_CHAR_LIMIT]
           }
         )
 
         if response.dig("error")
-          puts "\n\nERROR for post id '#{post.id}' in topic id '#{topic.id}': #{response.dig("error", "message")}\n\n"
+          error_text = "ERROR when trying to create Embedding for post id '#{post.id}' in topic id '#{topic.id}': #{response.dig("error", "message")}"
+          puts "\n\n#{error_text}\n\n"
+
+          Rails.logger.error("Chatbot: #{error_text}")
           return
         end
 
