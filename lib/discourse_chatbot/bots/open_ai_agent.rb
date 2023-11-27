@@ -81,6 +81,13 @@ module ::DiscourseChatbot
           -------------------------------
         EOS
         res = create_chat_completion(@chat_history + @inner_thoughts)
+
+        if res.dig("error")
+          error_text = "ERROR when trying to perform chat completion: #{res.dig("error", "message")}"
+
+          Rails.logger.error("Chatbot: #{error_text}")
+        end
+
         finish_reason = res["choices"][0]["finish_reason"]
 
         if finish_reason == 'stop' || @inner_thoughts.length > 5
@@ -89,7 +96,13 @@ module ::DiscourseChatbot
             @chat_history + [final_thought],
             false
           )
-          # pp final_res
+
+          if final_res.dig("error")
+            error_text = "ERROR when trying to perform final chat completion: #{final_res.dig("error", "message")}"
+
+            Rails.logger.error("Chatbot: #{error_text}")
+          end
+
           return final_res
         elsif finish_reason == 'function_call'
           handle_function_call(res)
