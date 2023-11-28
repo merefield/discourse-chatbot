@@ -87,7 +87,7 @@ en:
           answer_summary: "The top %{number_of_posts} posts on the forum related to this query are, best match first:\n\n"
           answer: "Number %{rank}: the post is at this web address: %{url}, it was written by '%{username}' on %{date} and the text is '%{raw}'.\n\n"
           error:  "'%{query}': my search for this on the forum failed."
-        forum_user_location_search_from_location:
+        forum_user_search_from_location:
           description: |
             Search the local forum for users that are located close to the specified coordinates.
 
@@ -102,7 +102,7 @@ en:
           answer_summary: "The users within %{distance} kilometres of %{query} are:\n\n"
           answer: "Number %{rank}: @%{username}'.\n\n"
           error:  "'%{query}': my search for users in proximity to this target failed."
-        forum_user_location_search_from_user:
+        forum_user_search_from_user_location:
           description: |
             Search the local forum for users that are located close to specified user.
 
