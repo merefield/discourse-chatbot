@@ -5,8 +5,6 @@ require_relative '../function'
 module DiscourseChatbot
   class ForumUserSearchFromUserLocationFunction < Function
 
-    REGEX_PATTERN = "(\[)?-?\d*.?\d*,\s?-?\d*.?\d*(\])?"
-
     def name
       'forum_user_search_from_user_location'
     end
@@ -52,8 +50,8 @@ module DiscourseChatbot
           break if index == number_of_users
         end
         response
-        # rescue
-        #   I18n.t("chatbot.prompt.function.forum_user_search_from_user_location.error", query: args[parameters[0][:name]])
+      rescue
+        I18n.t("chatbot.prompt.function.forum_user_search_from_user_location.error", query: args[parameters[0][:name]])
       end
     end
   end

@@ -5,8 +5,6 @@ require_relative '../function'
 module DiscourseChatbot
   class ForumTopicSearchFromLocationFunction < Function
 
-    REGEX_PATTERN = "(\[)?-?\d*.?\d*,\s?-?\d*.?\d*(\])?"
-
     def name
       'forum_topic_search_from_location'
     end
@@ -37,10 +35,8 @@ module DiscourseChatbot
 
         results = []
 
-        if REGEX_PATTERN.match?(query)
-          coords = query.split(/\D+/).reject(&:empty?).map(&:to_i)
-          results = ::Locations::TopicLocationProcess.search_from_location(coords[0], coords[1], distance)
-        end
+        coords = query.split(/\D+/).reject(&:empty?).map(&:to_i)
+        results = ::Locations::TopicLocationProcess.search_from_location(coords[0], coords[1], distance)
 
         response = I18n.t("chatbot.prompt.function.forum_topic_search_from_location.answer_summary", distance: distance, query: query)
 

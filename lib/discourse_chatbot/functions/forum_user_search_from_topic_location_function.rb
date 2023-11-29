@@ -5,8 +5,6 @@ require_relative '../function'
 module DiscourseChatbot
   class ForumUserSearchFromTopicLocationFunction < Function
 
-    REGEX_PATTERN = "(\[)?-?\d*.?\d*,\s?-?\d*.?\d*(\])?"
-
     def name
       'forum_topic_search_from_user_location'
     end
