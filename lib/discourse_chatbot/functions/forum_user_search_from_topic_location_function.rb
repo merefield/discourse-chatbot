@@ -3,7 +3,7 @@
 require_relative '../function'
 
 module DiscourseChatbot
-  class ForumUserLocationSearchFromUserFunction < Function
+  class ForumUserSearchFromTopicLocationFunction < Function
 
     REGEX_PATTERN = "(\[)?-?\d*.?\d*,\s?-?\d*.?\d*(\])?"
 
@@ -17,14 +17,14 @@ module DiscourseChatbot
     
     def parameters
       [
-        { name: "topic_id", type: Integer, description: I18n.t("chatbot.prompt.function.forum_topic_search_from_user_location.parameters.username") } ,
-        { name: "distance", type: String, description: I18n.t("chatbot.prompt.function.forum_topic_search_from_user_location.parameters.distance") } ,
-        { name: "number_of_topics", type: Integer, description: I18n.t("chatbot.prompt.function.forum_topic_search_from_user_location.parameters.number_of_users") }
+        { name: "username", type: String, description: I18n.t("chatbot.prompt.function.forum_topic_search_from_user_location.parameters.username") } ,
+        { name: "distance", type: Integer, description: I18n.t("chatbot.prompt.function.forum_topic_search_from_user_location.parameters.distance") } ,
+        { name: "number_of_topics", type: Integer, description: I18n.t("chatbot.prompt.function.forum_topic_search_from_user_location.parameters.number_of_topics") }
       ]
     end
 
     def required
-      ['topic_id']
+      ['username']
     end
 
     def process(args)
@@ -46,7 +46,8 @@ module DiscourseChatbot
 
         results.each_with_index do |result, index|
           user = User.find(result)
-          distance = result.distance_from(target_topic_location.to_coordinates, units: :km)
+          user_location = ::Locations::UserLocation.find_by(user_id: user.id)
+          distance = user_location.distance_from(target_topic_location.to_coordinates, :km)
           response += I18n.t("chatbot.prompt.function.forum_topic_search_from_user_location.answer", username: user.username, distance: distance, rank: index + 1)
           break if index == number_of_users
         end

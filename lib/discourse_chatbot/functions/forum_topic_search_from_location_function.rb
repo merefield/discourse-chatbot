@@ -48,7 +48,7 @@ module DiscourseChatbot
           topic = Topic.find(result.topic_id)
           url = "https://#{Discourse.current_hostname}/t/slug/#{topic.topic_id}"
           topic_location = TopicLocation.find_by(topic_id: topic.id)
-          distance = result.distance_from(coords[1], coords[0], units: :km) # geocoder expects order lat, lon.
+          distance = result.distance_from(coords[1], coords[0], :km) # geocoder expects order lat, lon.
           response += I18n.t("chatbot.prompt.function.forum_topic_search_from_location.answer", title: topic.title, address: topic_location.address, url: url, distance: distance, rank: index + 1)
           break if index == number_of_topics
         end

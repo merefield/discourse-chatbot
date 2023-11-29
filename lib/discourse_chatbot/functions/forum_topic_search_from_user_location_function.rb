@@ -3,7 +3,7 @@
 require_relative '../function'
 
 module DiscourseChatbot
-  class ForumUserLocationSearchFromUserFunction < Function
+  class ForumTopicSearchFromUserLocationFunction < Function
 
     REGEX_PATTERN = "(\[)?-?\d*.?\d*,\s?-?\d*.?\d*(\])?"
 
@@ -47,8 +47,8 @@ module DiscourseChatbot
         results.each_with_index do |result, index|
           topic = Topic.find(result.topic_id)
           url = "https://#{Discourse.current_hostname}/t/slug/#{topic.topic_id}"
-          topic_location = TopicLocation.find_by(topic_id: topic.id)
-          distance = result.distance_from(target_user_location.to_coordinates)
+          topic_location = ::Locations::TopicLocation.find_by(topic_id: topic.id)
+          distance = result.distance_from(target_user_location.to_coordinates, :km)
           response += I18n.t("chatbot.prompt.function.f0orum_topic_search_from_user_location.answer", title: topic.title, address: topic_location.address, url: url, distance: distance, rank: index + 1)
           break if index == number_of_topics
         end

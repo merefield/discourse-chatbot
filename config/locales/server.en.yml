@@ -87,20 +87,54 @@ en:
           answer_summary: "The top %{number_of_posts} posts on the forum related to this query are, best match first:\n\n"
           answer: "Number %{rank}: the post is at this web address: %{url}, it was written by '%{username}' on %{date} and the text is '%{raw}'.\n\n"
           error:  "'%{query}': my search for this on the forum failed."
+        forum_user_distance_from_location:
+          description: |
+            Return the distance of a user from a location specified by its coordinates in latitude and longitude.
+
+            Input should be a username and a string representing the coordinates.
+          parameters:
+            username: the username of the specific user for which you want to check the distance.
+            coords: the location you wish to determine the distance the user is from in latitude and longitude in the form "lon, lat", e.g. 30, 50
+          answer_summary: "The user @%{username} is %{distance}km from %{coords} \n\n"
+          error:  "the calculation of the distance the user is from the coordinates failed"
+        return_coords_from_location_description:
+          description: |
+            To find the coordinates of a location.
+
+            Takes a string query and returns coordinates in latitude and longitude.
+
+            You might need to run this function first in order to get coordinates to use another function.
+          parameters:
+            query: "string representing the location to be found"
+          answer_summary: "The coordinates of location '%{query}' are '%{coords}'\n\n"
+          error:  "'%{query}': my search for the coords of the requested location failed"    
         forum_user_search_from_location:
           description: |
             Search the local forum for users that are located close to the specified coordinates.
 
-            Input should be a two element array of longitude and latitude each in decimals.  You can optionally also specify the maximum distance from the coordinates and the maximum number of users you wish returned from your query.
+            Input should be a two element array of latitude and longitude each in decimals.  You can optionally also specify the maximum distance from the coordinates and the maximum number of users you wish returned from your query.
 
             Outputs the usernames of users found in proximity. When responding with these usernames, use the @ symbol prefix (as if you were mentioning them).
           parameters:
-            username: "target username"
-            coords: "target location in latitude and longitude"
-            distance: "maximum distance from target in kilometres (km)"
-            number_of_posts: "specify the number of users you want returned from your query"
+            coords: "target location in latitude and longitude.  Correct order is critical."
+            distance: "maximum distance from target coordinates in kilometres (km)"
+            number_of_users: "specify the number of users you want returned from your query"
           answer_summary: "The users within %{distance} kilometres of %{query} are:\n\n"
           answer: "Number %{rank}: @%{username}'.\n\n"
+          error:  "'%{query}': my search for users in proximity to this target failed."
+        forum_topic_search_from_location:
+          description: |
+            Search the local forum for topics that are located close to the specified coordinates.
+
+            Input should be a two element array of latitude and longitude each in decimals.  You can optionally also specify the maximum distance from the coordinates and the maximum number of topics you wish returned from your query.
+
+            Outputs the titles, addresses, links to the topicss found in proximity.
+          parameters:
+            coords: "target location in latitude and longitude.  Correct order is critical."
+            distance: "maximum distance from target coordinates in kilometres (km)"
+            number_of_topics: "specify the number of users you want returned from your query"
+          answer_summary: "The users within %{distance} kilometres of %{query} are:\n\n"
+          answer: "Number %{rank}: Topic Title: '%{title}'', Address: '%{address}' Link: '%{url}'\n\n"
           error:  "'%{query}': my search for users in proximity to this target failed."
         forum_user_search_from_user_location:
           description: |
@@ -112,10 +146,59 @@ en:
           parameters:
             username: "target username"
             distance: "maximum distance from target in kilometres (km)"
-            number_of_posts: "specify the number of users you want returned from your query"
+            number_of_users: "specify the maximum number of users you want returned from your query"
           answer_summary: "The users within %{distance} kilometres of %{query} are:\n\n"
           answer: "Number %{rank}: @%{username}'.\n\n"
           error:  "'%{query}': my search for users in proximity to this target failed."
+        forum_topic_search_from_user_location:
+          description: |
+            Search the local forum for topics that are located close to specified user.
+
+            Input should be a username.  You can optionally also specify the maximum distance from the user and the maximum number of topics you wish returned from your query.
+
+            Outputs the titles, addresses and urls of topics found in proximity.
+          parameters:
+            username: "target username"
+            distance: "maximum distance from target in kilometres (km)"
+            number_of_topics: "specify the maximum number of topics you want returned from your query"
+          answer_summary: "The topics within %{distance} kilometres of %{query} are:\n\n"
+          answer: "Number %{rank}: Topic Title: '%{title}'', Address: '%{address}' Link: '%{url}'\n\n"
+          error:  "'%{query}': my search for users in proximity to this target failed."
+        forum_user_search_from_topic_location:
+          description: |
+            Search the local forum for users that are located close to specified topic.
+
+            Input should be a topic id.  You can optionally also specify the maximum distance from the topic and the maximum number of users you wish returned from your query.
+
+            Outputs the usernames of users found in proximity. When responding with these usernames, use the @ symbol prefix (as if you were mentioning them).
+          parameters:
+            topic_id: "target topic id"
+            distance: "maximum distance from target in kilometres (km)"
+            number_of_posts: "specify the maximum number of users you want returned from your query"
+          answer_summary: "The users within %{distance} kilometres of %{query} are:\n\n"
+          answer: "Number %{rank}: @%{username}'.\n\n"
+          error:  "'%{query}': my search for users in proximity to this target failed."
+        forum_topic_search_from_topic_location:
+          description: |
+            Search the local forum for topics that are located close to specified topic.
+
+            Input should be a topic id.  You can optionally also specify the maximum distance from the topic and the maximum number of topics you wish returned from your query.
+
+            Outputs the titles, addresses and urls of topics found in proximity.
+          parameters:
+            topic_id: "target topic id"
+            distance: "maximum distance from target in kilometres (km)"
+            number_of_topics: "specify the maximum number of topics you want returned from your query"
+          answer_summary: "The topics within %{distance} kilometres of %{query} are:\n\n"
+          answer: "Number %{rank}: Topic Title: '%{title}'', Address: '%{address}' Link: '%{url}'\n\n"
+          error:  "'%{query}': my search for topics in proximity to this target failed."
+        get_distance_between_locations:
+          description: |
+            Return the distance in kilometres(km) between two locations specified by two pairs of coordinates, both in form [latitude, longitude]
+          parameters:
+            coords: "location one in form [latitude, longitude]"
+          answer_summary: "The distance between %{coords1} and %{coords2} is %{distance} kilometres (km)"
+          error:  "'%{query}': my calculation for the distance between those two locations went wrong."
         google_search:
           description: |
             A wrapper around Google Search.
