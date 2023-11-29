@@ -14,7 +14,7 @@ module DiscourseChatbot
     def description
       I18n.t("chatbot.prompt.function.forum_user_search_from_user_location.description")
     end
-    
+
     def parameters
       [
         { name: "username", type: String, description: I18n.t("chatbot.prompt.function.forum_user_search_from_user_location.parameters.username") } ,
@@ -36,7 +36,6 @@ module DiscourseChatbot
         number_of_users = args[parameters[2][:name]].blank? ? 3 : args[parameters[2][:name]]
         number_of_users = number_of_users > 16 ? 16 : number_of_users
 
-
         results = []
 
         user_id = User.find_by(username: query).id
@@ -53,8 +52,8 @@ module DiscourseChatbot
           break if index == number_of_users
         end
         response
-      # rescue
-      #   I18n.t("chatbot.prompt.function.forum_user_search_from_user_location.error", query: args[parameters[0][:name]])
+        # rescue
+        #   I18n.t("chatbot.prompt.function.forum_user_search_from_user_location.error", query: args[parameters[0][:name]])
       end
     end
   end

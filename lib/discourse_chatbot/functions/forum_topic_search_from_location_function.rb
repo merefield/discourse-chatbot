@@ -14,7 +14,7 @@ module DiscourseChatbot
     def description
       I18n.t("chatbot.prompt.function.forum_topic_search_from_location.description")
     end
-    
+
     def parameters
       [
         { name: "coords", type: String, description: I18n.t("chatbot.prompt.function.forum_topic_search_from_location.parameters.coords") } ,

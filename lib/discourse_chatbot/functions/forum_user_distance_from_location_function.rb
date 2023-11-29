@@ -12,7 +12,7 @@ module DiscourseChatbot
     def description
       I18n.t("chatbot.prompt.function.forum_user_distance_from_location.description")
     end
-    
+
     def parameters
       [
         { name: "username", type: String, description: I18n.t("chatbot.prompt.function.forum_user_distance_from_location.parameters.username") } ,

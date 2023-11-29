@@ -14,7 +14,7 @@ module DiscourseChatbot
     def description
       I18n.t("chatbot.prompt.function.forum_topic_search_from_topic_location.description")
     end
-    
+
     def parameters
       [
         { name: "topic_id", type: Integer, description: I18n.t("chatbot.prompt.function.forum_topic_search_from_topic_location.parameters.username") } ,

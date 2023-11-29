@@ -14,7 +14,7 @@ module DiscourseChatbot
     def description
       I18n.t("chatbot.prompt.function.get_distance_between_locations.description")
     end
-    
+
     def parameters
       [
         { name: "coords1", type: String, description: I18n.t("chatbot.prompt.function.get_distance_between_locations.parameters.coords") } ,
@@ -35,7 +35,6 @@ module DiscourseChatbot
         coords1 = query1.split(",")
         coords2 = query2.split(",")
 
-
         #byebug
         distance = ::Locations::Geocode.return_distance(coords1[0], coords1[1], coords2[0], coords2[1])
 
@@ -46,4 +45,3 @@ module DiscourseChatbot
     end
   end
 end
-

@@ -11,7 +11,7 @@ module DiscourseChatbot
     def description
       I18n.t("chatbot.prompt.function.return_coords_from_location_description.description")
     end
-    
+
     def parameters
       [
         { name: "query", type: String, description: I18n.t("chatbot.prompt.function.return_coords_from_location_description.parameters.coords") } ,
