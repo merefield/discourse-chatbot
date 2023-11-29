@@ -20,9 +20,9 @@ module ::DiscourseChatbot
       get_coords_of_location_function = nil
       get_distance_between_locations = nil
 
-      if defined?(Locations) == 'constant' && Locations.class == Module &&
+      if SiteSetting.chatbot_locations_plugin_support && defined?(Locations) == 'constant' && Locations.class == Module &&
          defined?(::Locations::UserLocation) == 'constant' && ::Locations::UserLocation.class == Class && ::Locations::UserLocation.count > 0
-        user_search_from_location_function = ::DiscourseChatbot::ForumUserSearchFromLocationFunction.new
+         user_search_from_location_function = ::DiscourseChatbot::ForumUserSearchFromLocationFunction.new
          user_search_from_user_location_function = ::DiscourseChatbot::ForumUserSearchFromUserLocationFunction.new
          get_coords_of_location_function = ::DiscourseChatbot::GetCoordsOfLocationDescriptionFunction.new
          user_distance_from_location_function = ::DiscourseChatbot::ForumUserDistanceFromLocationFunction.new
