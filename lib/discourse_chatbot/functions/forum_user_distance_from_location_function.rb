@@ -31,10 +31,9 @@ module DiscourseChatbot
         username = args[parameters[0][:name]]
         location = args[parameters[1][:name]]
 
-        if location.match?(/^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/)
-          coords = location.split(/, /).reject(&:empty?).map(&:to_i)
-          result = ::Locations::UserLocationProcess.get_user_distance_from_location(username, coords[0], coords[1])
-        end
+        coords = location.split(/, /)
+        user = User.find_by(username: username)
+        result = ::Locations::UserLocationProcess.get_user_distance_from_location(user.id, coords[0], coords[1])
 
         response = I18n.t("chatbot.prompt.function.forum_user_distance_from_location.answer_summary", distance: result, username: username, coords: location)
 

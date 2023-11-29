@@ -32,12 +32,10 @@ module DiscourseChatbot
         distance = args[parameters[1][:name]].blank? ? 5000 : args[parameters[1][:name]]
         number_of_users = args[parameters[2][:name]].blank? ? 3 : args[parameters[2][:name]]
         number_of_users = number_of_users > 16 ? 16 : number_of_users
-
         results = []
 
         coords = query.split(/,/)
-        results = ::Locations::UserLocationProcess.search_from_location(coords[0], coords[1], distance)
-
+        results = ::Locations::UserLocationProcess.search_users_from_location(coords[0], coords[1], distance)
         response = I18n.t("chatbot.prompt.function.forum_user_search_from_location.answer_summary", distance: distance, query: query)
 
         results.each_with_index do |result, index|

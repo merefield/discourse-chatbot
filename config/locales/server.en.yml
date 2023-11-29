@@ -120,7 +120,7 @@ en:
             distance: "maximum distance from target coordinates in kilometres (km)"
             number_of_users: "specify the number of users you want returned from your query"
           answer_summary: "The users within %{distance} kilometres of %{query} are:\n\n"
-          answer: "Number %{rank}: @%{username}'.\n\n"
+          answer: "Number %{rank}: user: @%{username} distance: %{distance} km.\n\n"
           error:  "'%{query}': my search for users in proximity to this target failed."
         forum_topic_search_from_location:
           description: |
@@ -148,7 +148,7 @@ en:
             distance: "maximum distance from target in kilometres (km)"
             number_of_users: "specify the maximum number of users you want returned from your query"
           answer_summary: "The users within %{distance} kilometres of %{query} are:\n\n"
-          answer: "Number %{rank}: @%{username}'.\n\n"
+          answer: "Number %{rank}: user: @%{username} distance: %{distance} km.\n\n"
           error:  "'%{query}': my search for users in proximity to this target failed."
         forum_topic_search_from_user_location:
           description: |
@@ -176,7 +176,7 @@ en:
             distance: "maximum distance from target in kilometres (km)"
             number_of_posts: "specify the maximum number of users you want returned from your query"
           answer_summary: "The users within %{distance} kilometres of %{query} are:\n\n"
-          answer: "Number %{rank}: @%{username}'.\n\n"
+          answer: "Number %{rank}: user: @%{username} distance: %{distance} km.\n\n"
           error:  "'%{query}': my search for users in proximity to this target failed."
         forum_topic_search_from_topic_location:
           description: |
