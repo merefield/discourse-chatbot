@@ -19,6 +19,7 @@ module ::DiscourseChatbot
       user_distance_from_location_function = nil
       get_coords_of_location_function = nil
       get_distance_between_locations = nil
+      get_user_address = nil
 
       if SiteSetting.chatbot_locations_plugin_support && defined?(Locations) == 'constant' && Locations.class == Module &&
          defined?(::Locations::UserLocation) == 'constant' && ::Locations::UserLocation.class == Class && ::Locations::UserLocation.count > 0
@@ -27,6 +28,7 @@ module ::DiscourseChatbot
         get_coords_of_location_function = ::DiscourseChatbot::GetCoordsOfLocationDescriptionFunction.new
         user_distance_from_location_function = ::DiscourseChatbot::ForumUserDistanceFromLocationFunction.new
         get_distance_between_locations = ::DiscourseChatbot::GetDistanceBetweenLocationsFunction.new
+        get_user_address = ::DiscourseChatbot::ForumGetUserAddressFunction.new
       end
 
       functions = [calculator_function, wikipedia_function, forum_search_function]
@@ -36,6 +38,7 @@ module ::DiscourseChatbot
       functions << get_coords_of_location_function if get_coords_of_location_function
       functions << user_distance_from_location_function if user_distance_from_location_function
       functions << get_distance_between_locations if get_distance_between_locations
+      functions << get_user_address if get_user_address
       functions << news_function if !SiteSetting.chatbot_news_api_token.blank?
       functions << google_search_function if !SiteSetting.chatbot_serp_api_key.blank?
       functions << stock_data_function if !SiteSetting.chatbot_marketstack_key.blank?
