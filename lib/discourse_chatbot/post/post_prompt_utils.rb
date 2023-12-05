@@ -16,14 +16,14 @@ module ::DiscourseChatbot
         role = (p.user_id == bot_user_id ? "assistant" : "user")
         text = (p.user_id == bot_user_id ? "#{p.raw}" : I18n.t("chatbot.prompt.post", username: p.user.username, raw: post_content))
         content = []
-        content << {"type": "text", "text": text}
+        content << { "type": "text", "text": text }
         if SiteSetting.chatbot_support_vision
           if p.image_upload_id
             url = Discourse.base_url + Upload.find(p.image_upload_id).url
             content << { "type": "image_url", "image_url": { "url": url } }
           end
         end
-        { "role": role, "content": content}
+        { "role": role, "content": content }
       end
 
       messages

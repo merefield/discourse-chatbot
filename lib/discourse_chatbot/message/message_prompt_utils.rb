@@ -12,18 +12,18 @@ module ::DiscourseChatbot
       messages += message_collection.reverse.map do |cm|
         username = ::User.find(cm.user_id).username
         role = (cm.user_id == bot_user_id ? "assistant" : "user")
-        text = (cm.user_id == bot_user_id ? "#{cm.message}" : I18n.t("chatbot.prompt.post", username: username, raw: cm.message)) 
+        text = (cm.user_id == bot_user_id ? "#{cm.message}" : I18n.t("chatbot.prompt.post", username: username, raw: cm.message))
         content = []
-        content << {"type": "text", "text": text}
+        content << { "type": "text", "text": text }
         if SiteSetting.chatbot_support_vision
           cm.uploads.each do |ul|
-            if ["png", "webp", "jpg", "jpeg", "gif", "ico", "avif"].include? (ul.extension) 
+            if ["png", "webp", "jpg", "jpeg", "gif", "ico", "avif"].include? (ul.extension)
               url = Discourse.base_url + ul.url
               content << { "type": "image_url", "image_url": { "url": url } }
             end
           end
         end
-        { "role": role, "content": content}
+        { "role": role, "content": content }
       end
 
       messages
