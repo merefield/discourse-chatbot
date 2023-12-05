@@ -14,8 +14,14 @@ module ::DiscourseChatbot
         post_content = p.raw
         post_content.gsub!(/\[quote.*?\](.*?)\[\/quote\]/m, '') if SiteSetting.chatbot_strip_quotes
         role = (p.user_id == bot_user_id ? "assistant" : "user")
-        content = (p.user_id == bot_user_id ? "#{p.raw}" : I18n.t("chatbot.prompt.post", username: p.user.username, raw: post_content))
-        { "role": role , "content": content }
+        text = (p.user_id == bot_user_id ? "#{p.raw}" : I18n.t("chatbot.prompt.post", username: p.user.username, raw: post_content))
+        content = []
+        content << {"type": "text", "text": text}
+        if p.image_upload_id
+          url = Discourse.base_url + Upload.find(p.image_upload_id).url
+          content << { "type": "image_url", "image_url": { "url": url } }
+        end
+        { "role": role, "content": content}
       end
 
       messages
