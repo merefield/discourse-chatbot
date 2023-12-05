@@ -46,6 +46,7 @@ module ::DiscourseChatbot
       if bot_user && (user != bot_user) && (mentions_bot_name || explicit_reply_to_bot || (last_post_was_bot && human_participants_count == 1))
         opts = {
           type: POST,
+          private: topic.archetype == Archetype.private_message,
           user_id: user_id,
           bot_user_id: bot_user.id,
           reply_to_message_or_post_id: post.id,

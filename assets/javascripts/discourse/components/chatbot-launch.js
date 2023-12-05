@@ -61,6 +61,7 @@ export default class ContentLanguageDiscovery extends Component {
         this.chat
           .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
           .then((chatChannel) => {
+            console.log(chatChannel);
             this.router.transitionTo("chat.channel", ...chatChannel.routeModels);
           });
       } else {
