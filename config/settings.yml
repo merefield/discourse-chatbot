@@ -143,6 +143,9 @@ plugins:
   chatbot_enable_verbose_console_response_progress_logging:
     client: false
     default: false
+  chatbot_locations_plugin_support:
+    client: false
+    default: false
   chatbot_news_api_token:
     client: false
     default: ''

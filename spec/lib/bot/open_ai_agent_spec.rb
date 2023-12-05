@@ -10,7 +10,7 @@ describe ::DiscourseChatbot::OpenAIAgent do
   it "calls function on returning a function request from LLN" do
     DateTime.expects(:current).returns("2023-08-18T10:11:44+00:00")
 
-    system_entry = { role: "system", content: "You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is 2023-08-18T10:11:44+00:00.  Only respond to the last question, using the prior information as context, if appropriate." }
+    system_entry = { role: "system", content: "You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is 2023-08-18T10:11:44+00:00.  When referring to users by name, include an @ symbol directly in front of their username.  Only respond to the last question, using the prior information as context, if appropriate." }
 
     query = [{ "role": "user", "content" => "what is 3 * 23.452432?" }]
     second_query = [system_entry, { :role => "user", "content" => "what is 3 * 23.452432?" }, { "role" => "assistant", "content" => nil, "function_call" => { "name" => "calculate", "arguments" => "{\n  \"input\": \"3 * 23.452432\"\n}" } }, { "role" => "function", "name" => "calculate", "content" => "The answer is 70.357296." }]

@@ -16,7 +16,7 @@ module DiscourseChatbot
     def parameters
       [
         { name: "query", type: String, description: I18n.t("chatbot.prompt.function.forum_search.parameters.query") } ,
-        { name: "number_of_posts", type: Integer, description: I18n.t("chatbot.prompt.function.stock_data.parameters.number_of_posts") }
+        { name: "number_of_posts", type: Integer, description: I18n.t("chatbot.prompt.function.forum_search.parameters.number_of_posts") }
       ]
     end
 
