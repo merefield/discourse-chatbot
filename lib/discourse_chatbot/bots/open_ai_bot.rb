@@ -29,7 +29,10 @@ module ::DiscourseChatbot
           raise StandardError, response["error"]["message"]
         rescue => e
           Rails.logger.error("Chatbot: There was a problem: #{e}")
-          I18n.t('chatbot.errors.general')
+          {
+            reply: I18n.t('chatbot.errors.general'),
+            inner_thoughts: nil
+          }
         end
       else
         {
