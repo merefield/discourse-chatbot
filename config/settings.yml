@@ -75,6 +75,9 @@ plugins:
       - gpt-3.5-turbo-16k
       - gpt-4
       - gpt-4-32k
+  chatbot_support_vision:
+    client: false
+    default: false
   chatbot_reply_job_time_delay:
     client: false
     default: 1
