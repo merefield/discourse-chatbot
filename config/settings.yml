@@ -143,9 +143,6 @@ plugins:
     default: 1
     min: 0
     max: 4
-  chatbot_enable_verbose_console_response_progress_logging:
-    client: false
-    default: false
   chatbot_locations_plugin_support:
     client: false
     default: false
@@ -158,3 +155,9 @@ plugins:
   chatbot_marketstack_key:
     client: false
     default: ''
+  chatbot_enable_verbose_console_logging:
+    client: false
+    default: false
+  chatbot_enable_verbose_rails_logging:
+    client: false
+    default: false

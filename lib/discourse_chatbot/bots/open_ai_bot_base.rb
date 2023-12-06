@@ -19,7 +19,10 @@ module ::DiscourseChatbot
           config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
         end
       end
-      @client = ::OpenAI::Client.new
+      @client = OpenAI::Client.new do |f|
+        f.response :logger, Logger.new($stdout), bodies: true if SiteSetting.chatbot_enable_verbose_console_logging
+        f.response :logger, Rails.logger, bodies: true if SiteSetting.chatbot_enable_verbose_rails_logging
+      end
       @model_name = SiteSetting.chatbot_open_ai_model_custom ? SiteSetting.chatbot_open_ai_model_custom_name : SiteSetting.chatbot_open_ai_model
     end
 
