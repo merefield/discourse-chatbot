@@ -18,11 +18,10 @@ module ::DiscourseChatbot
         if SiteSetting.chatbot_support_vision
           cm.uploads.each do |ul|
             if ["png", "webp", "jpg", "jpeg", "gif", "ico", "avif"].include? (ul.extension)
-              path = ul.url
-              url = Discourse.asset_host.blank? ? Discourse.base_url + path : UrlHelper.local_cdn_url(path)
+              url = UrlHelper.absolute(ul.url)
               content << { "type": "image_url", "image_url": { "url": url } }
             end
-          end
+          ends
         end
         { "role": role, "content": content }
       end

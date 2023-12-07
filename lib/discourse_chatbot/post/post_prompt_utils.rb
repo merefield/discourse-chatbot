@@ -19,8 +19,7 @@ module ::DiscourseChatbot
         content << { "type": "text", "text": text }
         if SiteSetting.chatbot_support_vision
           if p.image_upload_id
-            path = Upload.find(p.image_upload_id).url
-            url = Discourse.asset_host.blank? ? Discourse.base_url + path : UrlHelper.local_cdn_url(path)
+            url = UrlHelper.absolute(Upload.find(p.image_upload_id).url)
             content << { "type": "image_url", "image_url": { "url": url } }
           end
         end
