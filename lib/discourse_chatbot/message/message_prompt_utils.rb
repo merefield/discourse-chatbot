@@ -21,7 +21,7 @@ module ::DiscourseChatbot
               url = UrlHelper.absolute(ul.url)
               content << { "type": "image_url", "image_url": { "url": url } }
             end
-          ends
+          end
         end
         { "role": role, "content": content }
       end
