@@ -24,11 +24,11 @@ export default class ContentLanguageDiscovery extends Component {
       this.currentUser &&
       this.siteSettings.chatbot_enabled &&
       currentRouteName === `discovery.${defaultHomepage()}` &&
-      this.siteSettings.chatbot_quick_access_talk_button &&
+      this.siteSettings.chatbot_quick_access_talk_button !== "off" &&
       ((this.siteSettings.chat_enabled &&
         this.siteSettings.chatbot_permitted_in_chat) ||
         (this.siteSettings.chatbot_permitted_in_private_messages &&
-          this.siteSettings.chatbot_quick_access_talk_in_private_message))
+          this.siteSettings.chatbot_quick_access_talk_button === "personal message"))
     );
   }
 
@@ -40,24 +40,33 @@ export default class ContentLanguageDiscovery extends Component {
   }
 
   get chatbotLaunchUseAvatar() {
-    return this.siteSettings.chatbot_quick_access_bot_user_icon === "";
+    return this.siteSettings.chatbot_quick_access_talk_button_bot_icon === "";
   }
 
   get chatbotLaunchIcon() {
-    return this.siteSettings.chatbot_quick_access_bot_user_icon;
+    return this.siteSettings.chatbot_quick_access_talk_button_bot_icon;
   }
 
   @action
   async startChatting() {
-    if (this.siteSettings.chatbot_kicks_off) {
+    if (this.siteSettings.chatbot_quick_access_bot_kicks_off) {
 
       let result = await ajax('/chatbot/start_bot_convo', {
         type: "POST",
       });
 
-      DiscourseURL.redirectTo(`/t/${result.topic_id}`);
+      if (this.siteSettings.chatbot_quick_access_talk_button === "personal message") {
+        DiscourseURL.redirectTo(`/t/${result.topic_id}`);
+      } else {
+        this.chat
+        .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
+        .then((chatChannel) => {
+          console.log(chatChannel);
+          this.router.transitionTo("chat.channel", ...chatChannel.routeModels);
+        });
+      }
     } else {
-      if (!this.siteSettings.chatbot_quick_access_talk_in_private_message) {
+      if (this.siteSettings.chatbot_quick_access_talk_button === "chat") {
         this.chat
           .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
           .then((chatChannel) => {

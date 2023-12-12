@@ -9,7 +9,7 @@ module ::DiscourseChatbot
       first_post_role = post_collection.first.topic.first_post.user.id == bot_user_id ? "assistant" : "user"
 
       messages = [{ "role": first_post_role, "content":  I18n.t("chatbot.prompt.title", topic_title: post_collection.first.topic.title) }]
-      
+
       messages << { "role": first_post_role, "content": I18n.t("chatbot.prompt.first_post", username: post_collection.first.topic.first_post.user.username, raw: post_collection.first.topic.first_post.raw) }
 
       messages += post_collection.reverse.map do |p|

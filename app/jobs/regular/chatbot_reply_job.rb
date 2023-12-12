@@ -42,13 +42,13 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
 
     return unless bot_user
 
+    permitted_categories = SiteSetting.chatbot_permitted_categories.split('|')
+
     if over_quota
       reply_and_thoughts[:reply] = I18n.t('chatbot.errors.overquota')
     elsif type == ::DiscourseChatbot::POST && post
       is_private_msg = post.topic.private_message?
       opts.merge!(is_private_msg: is_private_msg)
-
-      permitted_categories = SiteSetting.chatbot_permitted_categories.split('|')
 
       begin
         presence = PresenceChannel.new("/discourse-presence/reply/#{post.topic.id}")
@@ -76,11 +76,42 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
         end
       end
     elsif type == ::DiscourseChatbot::MESSAGE && message
-      create_bot_reply = true
 
+      chat_channel_id = message.chat_channel_id
+      chat_channel = ::Chat::Channel.find(chat_channel_id)
+
+      is_direct_msg = chat_channel.chatable_type == "DirectMessage"
+
+      chat_category_id = nil
+
+      chat_category_id = chat_channel.chatable_id if chat_channel.chatable_type == "Category"
+
+      #opts.merge!(is_direct_msg: is_direct_msg)
+
+      if (is_direct_msg && !SiteSetting.chatbot_permitted_in_chat)
+        reply_and_thoughts[:reply] = I18n.t('chatbot.errors.forbiddeninchat')
+      elsif SiteSetting.chatbot_permitted_in_chat && (is_direct_msg || (!is_direct_msg && SiteSetting.chatbot_permitted_all_categories) || (chat_category_id && (permitted_categories.include? chat_category_id.to_s)))
+        create_bot_reply = true
+      else
+        if chat_channel.chatable_type == "Category"
+          if permitted_categories.size > 0
+            reply_and_thoughts[:reply] = I18n.t('chatbot.errors.forbiddenoutsidethesecategories')
+            permitted_categories.each_with_index do |permitted_category, index|
+              if index == permitted_categories.size - 1
+                reply_and_thoughts[:reply] += "##{Category.find_by(id: permitted_category).slug}"
+              else
+                reply_and_thoughts[:reply] += "##{Category.find_by(id: permitted_category).slug}, "
+              end
+            end
+          else
+            reply_and_thoughts[:reply] = I18n.t('chatbot.errors.forbiddenanycategory')
+          end
+        end
+      end
       presence = PresenceChannel.new("/chat-reply/#{message.chat_channel_id}")
       presence.present(user_id: bot_user_id, client_id: "12345")
     end
+
     if create_bot_reply
       ::DiscourseChatbot.progress_debug_message("4. Retrieving new reply message...")
       begin

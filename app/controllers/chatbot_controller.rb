@@ -7,31 +7,56 @@ module ::DiscourseChatbot
 
     def start_bot_convo
 
+      response = {}
+
       bot_username = SiteSetting.chatbot_bot_user
       bot_user = ::User.find_by(username: bot_username)
+      channel_type = SiteSetting.chatbot_quick_access_talk_button
 
-      default_opts = {
-        post_alert_options: { skip_send_email: true },
-        raw: I18n.t("chatbot.kickoff.statement"),
-        skip_validations: true,
-        title: I18n.t("chatbot.pm_prefix"),
-        archetype: Archetype.private_message,
-        target_usernames: [current_user.username, bot_user.username].join(",")
-      }
+      if channel_type == "chat"
 
-      new_post = PostCreator.create!(bot_user, default_opts)
+        @bot_author = ::User.find_by(username: SiteSetting.chatbot_bot_user)
+        @guardian = Guardian.new(@bot_author)
 
-      default_opts = {
-        raw: I18n.t("chatbot.kickoff.instructions" ),
-        topic_id: new_post.topic_id,
-        post_alert_options: { skip_send_email: true },
-        post_type: 4,
-        skip_validations: true
-      }
+        direct_message = Chat::DirectMessage.for_user_ids([bot_user.id, current_user.id])
+        if direct_message
+          chat_channel_id = Chat::Channel.find_by(chatable_id: direct_message).id
 
-      new_post = ::PostCreator.create!(bot_user, default_opts)
+          last_chat = ::Chat::Message.where(chat_channel_id: chat_channel_id, deleted_at: nil).last
 
-      response = { topic_id: new_post.topic_id }
+          unless last_chat && last_chat.message == I18n.t("chatbot.kickoff.statement")
+            Chat::CreateMessage.call(
+              chat_channel_id: chat_channel_id,
+              guardian: @guardian,
+              message: I18n.t("chatbot.kickoff.statement"),
+            )
+          end
+        end
+      elsif channel_type == "personal message"
+        default_opts = {
+          post_alert_options: { skip_send_email: true },
+          raw: I18n.t("chatbot.kickoff.statement"),
+          skip_validations: true,
+          title: I18n.t("chatbot.pm_prefix"),
+          archetype: Archetype.private_message,
+          target_usernames: [current_user.username, bot_user.username].join(",")
+        }
+
+        new_post = PostCreator.create!(bot_user, default_opts)
+
+        response = { topic_id: new_post.topic_id }
+      end
+
+      #TODO consider using whisper to hide extra bot data.
+      # default_opts = {
+      #   raw: I18n.t("chatbot.kickoff.instructions" ),
+      #   topic_id: new_post.topic_id,
+      #   post_alert_options: { skip_send_email: true },
+      #   post_type: 4,
+      #   skip_validations: true
+      # }
+
+      # new_post = ::PostCreator.create!(bot_user, default_opts)
 
       render json: response
     end
