@@ -78,6 +78,9 @@ plugins:
       - gpt-3.5-turbo-16k
       - gpt-4
       - gpt-4-32k
+  chatbot_support_vision:
+    client: false
+    default: false
   chatbot_reply_job_time_delay:
     client: false
     default: 1
@@ -143,7 +146,7 @@ plugins:
     default: 1
     min: 0
     max: 4
-  chatbot_enable_verbose_console_response_progress_logging:
+  chatbot_locations_plugin_support:
     client: false
     default: false
   chatbot_news_api_token:
@@ -155,3 +158,9 @@ plugins:
   chatbot_marketstack_key:
     client: false
     default: ''
+  chatbot_enable_verbose_console_logging:
+    client: false
+    default: false
+  chatbot_enable_verbose_rails_logging:
+    client: false
+    default: false

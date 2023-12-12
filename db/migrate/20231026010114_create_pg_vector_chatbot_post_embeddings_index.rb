@@ -10,7 +10,7 @@ class CreatePgVectorChatbotPostEmbeddingsIndex < ActiveRecord::Migration[7.0]
 
   def down
     execute <<-SQL
-      DROP INDEX IF EXISTS CREATE INDEX pgv_hnsw_index_on_chatbot_post_embeddings;
+      DROP INDEX IF EXISTS pgv_hnsw_index_on_chatbot_post_embeddings;
     SQL
   end
 end

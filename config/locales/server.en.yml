@@ -11,6 +11,7 @@ en:
     chatbot_open_ai_model_custom_api_type: "Fill in 'azure' if you use Azure OpenAI, otherwise will use Open AI"
     chatbot_open_ai_model_custom_api_version: "Fill in Azure OpenAI REST API version, default to '2023-05-15'. Required only when 'custom_api_type' is set to 'azure'. Refer to: <a target='_blank' rel='noopener' href='https://learn.microsoft.com/en-us/azure/ai-services/openai/reference'>Azure REST API reference</a>"
     chatbot_open_ai_model: "(UNLESS CUSTOM) The model to be accessed. More on supported models at <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/models/overview'>OpenAI: Model overview</a>"
+    chatbot_support_vision: "(EXPERIMENTAL) Support sharing of images with bot.  Must be supported by selected model.  Images must be uploaded to forum and not hotlinked."
     chatbot_reply_job_time_delay: 'Number of seconds before reply job is run. This helps prevent rate limits being hit and discourages spamming.'
     chatbot_include_whispers_in_post_history: "Include content of whispers in Post history bot sees (careful!)"
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
@@ -38,10 +39,12 @@ en:
     chatbot_request_presence_penalty: "Numeric value within the range of -200 to 200. Refer to: <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/api-reference/completions/create#completions/create-presence_penalty'>API docs: presence_penalty</a>"
     chatbot_max_response_tokens: "Specify the maximum amount of tokens bot will use to generate a response. Refer to: <a target='_blank' rel='noopener' href='https://openai.com/pricing'>OpenAI: Pricing</a>"
     chatbot_embeddings_benchmark_user_trust_level: "Trust level of benchmark user used to determine which Posts are embedded.  If this benchmark user can access a Post & it is not a Personal Message, it will be emdedded and content derived from such posts may be shared with all users.  Be careful not to unintentionally leak privileged information to lower trust levels so general advice is to keep this 0 or 1, but depends on the structure of your community and forum"
-    chatbot_enable_verbose_console_response_progress_logging: "Enable response retrieval progress logging to console to help debug issues"
+    chatbot_locations_plugin_support: "(EXPERIMENTAL currently user locations only) Natural language querying capability for <a target='_blank' rel='noopener' href='https://github.com/paviliondev/discourse-locations'>Locations Plugin</a> (when using agent mode, requires Locations Plugin to be installed)"
     chatbot_news_api_token: "News API token for news (if left blank, news will never be searched)<a target='_blank' rel='noopener' href='https://newsapi.org/'>Get one at NewsAPI.org</a>"
     chatbot_serp_api_key: "Serp API token for google search (if left blank, google will never be searched). <a target='_blank' rel='noopener' href='https://serpapi.com/'>Get one at SerpAPI.com</a>"
     chatbot_marketstack_key: "Marketstack API key for stock price information (if left blank, Marketstack will never be queried).<a target='_blank' rel='noopener' href='https://marketstack.com/'>Get one at MarketStack.com</a>"
+    chatbot_enable_verbose_console_logging: "Enable response retrieval progress logging to console to help debug issues"
+    chatbot_enable_verbose_rails_logging: "Enable response retrieval progress logging to rails logs to help debug issues"
 
   chatbot:
     bio: "Hi, I'm not a real person. I'm a bot that can discuss things with you. Don't take me too seriously. Sometimes, I'm even right about stuff!"
@@ -51,8 +54,8 @@ en:
       instructions: "These are my hidden instructions.  I like blue and if asked for my favourite colour, I will tell them I like blue."
     prompt:
       system:
-        basic: "You are a helpful assistant."
-        agent: "You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is %{current_date_time}.  Only respond to the last question, using the prior information as context, if appropriate."
+        basic: You are a helpful assistant. When referring to users by name, include an @ symbol directly in front of their username.
+        agent: You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is %{current_date_time}.  When referring to users by name, include an @ symbol directly in front of their username.  Only respond to the last question, using the prior information as context, if appropriate.
       title: "The subject of this conversation is %{topic_title}"
       first_post: "The first thing someone said was %{username} who said %{raw}"
       post: "%{username} said %{raw}"
@@ -92,6 +95,127 @@ en:
           answer_summary: "The top %{number_of_posts} posts on the forum related to this query are, best match first:\n\n"
           answer: "Number %{rank}: the post is at this web address: %{url}, it was written by '%{username}' on %{date} and the text is '%{raw}'.\n\n"
           error:  "'%{query}': my search for this on the forum failed."
+        forum_get_user_address:
+          description: |
+            Return the location of the user given their username.  This might be where they live or work.
+
+            Input should be a username.  Returns their address and coordinates.
+          parameters:
+            username: the username of the specific user for which you want to check the address and coordinates.
+          answer_summary: "The user @%{username} is at: %{address}, which is at coordinates: latitude: %{latitude} and longitude: %{longitude}"
+          error:  "we couldn't find an address for this user"
+        forum_user_distance_from_location:
+          description: |
+            Return the distance of a user from a location specified by its coordinates in latitude and longitude.
+
+            Input should be a username and a string representing the coordinates.
+          parameters:
+            username: the username of the specific user for which you want to check the distance.
+            coords: the location you wish to determine the distance the user is from in latitude and longitude in the form "lon, lat", e.g. 30, 50
+          answer_summary: "The user @%{username} is %{distance}km from %{coords} \n\n"
+          error:  "the calculation of the distance the user is from the coordinates failed"
+        return_coords_from_location_description:
+          description: |
+            To find the coordinates of a location.
+
+            Takes a string query and returns coordinates in latitude and longitude.
+
+            You might need to run this function first in order to get coordinates to use another function.
+          parameters:
+            query: "string representing the location to be found"
+          answer_summary: "The coordinates of location '%{query}' are '%{coords}'."
+          error:  "'%{query}': my search for the coords of the requested location failed"    
+        forum_user_search_from_location:
+          description: |
+            Search the local forum for users that are located close to the specified coordinates.
+
+            Input should be a two element array of latitude and longitude each in decimals.  You can optionally also specify the maximum distance from the coordinates and the maximum number of users you wish returned from your query.
+
+            Outputs the usernames of users found in proximity. When responding with these usernames, use the @ symbol prefix (as if you were mentioning them).
+          parameters:
+            coords: "target location in latitude and longitude.  Correct order is critical."
+            distance: "maximum distance from target coordinates in kilometres (km)"
+            number_of_users: "specify the number of users you want returned from your query"
+          answer_summary: "The users within %{distance} kilometres of %{query} are: "
+          answer: "Number %{rank}: user: @%{username} distance: %{distance} km.  "
+          error:  "'%{query}': my search for users in proximity to this target failed."
+        forum_topic_search_from_location:
+          description: |
+            Search the local forum for topics that are located close to the specified coordinates.
+
+            Input should be a two element array of latitude and longitude each in decimals.  You can optionally also specify the maximum distance from the coordinates and the maximum number of topics you wish returned from your query.
+
+            Outputs the titles, addresses, links to the topicss found in proximity.
+          parameters:
+            coords: "target location in latitude and longitude.  Correct order is critical."
+            distance: "maximum distance from target coordinates in kilometres (km)"
+            number_of_topics: "specify the number of users you want returned from your query"
+          answer_summary: "The users within %{distance} kilometres of %{query} are: "
+          answer: "Number %{rank}: Topic Title: '%{title}'', Address: '%{address}' Link: '%{url}'.  "
+          error:  "'%{query}': my search for users in proximity to this target failed."
+        forum_user_search_from_user_location:
+          description: |
+            Search the local forum for users that are located close to specified user.
+
+            Input should be a username.  You can optionally also specify the maximum distance from the user and the maximum number of users you wish returned from your query.
+
+            Outputs the usernames of users found in proximity. When responding with these usernames, use the @ symbol prefix (as if you were mentioning them).
+          parameters:
+            username: "target username"
+            distance: "maximum distance from target in kilometres (km)"
+            number_of_users: "specify the maximum number of users you want returned from your query"
+          answer_summary: "The users within %{distance} kilometres of %{query} are: "
+          answer: "Number %{rank}: user: @%{username} distance: %{distance} km.  "
+          error:  "'%{query}': my search for users in proximity to this target failed."
+        forum_topic_search_from_user_location:
+          description: |
+            Search the local forum for topics that are located close to specified user.
+
+            Input should be a username.  You can optionally also specify the maximum distance from the user and the maximum number of topics you wish returned from your query.
+
+            Outputs the titles, addresses and urls of topics found in proximity.
+          parameters:
+            username: "target username"
+            distance: "maximum distance from target in kilometres (km)"
+            number_of_topics: "specify the maximum number of topics you want returned from your query"
+          answer_summary: "The topics within %{distance} kilometres of %{query} are: "
+          answer: "Number %{rank}: Topic Title: '%{title}'', Address: '%{address}' Link: '%{url}'.  "
+          error:  "'%{query}': my search for users in proximity to this target failed."
+        forum_user_search_from_topic_location:
+          description: |
+            Search the local forum for users that are located close to specified topic.
+
+            Input should be a topic id.  You can optionally also specify the maximum distance from the topic and the maximum number of users you wish returned from your query.
+
+            Outputs the usernames of users found in proximity. When responding with these usernames, use the @ symbol prefix (as if you were mentioning them).
+          parameters:
+            topic_id: "target topic id"
+            distance: "maximum distance from target in kilometres (km)"
+            number_of_posts: "specify the maximum number of users you want returned from your query"
+          answer_summary: "The users within %{distance} kilometres of %{query} are: "
+          answer: "Number %{rank}: user: @%{username} distance: %{distance} km.  "
+          error:  "'%{query}': my search for users in proximity to this target failed."
+        forum_topic_search_from_topic_location:
+          description: |
+            Search the local forum for topics that are located close to specified topic.
+
+            Input should be a topic id.  You can optionally also specify the maximum distance from the topic and the maximum number of topics you wish returned from your query.
+
+            Outputs the titles, addresses and urls of topics found in proximity.
+          parameters:
+            topic_id: "target topic id"
+            distance: "maximum distance from target in kilometres (km)"
+            number_of_topics: "specify the maximum number of topics you want returned from your query"
+          answer_summary: "The topics within %{distance} kilometres of %{query} are: "
+          answer: "Number %{rank}: Topic Title: '%{title}'', Address: '%{address}' Link: '%{url}'.  "
+          error:  "'%{query}': my search for topics in proximity to this target failed."
+        get_distance_between_locations:
+          description: |
+            Return the distance in kilometres(km) between two locations specified by two pairs of coordinates, both in form [latitude, longitude]
+          parameters:
+            coords: "location one in form [latitude, longitude]"
+          answer_summary: "The distance between %{coords1} and %{coords2} is %{distance} kilometres (km)."
+          error:  "'%{query}': my calculation for the distance between those two locations went wrong."
         google_search:
           description: |
             A wrapper around Google Search.

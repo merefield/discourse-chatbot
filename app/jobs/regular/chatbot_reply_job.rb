@@ -91,7 +91,7 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
         end
         reply_and_thoughts = bot.ask(opts)
       rescue => e
-        Rails.logger.error ("OpenAIBot: There was a problem, but will retry til limit: #{e}")
+        Rails.logger.error ("Chatbot: There was a problem, but will retry til limit: #{e}")
         fail e
       end
     end

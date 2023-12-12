@@ -28,8 +28,11 @@ module ::DiscourseChatbot
         begin
           raise StandardError, response["error"]["message"]
         rescue => e
-          Rails.logger.error("OpenAIBot: There was a problem: #{e}")
-          I18n.t('chatbot.errors.general')
+          Rails.logger.error("Chatbot: There was a problem: #{e}")
+          {
+            reply: I18n.t('chatbot.errors.general'),
+            inner_thoughts: nil
+          }
         end
       else
         {

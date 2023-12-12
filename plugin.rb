@@ -1,13 +1,14 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.54
+# version: 0.67
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
 gem 'multipart-post', '2.3.0', { require: false }
 gem 'faraday-multipart', '1.0.4', { require: false }
-gem "ruby-openai", '5.1.0', { require: false }
+gem 'event_stream_parser', '1.0.0', { require: false }
+gem "ruby-openai", '6.3.1', { require: false }
 # google search
 gem "google_search_results", '2.2.0'
 # wikipedia
@@ -27,9 +28,8 @@ module ::DiscourseChatbot
   EMBEDDING_CHAR_LIMIT = 11500
 
   def progress_debug_message(message)
-    if SiteSetting.chatbot_enable_verbose_console_response_progress_logging
-      puts message
-    end
+    puts "Chatbot: #{message}" if SiteSetting.chatbot_enable_verbose_console_logging
+    Rails.logger.info("Chatbot: #{message}") if SiteSetting.chatbot_enable_verbose_rails_logging
   end
 
   module_function :progress_debug_message
@@ -65,6 +65,16 @@ after_initialize do
     ../lib/discourse_chatbot/functions/wikipedia_function.rb
     ../lib/discourse_chatbot/functions/google_search_function.rb
     ../lib/discourse_chatbot/functions/forum_search_function.rb
+    ../lib/discourse_chatbot/functions/forum_user_distance_from_location_function.rb
+    ../lib/discourse_chatbot/functions/forum_user_search_from_location_function.rb
+    ../lib/discourse_chatbot/functions/forum_user_search_from_user_location_function.rb
+    ../lib/discourse_chatbot/functions/forum_user_search_from_topic_location_function.rb
+    ../lib/discourse_chatbot/functions/forum_get_user_address_function.rb
+    ../lib/discourse_chatbot/functions/forum_topic_search_from_location_function.rb
+    ../lib/discourse_chatbot/functions/forum_topic_search_from_user_location_function.rb
+    ../lib/discourse_chatbot/functions/forum_topic_search_from_topic_location_function.rb
+    ../lib/discourse_chatbot/functions/get_distance_between_locations_function.rb
+     ../lib/discourse_chatbot/functions/coords_from_location_description_search.rb
     ../lib/discourse_chatbot/functions/stock_data_function.rb
     ../lib/discourse_chatbot/functions/parser.rb
     ../lib/discourse_chatbot/prompt_utils.rb
