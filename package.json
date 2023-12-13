@@ -3,5 +3,8 @@
   "version": "0.13.0",
   "repository": "git@github.com:merefield/discourse-chatbot.git",
   "author": "Robert Barrow",
-  "license": "GPL V2"
+  "license": "GPL V2",
+  "devDependencies": {
+    "@discourse/lint-configs": "^1.0.0"
+  }
 }
