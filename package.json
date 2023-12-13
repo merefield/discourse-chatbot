@@ -4,7 +4,4 @@
   "repository": "git@github.com:merefield/discourse-chatbot.git",
   "author": "Robert Barrow",
   "license": "GPL V2",
-  "devDependencies": {
-    "eslint-config-discourse": "^3.2.0"
-  }
 }

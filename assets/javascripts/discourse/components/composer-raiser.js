@@ -1,6 +1,6 @@
 import Component from "@glimmer/component";
-import { inject as service } from "@ember/service";
 import { action } from "@ember/object";
+import { inject as service } from "@ember/service";
 import Composer from "discourse/models/composer";
 
 export default class ComposerRaiserCompopnent extends Component {
@@ -12,8 +12,6 @@ export default class ComposerRaiserCompopnent extends Component {
 
   @action
   raiseComposer() {
-    console.log(this.args.model)
-
     this.composer.focusComposer({
       fallbackToNewTopic: true,
       openOpts: {
@@ -28,6 +26,6 @@ export default class ComposerRaiserCompopnent extends Component {
   }
 
   get isBotConversation() {
-    return (this.currentUser && this.args.model.user_id === this.BOT_USER_ID)
+    return (this.currentUser && this.args.model.user_id === this.BOT_USER_ID);
   }
 }
