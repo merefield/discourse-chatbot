@@ -24,18 +24,18 @@ module ::DiscourseChatbot
 
           last_chat = ::Chat::Message.where(chat_channel_id: chat_channel_id, deleted_at: nil).last
 
-          unless last_chat && last_chat.message == I18n.t("chatbot.kickoff.statement")
+          unless last_chat && last_chat.message == I18n.t("chatbot.quick_access_kick_off.announcement")
             Chat::CreateMessage.call(
               chat_channel_id: chat_channel_id,
               guardian: @guardian,
-              message: I18n.t("chatbot.kickoff.statement"),
+              message: I18n.t("chatbot.quick_access_kick_off.announcement"),
             )
           end
         end
       elsif channel_type == "personal message"
         default_opts = {
           post_alert_options: { skip_send_email: true },
-          raw: I18n.t("chatbot.kickoff.statement"),
+          raw: I18n.t("chatbot.quick_access_kick_off.announcement"),
           skip_validations: true,
           title: I18n.t("chatbot.pm_prefix"),
           archetype: Archetype.private_message,
@@ -46,17 +46,6 @@ module ::DiscourseChatbot
 
         response = { topic_id: new_post.topic_id }
       end
-
-      #TODO consider using whisper to hide extra bot data.
-      # default_opts = {
-      #   raw: I18n.t("chatbot.kickoff.instructions" ),
-      #   topic_id: new_post.topic_id,
-      #   post_alert_options: { skip_send_email: true },
-      #   post_type: 4,
-      #   skip_validations: true
-      # }
-
-      # new_post = ::PostCreator.create!(bot_user, default_opts)
 
       render json: response
     end

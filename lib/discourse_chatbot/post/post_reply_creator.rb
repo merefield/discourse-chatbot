@@ -16,7 +16,7 @@ module ::DiscourseChatbot
           skip_validations: true
         }
 
-        if SiteSetting.chatbot_bot_type == "agent" && SiteSetting.chatbot_include_inner_thoughts_in_private_messages && @is_private_msg
+        if SiteSetting.chatbot_bot_type == "RAG" && SiteSetting.chatbot_include_inner_thoughts_in_private_messages && @is_private_msg
           default_opts.merge!(raw: '[details="Inner Thoughts"]<br/>' + @inner_thoughts + '<br/>[/details]')
 
           new_post = PostCreator.create!(@author, default_opts)

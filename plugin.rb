@@ -57,8 +57,8 @@ after_initialize do
     ../lib/discourse_chatbot/post/post_evaluation.rb
     ../lib/discourse_chatbot/bot.rb
     ../lib/discourse_chatbot/bots/open_ai_bot_base.rb
-    ../lib/discourse_chatbot/bots/open_ai_bot.rb
-    ../lib/discourse_chatbot/bots/open_ai_agent.rb
+    ../lib/discourse_chatbot/bots/open_ai_bot_basic.rb
+    ../lib/discourse_chatbot/bots/open_ai_bot_rag.rb
     ../lib/discourse_chatbot/function.rb
     ../lib/discourse_chatbot/functions/calculator_function.rb
     ../lib/discourse_chatbot/functions/news_function.rb

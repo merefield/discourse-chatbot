@@ -3,11 +3,35 @@ require "openai"
 
 module ::DiscourseChatbot
 
-  class OpenAIAgent < OpenAIBotBase
+  class OpenAiBotRag < OpenAIBotBase
 
     def initialize
       super
+      merge_functions
+    end
 
+    def get_response(prompt, private_discussion = false)
+      if private_discussion
+        system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.private.rag", current_date_time: DateTime.current) }
+      else
+        system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.open.rag", current_date_time: DateTime.current) }
+      end
+
+      prompt.unshift(system_message)
+
+      @inner_thoughts = []
+
+      @chat_history += prompt
+
+      res = generate_response
+
+      {
+        reply: res["choices"][0]["message"]["content"],
+        inner_thoughts: @inner_thoughts.to_s
+      }
+    end
+
+    def merge_functions
       calculator_function = ::DiscourseChatbot::CalculatorFunction.new
       wikipedia_function = ::DiscourseChatbot::WikipediaFunction.new
       news_function = ::DiscourseChatbot::NewsFunction.new
@@ -177,22 +201,6 @@ module ::DiscourseChatbot
       }
 
       final_thought
-    end
-
-    def get_response(prompt)
-      system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.agent", current_date_time: DateTime.current) }
-      prompt.unshift(system_message)
-
-      @inner_thoughts = []
-
-      @chat_history += prompt
-
-      res = generate_response
-
-      {
-        reply: res["choices"][0]["message"]["content"],
-        inner_thoughts: @inner_thoughts.to_s
-      }
     end
 
     def ask(opts)

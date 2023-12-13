@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 require_relative '../../plugin_helper'
 
-describe ::DiscourseChatbot::OpenAIAgent do
-  let(:agent) { ::DiscourseChatbot::OpenAIAgent.new }
+describe ::DiscourseChatbot::OpenAiBotRag do
+  let(:agent) { ::DiscourseChatbot::OpenAiBotRag.new }
   let(:llm_function_response) { get_chatbot_fixture("llm_function_response") }
   let(:llm_interim_response) { get_chatbot_fixture("llm_interim_response") }
   let(:llm_final_response) { get_chatbot_fixture("llm_final_response") }
@@ -16,9 +16,9 @@ describe ::DiscourseChatbot::OpenAIAgent do
     second_query = [system_entry, { :role => "user", "content" => "what is 3 * 23.452432?" }, { "role" => "assistant", "content" => nil, "function_call" => { "name" => "calculate", "arguments" => "{\n  \"input\": \"3 * 23.452432\"\n}" } }, { "role" => "function", "name" => "calculate", "content" => "The answer is 70.357296." }]
     final_query = [system_entry, { :role => "user", "content" => "what is 3 * 23.452432?" }, { "role" => "assistant", "content" => "To answer the question I will use these step by step instructions.\n\nI will use the calculate function to calculate the answer with arguments {\n  \"input\": \"3 * 23.452432\"\n}.\n\nThe answer is 70.357296.\n\n Based on the above, I will now answer the question, this message will only be seen by me so answer with the assumption with that the user has not seen this message." }]
 
-    ::DiscourseChatbot::OpenAIAgent.any_instance.expects(:create_chat_completion).with(query).returns(llm_function_response)
-    ::DiscourseChatbot::OpenAIAgent.any_instance.expects(:create_chat_completion).with(second_query).returns(llm_interim_response)
-    ::DiscourseChatbot::OpenAIAgent.any_instance.expects(:create_chat_completion).with(final_query, false).returns(llm_final_response)
+    ::DiscourseChatbot::OpenAiBotRag.any_instance.expects(:create_chat_completion).with(query).returns(llm_function_response)
+    ::DiscourseChatbot::OpenAiBotRag.any_instance.expects(:create_chat_completion).with(second_query).returns(llm_interim_response)
+    ::DiscourseChatbot::OpenAiBotRag.any_instance.expects(:create_chat_completion).with(final_query, false).returns(llm_final_response)
 
     expect(agent.get_response(query)[:reply]).to eq(llm_final_response["choices"][0]["message"]["content"])
   end

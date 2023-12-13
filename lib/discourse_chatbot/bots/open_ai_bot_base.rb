@@ -26,7 +26,7 @@ module ::DiscourseChatbot
       @model_name = SiteSetting.chatbot_open_ai_model_custom ? SiteSetting.chatbot_open_ai_model_custom_name : SiteSetting.chatbot_open_ai_model
     end
 
-    def get_response(prompt)
+    def get_response(prompt, private_discussion = false)
       raise "Overwrite me!"
     end
 

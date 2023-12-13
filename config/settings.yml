@@ -80,6 +80,12 @@ plugins:
       - gpt-3.5-turbo-16k
       - gpt-4
       - gpt-4-32k
+  chatbot_open_ai_model_custom:
+    default: false
+    client: false
+  chatbot_open_ai_model_custom_name:
+    default: ''
+    client: false
   chatbot_support_vision:
     client: false
     default: false
@@ -92,18 +98,12 @@ plugins:
     client: false
     default: ''
   chatbot_bot_type:
-    default: 'normal'
+    default: basic
     client: false
     type: enum
     choices:
-      - normal
-      - agent
-  chatbot_open_ai_model_custom:
-    default: false
-    client: false
-  chatbot_open_ai_model_custom_name:
-    default: ''
-    client: false
+      - basic
+      - RAG
   chatbot_open_ai_model_custom_url:
     client: false
     default: ''
