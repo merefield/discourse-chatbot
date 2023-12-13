@@ -17,7 +17,7 @@ module ::DiscourseChatbot
         content << { "type": "text", "text": text }
         if SiteSetting.chatbot_support_vision
           cm.uploads.each do |ul|
-            if ["png", "webp", "jpg", "jpeg", "gif", "ico", "avif"].include? (ul.extension)
+            if ["png", "webp", "jpg", "jpeg", "gif", "ico", "avif"].include?(ul.extension)
               url = resolve_full_url(ul.url)
               content << { "type": "image_url", "image_url": { "url": url } }
             end

@@ -5,10 +5,6 @@ module ::DiscourseChatbot
 
   class OpenAiBotBasic < OpenAIBotBase
 
-    def initialize
-      super
-    end
-
     def get_response(prompt, private_discussion = false)
       if private_discussion
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.private.basic", current_date_time: DateTime.current) }
@@ -45,10 +41,6 @@ module ::DiscourseChatbot
           inner_thoughts: nil
         }
       end
-    end
-
-    def ask(opts)
-      super(opts)
     end
   end
 end

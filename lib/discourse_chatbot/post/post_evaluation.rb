@@ -65,12 +65,5 @@ module ::DiscourseChatbot
         false
       end
     end
-
-    private
-
-    def invoke_background_job(job_class, opts)
-      super(job_class, opts)
-    end
-
   end
 end

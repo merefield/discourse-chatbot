@@ -202,9 +202,5 @@ module ::DiscourseChatbot
 
       final_thought
     end
-
-    def ask(opts)
-      super(opts)
-    end
   end
 end
