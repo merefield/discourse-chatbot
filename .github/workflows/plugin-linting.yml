@@ -18,12 +18,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: 14
+          node-version: 18
 
       - name: Set up ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7
+          ruby-version: 3.2
 
       - name: Setup bundler
         run: gem install bundler -v 2.1.4 --no-doc
