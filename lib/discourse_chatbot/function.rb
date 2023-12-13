@@ -2,7 +2,6 @@
 
 module ::DiscourseChatbot
   class Function
-    attr_reader :name, :description, :parameters, :required
 
     def name
       raise "Overwrite me!"

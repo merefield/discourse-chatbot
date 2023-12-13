@@ -12,7 +12,7 @@ class ::Jobs::ChatbotPostEmbeddingDeleteJob < Jobs::Base
 
       ::DiscourseChatbot::PostEmbedding.find_by(post_id: post_id).destroy!
     rescue => e
-      Rails.logger.error ("Chatbot: Post Embedding: There was a problem, but will retry til limit: #{e}")
+      Rails.logger.error("Chatbot: Post Embedding: There was a problem, but will retry til limit: #{e}")
     end
   end
 end
