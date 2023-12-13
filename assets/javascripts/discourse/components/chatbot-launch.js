@@ -28,7 +28,8 @@ export default class ContentLanguageDiscovery extends Component {
       ((this.siteSettings.chat_enabled &&
         this.siteSettings.chatbot_permitted_in_chat) ||
         (this.siteSettings.chatbot_permitted_in_private_messages &&
-          this.siteSettings.chatbot_quick_access_talk_button === "personal message"))
+          this.siteSettings.chatbot_quick_access_talk_button ===
+            "personal message"))
     );
   }
 
@@ -50,26 +51,34 @@ export default class ContentLanguageDiscovery extends Component {
   @action
   async startChatting() {
     if (this.siteSettings.chatbot_quick_access_bot_kicks_off) {
-
-      let result = await ajax('/chatbot/start_bot_convo', {
+      let result = await ajax("/chatbot/start_bot_convo", {
         type: "POST",
       });
 
-      if (this.siteSettings.chatbot_quick_access_talk_button === "personal message") {
+      if (
+        this.siteSettings.chatbot_quick_access_talk_button ===
+        "personal message"
+      ) {
         DiscourseURL.redirectTo(`/t/${result.topic_id}`);
       } else {
         this.chat
-        .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
-        .then((chatChannel) => {
-          this.router.transitionTo("chat.channel", ...chatChannel.routeModels);
-        });
+          .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
+          .then((chatChannel) => {
+            this.router.transitionTo(
+              "chat.channel",
+              ...chatChannel.routeModels
+            );
+          });
       }
     } else {
       if (this.siteSettings.chatbot_quick_access_talk_button === "chat") {
         this.chat
           .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
           .then((chatChannel) => {
-            this.router.transitionTo("chat.channel", ...chatChannel.routeModels);
+            this.router.transitionTo(
+              "chat.channel",
+              ...chatChannel.routeModels
+            );
           });
       } else {
         this.composer.focusComposer({
