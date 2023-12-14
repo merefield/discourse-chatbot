@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.67
+# version: 0.70
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -57,8 +57,8 @@ after_initialize do
     ../lib/discourse_chatbot/post/post_evaluation.rb
     ../lib/discourse_chatbot/bot.rb
     ../lib/discourse_chatbot/bots/open_ai_bot_base.rb
-    ../lib/discourse_chatbot/bots/open_ai_bot.rb
-    ../lib/discourse_chatbot/bots/open_ai_agent.rb
+    ../lib/discourse_chatbot/bots/open_ai_bot_basic.rb
+    ../lib/discourse_chatbot/bots/open_ai_bot_rag.rb
     ../lib/discourse_chatbot/function.rb
     ../lib/discourse_chatbot/functions/calculator_function.rb
     ../lib/discourse_chatbot/functions/news_function.rb
@@ -85,6 +85,8 @@ after_initialize do
     ../lib/discourse_chatbot/message/message_reply_creator.rb
     ../app/jobs/regular/chatbot_reply_job.rb
     ../app/jobs/scheduled/chatbot_quota_reset_job.rb
+    ../config/routes.rb
+    ../app/controllers/chatbot_controller.rb
   ).each do |path|
     load File.expand_path(path, __FILE__)
   end

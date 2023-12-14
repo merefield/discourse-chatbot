@@ -5,24 +5,36 @@ plugins:
   chatbot_permitted_in_private_messages:
     default: true
     client: true
-  chatbot_include_inner_thoughts_in_private_messages:
-    default: false
-    client: false
   chatbot_permitted_in_chat:
     default: true
     client: true
+  chatbot_bot_type:
+    default: basic
+    client: false
+    type: enum
+    choices:
+      - basic
+      - RAG
+  chatbot_quick_access_talk_button:
+    client: true
+    default: chat
+    type: enum
+    choices:
+      - "off"
+      - chat
+      - personal message
+  chatbot_quick_access_bot_kicks_off:
+    default: true
+    client: true
+  chatbot_quick_access_talk_button_bot_icon:
+      client: true
+      default: robot
+  chatbot_include_inner_thoughts_in_private_messages:
+    default: false
+    client: false
   chatbot_can_trigger_from_whisper:
     default: false
     client: false
-  chatbot_quick_access_talk_button:
-    default: true
-    client: true
-  chatbot_quick_access_bot_user_icon: 
-      client: true
-      default: robot
-  chatbot_quick_access_talk_in_private_message:
-    default: false
-    client: true
   chatbot_permitted_all_categories:
     default: true
     client: false
@@ -75,6 +87,12 @@ plugins:
       - gpt-3.5-turbo-16k
       - gpt-4
       - gpt-4-32k
+  chatbot_open_ai_model_custom:
+    default: false
+    client: false
+  chatbot_open_ai_model_custom_name:
+    default: ''
+    client: false
   chatbot_support_vision:
     client: false
     default: false
@@ -86,19 +104,6 @@ plugins:
   chatbot_open_ai_token:
     client: false
     default: ''
-  chatbot_bot_type:
-    default: 'normal'
-    client: false
-    type: enum
-    choices:
-      - normal
-      - agent
-  chatbot_open_ai_model_custom:
-    default: false
-    client: false
-  chatbot_open_ai_model_custom_name:
-    default: ''
-    client: false
   chatbot_open_ai_model_custom_url:
     client: false
     default: ''

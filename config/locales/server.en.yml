@@ -2,7 +2,7 @@ en:
   site_settings:
     chatbot_enabled: "Enable the chatbot plugin"
     chatbot_open_ai_token: "Your Open AI token. Will also be used as token if you set a custom URL to service other than Open AI. You can get one at <a target='_blank' rel='noopener' href='https://platform.openai.com/account/api-keys/'>openai.com</a>"
-    chatbot_bot_type: "EXPERIMENTAL: To make the bot smarter, use 'agent' (but be aware this uses many more calls to the LLM increasing cost significantly!)"
+    chatbot_bot_type: "To make the bot smarter, use 'RAG', which will enhance it will local deterministic functions (but be aware this uses many more calls to the LLM increasing cost significantly!)"
     chatbot_open_ai_model_custom: "Use Custom model name (ADVANCED USERS ONLY)"
     chatbot_open_ai_model_custom_name: "(CUSTOM ONLY) Name of model"
     chatbot_open_ai_model_custom_type: "(CUSTOM ONLY) IMPORTANT: Select which type of Open AI endpoint should be used, Chat (ChatGPT style), or Completion (Davinci style) - will break if you select wrong type"
@@ -11,7 +11,7 @@ en:
     chatbot_open_ai_model_custom_api_type: "Fill in 'azure' if you use Azure OpenAI, otherwise will use Open AI"
     chatbot_open_ai_model_custom_api_version: "Fill in Azure OpenAI REST API version, default to '2023-05-15'. Required only when 'custom_api_type' is set to 'azure'. Refer to: <a target='_blank' rel='noopener' href='https://learn.microsoft.com/en-us/azure/ai-services/openai/reference'>Azure REST API reference</a>"
     chatbot_open_ai_model: "(UNLESS CUSTOM) The model to be accessed. More on supported models at <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/models/overview'>OpenAI: Model overview</a>"
-    chatbot_support_vision: "(EXPERIMENTAL) Support sharing of images with bot.  Must be supported by selected model.  Images must be uploaded to forum and not hotlinked."
+    chatbot_support_vision: "(EXPERIMENTAL) Bot 'Vision': support sharing of images with bot.  Must be supported by selected model.  Images must be uploaded to forum and not hotlinked."
     chatbot_reply_job_time_delay: 'Number of seconds before reply job is run. This helps prevent rate limits being hit and discourages spamming.'
     chatbot_include_whispers_in_post_history: "Include content of whispers in Post history bot sees (careful!)"
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
@@ -23,9 +23,9 @@ en:
     chatbot_permitted_all_categories: "Allow Chatbot to interact in any Category"
     chatbot_permitted_categories: "Allow Chatbot to interact only in these Categories if not allowed to play in all"
     chatbot_bot_user: "The Chatbot User"
-    chatbot_quick_access_talk_button: "Display floating button which links to direct discussion one-to-one with the bot"
-    chatbot_quick_access_bot_user_icon: "Name of icon used for floating quick bot access button.  If blank it will use bot user's avatar instead. (if icon make sure it's permitted and added to svg_icon_subset if necessary)"
-    chatbot_quick_access_talk_in_private_message: "Quick access talk button takes you to Personal Message instead of Chat"
+    chatbot_quick_access_talk_button: "Display floating button which links to direct discussion one-to-one with the bot on specified channel type"
+    chatbot_quick_access_talk_button_bot_icon: "Name of icon used for floating quick bot access button.  If blank it will use bot user's avatar instead. (if icon make sure it's permitted and added to svg_icon_subset if necessary)"
+    chatbot_quick_access_bot_kicks_off: "Quick access launches a convesation in which the bot speaks first based on provided text at <a target='_blank' rel='noopener' href='/admin/customize/site_texts?q=chatbot.quick_access_kick_off.announcement'>Customize Text</a>"
     chatbot_quota_high_trust: "The allowed number of bot responses allowed by prompting user per week - high trust groups"
     chatbot_quota_medium_trust: "The allowed number of bot responses allowed by prompting user per week - medium trust groups"
     chatbot_quota_low_trust: "The allowed number of bot responses allowed by prompting user per week - low trust groups"
@@ -47,10 +47,17 @@ en:
 
   chatbot:
     bio: "Hi, I'm not a real person. I'm a bot that can discuss things with you. Don't take me too seriously. Sometimes, I'm even right about stuff!"
+    pm_prefix: "A Discussion with Chatbot"
+    quick_access_kick_off:
+      announcement: "Hello, how can I help you?"
     prompt:
       system:
-        basic: You are a helpful assistant. When referring to users by name, include an @ symbol directly in front of their username.
-        agent: You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is %{current_date_time}.  When referring to users by name, include an @ symbol directly in front of their username.  Only respond to the last question, using the prior information as context, if appropriate.
+        open:
+          basic: You are a helpful assistant. When referring to users by name, include an @ symbol directly in front of their username.
+          rag: You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is %{current_date_time}.  When referring to users by name, include an @ symbol directly in front of their username.  Only respond to the last question, using the prior information as context, if appropriate.
+        private:
+          basic: You are a helpful assistant. When referring to users by name, include an @ symbol directly in front of their username.
+          rag: You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is %{current_date_time}.  When referring to users by name, include an @ symbol directly in front of their username.  Only respond to the last question, using the prior information as context, if appropriate.
       title: "The subject of this conversation is %{topic_title}"
       first_post: "The first thing someone said was %{username} who said %{raw}"
       post: "%{username} said %{raw}"
@@ -268,6 +275,7 @@ en:
       general: "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"
       retries: "I've tried working out a response for you several times, but ultimately failed.  Please contact the admin if this persists, thank you!"
       forbiddeninprivatemessages: "Use in private messages has not been permitted, please contact the admin"
+      forbiddeninchat: "Use in Chat messages has not been permitted, please contact the admin"
       forbiddenoutsidethesecategories: "Public use of Chatbot has only been permitted in these Categories: "
       forbiddenanycategory: "Public use of Chatbot has not been enabled in any Category, please contact your admin"
       overquota: "I'm afraid you've reached this week's quota for bot interactions"

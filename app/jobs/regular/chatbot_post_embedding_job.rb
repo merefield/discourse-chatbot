@@ -14,7 +14,7 @@ class ::Jobs::ChatbotPostEmbeddingJob < Jobs::Base
 
       process_post_embedding.upsert(post_id)
     rescue => e
-      Rails.logger.error ("Chatbot: Post Embedding: There was a problem, but will retry til limit: #{e}")
+      Rails.logger.error("Chatbot: Post Embedding: There was a problem, but will retry til limit: #{e}")
     end
   end
 end

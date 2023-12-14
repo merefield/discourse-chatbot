@@ -1,2 +1,3 @@
 *.swp
 gems/
+node_modules

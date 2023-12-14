@@ -53,6 +53,7 @@ module ::DiscourseChatbot
 
         opts = {
             type: MESSAGE,
+            private: direct_message_channel,
             user_id: user_id,
             bot_user_id: bot_user_id,
             reply_to_message_or_post_id: chat_message.id,
@@ -70,12 +71,5 @@ module ::DiscourseChatbot
         false
       end
     end
-
-    private
-
-    def invoke_background_job(job_class, opts)
-      super(job_class, opts)
-    end
-
   end
 end

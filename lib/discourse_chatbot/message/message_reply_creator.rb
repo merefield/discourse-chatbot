@@ -21,7 +21,7 @@ module ::DiscourseChatbot
         ::DiscourseChatbot.progress_debug_message("6. The Message has been created successfully")
       rescue => e
         ::DiscourseChatbot.progress_debug_message("Problem with the bot Message: #{e}")
-        Rails.logger.error ("Chatbot: There was a problem: #{e}")
+        Rails.logger.error("Chatbot: There was a problem: #{e}")
       end
     end
   end

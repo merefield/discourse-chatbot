@@ -6,9 +6,11 @@ module ::DiscourseChatbot
     def self.create_prompt(opts)
       post_collection = collect_past_interactions(opts[:reply_to_message_or_post_id])
       bot_user_id = opts[:bot_user_id]
+      first_post_role = post_collection.first.topic.first_post.user.id == bot_user_id ? "assistant" : "user"
 
-      messages = [{ "role": "user", "content":  I18n.t("chatbot.prompt.title", topic_title: post_collection.first.topic.title) }]
-      messages << { "role": "user", "content": I18n.t("chatbot.prompt.first_post", username: post_collection.first.topic.first_post.user.username, raw: post_collection.first.topic.first_post.raw) }
+      messages = [{ "role": first_post_role, "content":  I18n.t("chatbot.prompt.title", topic_title: post_collection.first.topic.title) }]
+
+      messages << { "role": first_post_role, "content": I18n.t("chatbot.prompt.first_post", username: post_collection.first.topic.first_post.user.username, raw: post_collection.first.topic.first_post.raw) }
 
       messages += post_collection.reverse.map do |p|
         post_content = p.raw
