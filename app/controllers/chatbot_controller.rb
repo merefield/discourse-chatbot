@@ -1,6 +1,8 @@
 
 # frozen_string_literal: true
-module ::DiscourseChatbot
+require_dependency 'application_controller'
+
+module DiscourseChatbot
   class ChatbotController < ::ApplicationController
     requires_plugin PLUGIN_NAME
     before_action :ensure_plugin_enabled
