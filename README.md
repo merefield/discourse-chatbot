@@ -6,7 +6,7 @@
 * Converse with the bot in any Post or Chat Channel, one to one or with others!
 * Customise the character of your bot to suit your forum!
   * want it to sound like William Shakespeare, or Winston Churchill? can do!
-* The new "Agent Mode" can now:
+* The new "RAG mode" can now:
   * Search your whole* forum for answers so the bot can be an expert on the subject of your forum.
     * not just be aware of the information on the current Topic or Channel.
   * Search Wikipedia
@@ -22,9 +22,9 @@
 
 There are two modes:
 
-- Agent mode is very smart and knows facts posted on your forum.
+- RAG mode is very smart and knows facts posted on your forum.
 
-- Normal bot mode can sometimes make mistakes, but is cheaper to run because it makes fewer calls to the Large Language Model:
+- Basic bot mode can sometimes make mistakes, but is cheaper to run because it makes fewer calls to the Large Language Model:
 
 ### :biohazard: **Bot access and privacy :biohazard:
 
