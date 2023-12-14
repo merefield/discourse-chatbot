@@ -8,6 +8,13 @@ plugins:
   chatbot_permitted_in_chat:
     default: true
     client: true
+  chatbot_bot_type:
+    default: basic
+    client: false
+    type: enum
+    choices:
+      - basic
+      - RAG
   chatbot_quick_access_talk_button:
     client: true
     default: chat
@@ -97,13 +104,6 @@ plugins:
   chatbot_open_ai_token:
     client: false
     default: ''
-  chatbot_bot_type:
-    default: basic
-    client: false
-    type: enum
-    choices:
-      - basic
-      - RAG
   chatbot_open_ai_model_custom_url:
     client: false
     default: ''

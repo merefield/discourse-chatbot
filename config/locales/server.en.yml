@@ -25,7 +25,7 @@ en:
     chatbot_bot_user: "The Chatbot User"
     chatbot_quick_access_talk_button: "Display floating button which links to direct discussion one-to-one with the bot on specified channel type"
     chatbot_quick_access_talk_button_bot_icon: "Name of icon used for floating quick bot access button.  If blank it will use bot user's avatar instead. (if icon make sure it's permitted and added to svg_icon_subset if necessary)"
-    chatbot_quick_access_bot_kicks_off: "Quick access launches a convesation in which the bot speaks first based on provided text"
+    chatbot_quick_access_bot_kicks_off: "Quick access launches a convesation in which the bot speaks first based on provided text at <a target='_blank' rel='noopener' href='/admin/customize/site_texts?q=chatbot.quick_access_kick_off.announcement'>Customize Text</a>"
     chatbot_quota_high_trust: "The allowed number of bot responses allowed by prompting user per week - high trust groups"
     chatbot_quota_medium_trust: "The allowed number of bot responses allowed by prompting user per week - medium trust groups"
     chatbot_quota_low_trust: "The allowed number of bot responses allowed by prompting user per week - low trust groups"
