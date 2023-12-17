@@ -165,7 +165,7 @@ module ::DiscourseChatbot
       func_name = first_message["function_call"]["name"]
       args_str = first_message["function_call"]["arguments"]
       result = call_function(func_name, args_str)
-      res_msg = { 'role' => 'function', 'name' => func_name, 'content' => I18n.t("chatbot.prompt.agent.handle_function_call.answer", result: result) }
+      res_msg = { 'role' => 'function', 'name' => func_name, 'content' => I18n.t("chatbot.prompt.rag.handle_function_call.answer", result: result) }
       @inner_thoughts << res_msg
     end
 
@@ -181,15 +181,15 @@ module ::DiscourseChatbot
         res = func.process(args)
         res
        rescue
-         I18n.t("chatbot.prompt.agent.call_function.error")
+         I18n.t("chatbot.prompt.rag.call_function.error")
       end
     end
 
     def final_thought_answer
-      thoughts = I18n.t("chatbot.prompt.agent.final_thought_answer.opener")
+      thoughts = I18n.t("chatbot.prompt.rag.final_thought_answer.opener")
       @inner_thoughts.each do |thought|
         if thought.key?('function_call')
-          thoughts += I18n.t("chatbot.prompt.agent.final_thought_answer.thought_declaration", function_name: thought['function_call']['name'], arguments: thought['function_call']['arguments'])
+          thoughts += I18n.t("chatbot.prompt.rag.final_thought_answer.thought_declaration", function_name: thought['function_call']['name'], arguments: thought['function_call']['arguments'])
         else
           thoughts += "#{thought['content']}\n\n"
         end
@@ -197,7 +197,7 @@ module ::DiscourseChatbot
 
       final_thought = {
         'role' => 'assistant',
-        'content' => I18n.t("chatbot.prompt.agent.final_thought_answer.final_thought", thoughts: thoughts)
+        'content' => I18n.t("chatbot.prompt.rag.final_thought_answer.final_thought", thoughts: thoughts)
       }
 
       final_thought
