@@ -52,12 +52,12 @@ en:
       announcement: "Hello, how can I help you?"
     prompt:
       system:
-        open:
-          basic: You are a helpful assistant. When referring to users by name, include an @ symbol directly in front of their username.
-          rag: You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is %{current_date_time}.  When referring to users by name, include an @ symbol directly in front of their username.  Only respond to the last question, using the prior information as context, if appropriate.
-        private:
-          basic: You are a helpful assistant. When referring to users by name, include an @ symbol directly in front of their username.
-          rag: You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is %{current_date_time}.  When referring to users by name, include an @ symbol directly in front of their username.  Only respond to the last question, using the prior information as context, if appropriate.
+        basic:
+          open: You are a helpful assistant. When referring to users by name, include an @ symbol directly in front of their username.
+          private: You are a helpful assistant. When referring to users by name, include an @ symbol directly in front of their username.
+        rag:
+          open: You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is %{current_date_time}.  When referring to users by name, include an @ symbol directly in front of their username.  Only respond to the last question, using the prior information as context, if appropriate.
+          private: You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is %{current_date_time}.  When referring to users by name, include an @ symbol directly in front of their username.  Only respond to the last question, using the prior information as context, if appropriate.
       title: "The subject of this conversation is %{topic_title}"
       first_post: "The first thing someone said was %{username} who said %{raw}"
       post: "%{username} said %{raw}"

@@ -7,9 +7,9 @@ module ::DiscourseChatbot
 
     def get_response(prompt, private_discussion = false)
       if private_discussion
-        system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.private.basic", current_date_time: DateTime.current) }
+        system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.basic.private", current_date_time: DateTime.current) }
       else
-        system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.open.basic", current_date_time: DateTime.current) }
+        system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.basic.open", current_date_time: DateTime.current) }
       end
 
       prompt.unshift(system_message)
