@@ -148,6 +148,18 @@ plugins:
     default: 1
     min: 0
     max: 4
+  chatbot_forum_search_function_similarity_threshold:
+    client: false
+    default: 0.8
+    max: 1
+    min: 0
+  chatbot_forum_search_function_reranking_group_promotion:
+    client: false
+    type: group_list
+    list_type: compact
+    default: ""
+    allow_any: false
+    refresh: true
   chatbot_locations_plugin_support:
     client: false
     default: false

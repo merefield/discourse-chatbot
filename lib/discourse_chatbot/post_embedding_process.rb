@@ -72,28 +72,44 @@ module ::DiscourseChatbot
         }
        )
 
-       query_vector = response.dig("data", 0, "embedding")
+      query_vector = response.dig("data", 0, "embedding")
 
-       begin
-         search_result_post_ids =
-           DB.query(<<~SQL, query_embedding: query_vector, limit: 10).map(
-              SELECT
-                post_id
-              FROM
-                chatbot_post_embeddings
-              ORDER BY
-               embedding <-> '[:query_embedding]'
-              LIMIT :limit
-            SQL
-             &:post_id
-           )
+      begin
+        threshold = SiteSetting.chatbot_forum_search_function_similarity_threshold
+        results = 
+          DB.query(<<~SQL, query_embedding: query_vector, threshold: threshold, limit: 100)
+            SELECT
+              post_id,
+              p.user_id,
+              embedding <=> '[:query_embedding]' as cosine_distance
+            FROM
+              chatbot_post_embeddings
+            INNER JOIN
+              posts p
+            ON
+              post_id = p.id
+            WHERE
+              (1 -  (embedding <=> '[:query_embedding]')) > :threshold
+            ORDER BY
+              embedding <=> '[:query_embedding]'
+            LIMIT :limit
+          SQL
+
+        high_ranked_users = []
+
+        SiteSetting.chatbot_forum_search_function_reranking_group_promotion_map.each do |g|
+          high_ranked_users = high_ranked_users | GroupUser.where(group_id: g).pluck(:user_id)
+        end
+
+        reranked_results = results.filter {|r| high_ranked_users.include?(r.user_id)} + results.filter {|r| !high_ranked_users.include?(r.user_id)}.first(20)
+
         rescue PG::Error => e
           Rails.logger.error(
             "Error #{e} querying embeddings for search #{query}",
           )
          raise MissingEmbeddingError
-       end
-       search_result_post_ids
+        end
+      reranked_results.map {|p| p.post_id}
     end
   end
 end
