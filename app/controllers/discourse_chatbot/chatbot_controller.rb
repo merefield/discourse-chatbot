@@ -1,6 +1,6 @@
 
 # frozen_string_literal: true
-require_dependency 'application_controller'
+# require_dependency 'application_controller'
 
 module ::DiscourseChatbot
   class ChatbotController < ::ApplicationController

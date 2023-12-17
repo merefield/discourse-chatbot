@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-::DiscourseChatbot::Engine.routes.draw do
+DiscourseChatbot::Engine.routes.draw do
   post '/start_bot_convo' => 'chatbot#start_bot_convo'
 end
 

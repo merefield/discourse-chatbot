@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.72
+# version: 0.73
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -74,7 +74,7 @@ after_initialize do
     ../lib/discourse_chatbot/functions/forum_topic_search_from_user_location_function.rb
     ../lib/discourse_chatbot/functions/forum_topic_search_from_topic_location_function.rb
     ../lib/discourse_chatbot/functions/get_distance_between_locations_function.rb
-     ../lib/discourse_chatbot/functions/coords_from_location_description_search.rb
+    ../lib/discourse_chatbot/functions/coords_from_location_description_search.rb
     ../lib/discourse_chatbot/functions/stock_data_function.rb
     ../lib/discourse_chatbot/functions/parser.rb
     ../lib/discourse_chatbot/prompt_utils.rb
@@ -85,7 +85,6 @@ after_initialize do
     ../lib/discourse_chatbot/message/message_reply_creator.rb
     ../app/jobs/regular/chatbot_reply_job.rb
     ../app/jobs/scheduled/chatbot_quota_reset_job.rb
-    ../config/routes.rb
     ../app/controllers/discourse_chatbot/chatbot_controller.rb
   ).each do |path|
     load File.expand_path(path, __FILE__)
