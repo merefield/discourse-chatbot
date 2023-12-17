@@ -109,7 +109,7 @@ module ::DiscourseChatbot
           )
          raise MissingEmbeddingError
         end
-      reranked_results.map {|u| u.user_id}
+      reranked_results.map {|p| p.post_id}
     end
   end
 end
