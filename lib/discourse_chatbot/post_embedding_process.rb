@@ -101,7 +101,7 @@ module ::DiscourseChatbot
           high_ranked_users = high_ranked_users | GroupUser.where(group_id: g).pluck(:user_id)
         end
 
-        reranked_results = results.filter {|r| high_ranked_users.include? (r.user_id)} + results.filter {|r| !high_ranked_users.include? (r.user_id)}.first(20)
+        reranked_results = results.filter {|r| high_ranked_users.include?(r.user_id)} + results.filter {|r| !high_ranked_users.include?(r.user_id)}.first(20)
 
         rescue PG::Error => e
           Rails.logger.error(
