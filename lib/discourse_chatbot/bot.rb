@@ -25,15 +25,14 @@ module ::DiscourseChatbot
       end
     end
 
-    def get_response(prompt, private_discussion = false)
+    def get_response(prompt, opts)
       raise "Overwrite me!"
     end
 
     def ask(opts)
       content = opts[:type] == POST ? PostPromptUtils.create_prompt(opts) : MessagePromptUtils.create_prompt(opts)
-      private_discussion = opts[:private]
 
-      response = get_response(content, private_discussion)
+      response = get_response(content, opts)
     end
   end
 end

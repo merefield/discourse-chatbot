@@ -163,6 +163,9 @@ plugins:
   chatbot_locations_plugin_support:
     client: false
     default: false
+  chatbot_escalate_to_staff_function:
+    client: false
+    default: false
   chatbot_news_api_token:
     client: false
     default: ''

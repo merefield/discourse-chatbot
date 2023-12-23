@@ -5,12 +5,14 @@ module ::DiscourseChatbot
 
   class OpenAiBotRag < OpenAIBotBase
 
-    def initialize
+    def initialize(opts)
       super
-      merge_functions
+      merge_functions(opts)
     end
 
-    def get_response(prompt, private_discussion = false)
+    def get_response(prompt, opts)
+      private_discussion = opts[:private] || false
+
       if private_discussion
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
       else
@@ -23,7 +25,7 @@ module ::DiscourseChatbot
 
       @chat_history += prompt
 
-      res = generate_response
+      res = generate_response(opts)
 
       {
         reply: res["choices"][0]["message"]["content"],
@@ -31,13 +33,14 @@ module ::DiscourseChatbot
       }
     end
 
-    def merge_functions
+    def merge_functions(opts)
       calculator_function = ::DiscourseChatbot::CalculatorFunction.new
       wikipedia_function = ::DiscourseChatbot::WikipediaFunction.new
       news_function = ::DiscourseChatbot::NewsFunction.new
       google_search_function = ::DiscourseChatbot::GoogleSearchFunction.new
       forum_search_function = ::DiscourseChatbot::ForumSearchFunction.new
       stock_data_function = ::DiscourseChatbot::StockDataFunction.new
+      escalate_to_staff_function = ::DiscourseChatbot::EscalateToStaffFunction.new
       user_search_from_user_location_function = nil
       user_search_from_location_function = nil
       user_distance_from_location_function = nil
@@ -63,6 +66,7 @@ module ::DiscourseChatbot
       functions << user_distance_from_location_function if user_distance_from_location_function
       functions << get_distance_between_locations if get_distance_between_locations
       functions << get_user_address if get_user_address
+      functions << escalate_to_staff_function if SiteSetting.chatbot_escalate_to_staff_function && opts[:private] && opts[:type] == ::DiscourseChatbot::MESSAGE
       functions << news_function if !SiteSetting.chatbot_news_api_token.blank?
       functions << google_search_function if !SiteSetting.chatbot_serp_api_key.blank?
       functions << stock_data_function if !SiteSetting.chatbot_marketstack_key.blank?
@@ -114,7 +118,7 @@ module ::DiscourseChatbot
       res
     end
 
-    def generate_response
+    def generate_response(opts)
       iteration = 1
       ::DiscourseChatbot.progress_debug_message <<~EOS
         ===============================
@@ -151,7 +155,7 @@ module ::DiscourseChatbot
 
           return final_res
         elsif finish_reason == 'function_call'
-          handle_function_call(res)
+          handle_function_call(res, opts)
         else
           raise "Unexpected finish reason: #{finish_reason}"
         end
@@ -159,17 +163,17 @@ module ::DiscourseChatbot
       end
     end
 
-    def handle_function_call(res)
+    def handle_function_call(res, opts)
       first_message = res["choices"][0]["message"]
       @inner_thoughts << first_message.to_hash
       func_name = first_message["function_call"]["name"]
       args_str = first_message["function_call"]["arguments"]
-      result = call_function(func_name, args_str)
+      result = call_function(func_name, args_str, opts)
       res_msg = { 'role' => 'function', 'name' => func_name, 'content' => I18n.t("chatbot.prompt.rag.handle_function_call.answer", result: result) }
       @inner_thoughts << res_msg
     end
 
-    def call_function(func_name, args_str)
+    def call_function(func_name, args_str, opts)
       ::DiscourseChatbot.progress_debug_message <<~EOS
         +++++++++++++++++++++++++++++++++++++++
         I used '#{func_name}' to help me
@@ -178,7 +182,11 @@ module ::DiscourseChatbot
       begin
         args = JSON.parse(args_str)
         func = @func_mapping[func_name]
-        res = func.process(args)
+        if ["escalate_to_staff"].includes?(func_name)
+          res = func.process(args, opts)
+        else
+          res = func.process(args)
+        end
         res
        rescue
          I18n.t("chatbot.prompt.rag.call_function.error")
