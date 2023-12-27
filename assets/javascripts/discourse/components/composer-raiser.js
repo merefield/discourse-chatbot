@@ -13,7 +13,7 @@ export default class ComposerRaiserCompopnent extends Component {
 
   @action
   raiseComposer() {
-    if (!this.site.mobileView && this.args.model.current_post_number == 1) {
+    if (!this.site.mobileView && this.args.model.current_post_number === 1) {
       this.composer.focusComposer({
         fallbackToNewTopic: true,
         openOpts: {
