@@ -29,6 +29,10 @@ export default class ComposerRaiserCompopnent extends Component {
   }
 
   get isBotConversation() {
-    return this.currentUser && this.args.model.archetype === "private_message"  && this.args.model.user_id === this.BOT_USER_ID;
+    return (
+      this.currentUser &&
+      this.args.model.archetype === "private_message" &&
+      this.args.model.user_id === this.BOT_USER_ID
+    );
   }
 }
