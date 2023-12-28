@@ -1,0 +1,5 @@
+<label class="control-label">{{i18n "chatbot.user_prefs.title"}}</label>
+<PreferenceCheckbox
+  @labelKey="chatbot.user_prefs.prefer_no_quickchat_pm_popup"
+  @checked={{this.model.custom_fields.chatbot_user_prefs_disable_quickchat_pm_composer_popup_mobile}}
+/>
