@@ -177,12 +177,14 @@ module ::DiscourseChatbot
       ::DiscourseChatbot.progress_debug_message <<~EOS
         +++++++++++++++++++++++++++++++++++++++
         I used '#{func_name}' to help me
+        args_str was '#{args_str}'
+        opts was '#{opts}'
         +++++++++++++++++++++++++++++++++++++++
       EOS
       begin
         args = JSON.parse(args_str)
         func = @func_mapping[func_name]
-        if ["escalate_to_staff"].includes?(func_name)
+        if ["escalate_to_staff"].include?(func_name)
           res = func.process(args, opts)
         else
           res = func.process(args)

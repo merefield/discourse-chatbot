@@ -173,6 +173,9 @@ plugins:
     default: ""
     allow_any: false
     refresh: true
+  chatbot_escalate_to_staff_max_history:
+    client: false
+    default: 10
   chatbot_news_api_token:
     client: false
     default: ''
