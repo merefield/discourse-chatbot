@@ -4,7 +4,7 @@ require "openai"
 module ::DiscourseChatbot
 
   class OpenAIBotBase < Bot
-    def initialize
+    def initialize(opts)
       ::OpenAI.configure do |config|
         config.access_token = SiteSetting.chatbot_open_ai_token
       end
@@ -26,7 +26,7 @@ module ::DiscourseChatbot
       @model_name = SiteSetting.chatbot_open_ai_model_custom ? SiteSetting.chatbot_open_ai_model_custom_name : SiteSetting.chatbot_open_ai_model
     end
 
-    def get_response(prompt, private_discussion = false)
+    def get_response(prompt, opts)
       raise "Overwrite me!"
     end
 

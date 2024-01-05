@@ -5,7 +5,9 @@ module ::DiscourseChatbot
 
   class OpenAiBotBasic < OpenAIBotBase
 
-    def get_response(prompt, private_discussion = false)
+    def get_response(prompt, opts)
+      private_discussion = opts[:private] || false
+
       if private_discussion
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.basic.private", current_date_time: DateTime.current) }
       else

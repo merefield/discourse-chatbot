@@ -116,9 +116,9 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
       ::DiscourseChatbot.progress_debug_message("4. Retrieving new reply message...")
       begin
         if SiteSetting.chatbot_bot_type == "RAG"
-          bot = ::DiscourseChatbot::OpenAiBotRag.new
+          bot = ::DiscourseChatbot::OpenAiBotRag.new(opts)
         else
-          bot = ::DiscourseChatbot::OpenAiBotBasic.new
+          bot = ::DiscourseChatbot::OpenAiBotBasic.new(opts)
         end
         reply_and_thoughts = bot.ask(opts)
       rescue => e

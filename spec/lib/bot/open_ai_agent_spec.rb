@@ -2,7 +2,8 @@
 require_relative '../../plugin_helper'
 
 describe ::DiscourseChatbot::OpenAiBotRag do
-  let(:agent) { ::DiscourseChatbot::OpenAiBotRag.new }
+  let(:opts) { {} }
+  let(:rag) { ::DiscourseChatbot::OpenAiBotRag.new(opts) }
   let(:llm_function_response) { get_chatbot_fixture("llm_function_response") }
   let(:llm_interim_response) { get_chatbot_fixture("llm_interim_response") }
   let(:llm_final_response) { get_chatbot_fixture("llm_final_response") }
@@ -20,6 +21,6 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     ::DiscourseChatbot::OpenAiBotRag.any_instance.expects(:create_chat_completion).with(second_query).returns(llm_interim_response)
     ::DiscourseChatbot::OpenAiBotRag.any_instance.expects(:create_chat_completion).with(final_query, false).returns(llm_final_response)
 
-    expect(agent.get_response(query)[:reply]).to eq(llm_final_response["choices"][0]["message"]["content"])
+    expect(rag.get_response(query, opts)[:reply]).to eq(llm_final_response["choices"][0]["message"]["content"])
   end
 end

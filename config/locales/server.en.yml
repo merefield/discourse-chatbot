@@ -41,6 +41,7 @@ en:
     chatbot_forum_search_function_similarity_threshold: "Fraction of 1.  The point at which a Post is included in the results is defined by how similar it is to the query with 1 being identical and zero being nothing like the query"
     chatbot_forum_search_function_reranking_group_promotion: "Posts authored by these Groups are promoted in results set so their Posts are more likely to be seen and taken into account by the bot"
     chatbot_locations_plugin_support: "(EXPERIMENTAL currently user locations only) Natural language querying capability for <a target='_blank' rel='noopener' href='https://github.com/paviliondev/discourse-locations'>Locations Plugin</a> (when using RAG mode, requires Locations Plugin to be installed)"
+    chatbot_escalate_to_staff_function: "(EXPERIMENTAL, Chat only) if user requests human assistance or gets irritated, escalate to staff via PM (requires staff group to be populated)"
     chatbot_news_api_token: "News API token for news (if left blank, news will never be searched)<a target='_blank' rel='noopener' href='https://newsapi.org/'>Get one at NewsAPI.org</a>"
     chatbot_serp_api_key: "Serp API token for google search (if left blank, google will never be searched). <a target='_blank' rel='noopener' href='https://serpapi.com/'>Get one at SerpAPI.com</a>"
     chatbot_marketstack_key: "Marketstack API key for stock price information (if left blank, Marketstack will never be queried).<a target='_blank' rel='noopener' href='https://marketstack.com/'>Get one at MarketStack.com</a>"
@@ -99,6 +100,14 @@ en:
           answer_summary: "The top %{number_of_posts} posts on the forum related to this query are, best match first:\n\n"
           answer: "Number %{rank}: the post is at this web address: %{url}, it was written by '%{username}' on %{date} and the text is '%{raw}'.\n\n"
           error:  "'%{query}': my search for this on the forum failed."
+        escalate_to_staff:
+          description: |
+            This function should be called whenever the customer confirms they have had their question answered or are getting angry with the bot and the conversation needs to be moved to a Private Message for staff to handle.  You must provide the user with a url of the new Private Message in your Chat response.
+          title:  "Support bot chat escalation"
+          announcement: "This is a follow-up Personal Message which includes Staff.  The following chat conversation was had between the user and the bot:\n\n%{content}"
+          answer_summary: "The function ran and this chat has been successfully escalated and raised to the attention of staff.  A Personal Message to discuss things further with Staff has been created at the following url: %{url}.  I must now share this news & the url with the user.  There is no need for me to do anything more than communicate this fact with the web link and wish the user a good day."
+          wrong_type_error: "This function cannot be used outside of Chat Messages"
+          error:  "Escalation of user and bot chat failed"
         forum_get_user_address:
           description: |
             Return the location of the user given their username.  This might be where they live or work.
