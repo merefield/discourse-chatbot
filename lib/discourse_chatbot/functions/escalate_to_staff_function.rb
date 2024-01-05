@@ -41,6 +41,8 @@ module DiscourseChatbot
           target_group_names << Group.find(g.to_i).name
         end
 
+        target_group_names = target_group_names.join(",")
+
         message_or_post_id = opts[:reply_to_message_or_post_id]
 
         current_message = ::Chat::Message.find(message_or_post_id)
@@ -73,14 +75,14 @@ module DiscourseChatbot
           title: I18n.t("chatbot.prompt.function.escalate_to_staff.title"),
           archetype: Archetype.private_message,
           target_usernames: target_usernames,
-          target_groups: target_group_names
+          target_group_names: target_group_names
         }
 
         post = PostCreator.create!(bot_user, default_opts)
 
         url = "https://#{Discourse.current_hostname}/t/slug/#{post.topic_id}"
 
-        response = I18n.t("chatbot.prompt.function.escalate_to_staff.answer_summary", url)
+        response = I18n.t("chatbot.prompt.function.escalate_to_staff.answer_summary", url: url)
       rescue
         I18n.t("chatbot.prompt.function.escalate_to_staff.error", parameter: args[parameters[0][:name]])
       end
