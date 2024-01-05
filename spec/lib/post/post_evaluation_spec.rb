@@ -2,10 +2,11 @@
 require_relative '../../plugin_helper'
 
 describe ::DiscourseChatbot::PostEvaluation do
-  let(:topic) { Fabricate(:topic) }
+  fab!(:user) { Fabricate(:user, refresh_auto_groups: true) }
+  let(:topic) { Fabricate(:topic, user: user) }
   let(:post_args) { { user: topic.user, topic: topic } }
-  let(:bot_user) { Fabricate(:user) }
-  let(:other_user) { Fabricate(:user) }
+  let(:bot_user) { Fabricate(:user, refresh_auto_groups: true) }
+  let(:other_user) { Fabricate(:user, refresh_auto_groups: true) }
 
   def post_with_body(body, user = nil)
     args = post_args.merge(raw: body)
