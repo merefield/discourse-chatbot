@@ -8,7 +8,6 @@
     background-color 2s, transform 0.5s;
 }
 
-//New Topic Fab
 #chatbot-btn {
   display: flex;
   align-items: center;
@@ -17,7 +16,6 @@
   @include buttonTransition;
   padding: 0;
   margin: 0;
-  width: 60px;
   height: 60px;
   border-radius: 40px;
   position: fixed;
@@ -28,31 +26,37 @@
   color: var(--secondary);
   white-space: nowrap;
   overflow: hidden;
+  transition: all 0.3s;
   .d-icon {
     margin: 0;
+    padding: 0.7em;
     width: 30px;
     height: 30px;
+  }
+  img {
+    padding: 0.2em;
   }
   .d-button-label {
     color: var(--secondary);
     display: inline-block;
-    transition: all 0.3s;
-    margin: 0 0.7em;
+    margin: 0 0.7em 0 0;
   }
-
+  .d-icon,
+  .avatar {
+    margin: 0 0.25em;
+  }
   &:not(:hover):not(:active):not(:focus) {
     .d-button-label {
       opacity: 0;
       width: 0;
       margin: 0;
     }
-    .d-icon,
-    .avatar {
-      margin: 0 0.25em;
-    }
   }
 }
 
 #chatbot-btn:hover {
-  width: 190px;
+  .d-button-label {
+    transition: all 0.3s;
+    width: 100%;
+  }
 }
