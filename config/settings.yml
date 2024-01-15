@@ -8,13 +8,87 @@ plugins:
   chatbot_permitted_in_chat:
     default: true
     client: true
-  chatbot_bot_type:
+  chatbot_high_trust_groups:
+    client: false
+    default: ''
+    type: group_list
+    list_type: compact
+  chatbot_medium_trust_groups:
+    client: false
+    default: ''
+    type: group_list
+    list_type: compact
+  chatbot_low_trust_groups:
+    client: false
+    default: ''
+    type: group_list
+    list_type: compact
+  chatbot_bot_type_high_trust:
+    default: RAG
+    client: false
+    type: enum
+    choices:
+      - basic
+      - RAG
+  chatbot_open_ai_model_high_trust:
+    client: false
+    type: enum
+    default: gpt-3.5-turbo
+    choices:
+      - gpt-3.5-turbo
+      - gpt-3.5-turbo-16k
+      - gpt-4
+      - gpt-4-32k
+  chatbot_open_ai_model_custom_high_trust:
+    default: false
+    client: false
+  chatbot_open_ai_model_custom_name_high_trust:
+    default: ''
+    client: false
+  chatbot_bot_type_medium_trust:
     default: basic
     client: false
     type: enum
     choices:
       - basic
       - RAG
+  chatbot_open_ai_model_medium_trust:
+    client: false
+    type: enum
+    default: gpt-3.5-turbo
+    choices:
+      - gpt-3.5-turbo
+      - gpt-3.5-turbo-16k
+      - gpt-4
+      - gpt-4-32k
+  chatbot_open_ai_model_custom_medium_trust:
+    default: false
+    client: false
+  chatbot_open_ai_model_custom_name_medium_trust:
+    default: ''
+    client: false
+  chatbot_bot_type_low_trust:
+    default: basic
+    client: false
+    type: enum
+    choices:
+      - basic
+      - RAG
+  chatbot_open_ai_model_low_trust:
+    client: false
+    type: enum
+    default: gpt-3.5-turbo
+    choices:
+      - gpt-3.5-turbo
+      - gpt-3.5-turbo-16k
+      - gpt-4
+      - gpt-4-32k
+  chatbot_open_ai_model_custom_low_trust:
+    default: false
+    client: false
+  chatbot_open_ai_model_custom_name_low_trust:
+    default: ''
+    client: false
   chatbot_quick_access_talk_button:
     client: true
     default: chat
@@ -52,21 +126,6 @@ plugins:
   chatbot_quota_low_trust:
     default: 10
     client: false
-  chatbot_high_trust_groups:
-    client: false
-    default: ''
-    type: group_list
-    list_type: compact
-  chatbot_medium_trust_groups:
-    client: false
-    default: ''
-    type: group_list
-    list_type: compact
-  chatbot_low_trust_groups:
-    client: false
-    default: ''
-    type: group_list
-    list_type: compact
   chatbot_max_look_behind:
     default: 5
     max: 160
@@ -77,21 +136,6 @@ plugins:
     client: false
   chatbot_strip_quotes:
     default: true
-    client: false
-  chatbot_open_ai_model:
-    client: false
-    type: enum
-    default: gpt-3.5-turbo
-    choices:
-      - gpt-3.5-turbo
-      - gpt-3.5-turbo-16k
-      - gpt-4
-      - gpt-4-32k
-  chatbot_open_ai_model_custom:
-    default: false
-    client: false
-  chatbot_open_ai_model_custom_name:
-    default: ''
     client: false
   chatbot_support_vision:
     client: false

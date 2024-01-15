@@ -115,9 +115,24 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
     if create_bot_reply
       ::DiscourseChatbot.progress_debug_message("4. Retrieving new reply message...")
       begin
-        if SiteSetting.chatbot_bot_type == "RAG"
-          bot = ::DiscourseChatbot::OpenAiBotRag.new(opts)
+        case opts[:trust_level]
+        when nil
+          ::DiscourseChatbot.progress_debug_message("4a. Using basic bot...")
+          opts.merge!(chatbot_bot_type: "basic")
+          bot = ::DiscourseChatbot::OpenAiBotBasic.new(opts)
+        when ::DiscourseChatbot::TRUST_LEVELS[0], ::DiscourseChatbot::TRUST_LEVELS[1], ::DiscourseChatbot::TRUST_LEVELS[2]
+          if SiteSetting.send("chatbot_bot_type_" + opts[:trust_level] + "_trust") == "RAG"
+            ::DiscourseChatbot.progress_debug_message("4a. Using RAG bot...")
+            opts.merge!(chatbot_bot_type: "RAG")
+            bot = ::DiscourseChatbot::OpenAiBotRag.new(opts)
+          else
+            ::DiscourseChatbot.progress_debug_message("4a. Using basic bot...")
+            opts.merge!(chatbot_bot_type: "basic")
+            bot = ::DiscourseChatbot::OpenAiBotBasic.new(opts)
+          end
         else
+          ::DiscourseChatbot.progress_debug_message("4a. Using basic bot...")
+          opts.merge!(chatbot_bot_type: "basic")
           bot = ::DiscourseChatbot::OpenAiBotBasic.new(opts)
         end
         reply_and_thoughts = bot.ask(opts)

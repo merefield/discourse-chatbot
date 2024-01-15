@@ -11,6 +11,8 @@ module ::DiscourseChatbot
       @message_body = options[:reply]
       @is_private_msg = options[:is_private_msg]
       @inner_thoughts = options[:inner_thoughts]
+      @trust_level = options[:trust_level]
+      @chatbot_bot_type = options[:chatbot_bot_type]
       if @message_body.blank?
         @message_body = '...'
       end

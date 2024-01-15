@@ -23,7 +23,17 @@ module ::DiscourseChatbot
         f.response :logger, Logger.new($stdout), bodies: true if SiteSetting.chatbot_enable_verbose_console_logging
         f.response :logger, Rails.logger, bodies: true if SiteSetting.chatbot_enable_verbose_rails_logging
       end
-      @model_name = SiteSetting.chatbot_open_ai_model_custom ? SiteSetting.chatbot_open_ai_model_custom_name : SiteSetting.chatbot_open_ai_model
+      @model_name =
+        case opts[:trust_level]
+        when nil
+          SiteSetting.chatbot_open_ai_model_custom_low_trust ? SiteSetting.chatbot_open_ai_model_custom_name_low_trust : SiteSetting.chatbot_open_ai_model_low_trust
+        when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
+          SiteSetting.send("chatbot_open_ai_model_custom_" + opts[:trust_level] + "_trust") ? 
+            SiteSetting.send("chatbot_open_ai_model_custom_name_" + opts[:trust_level] + "_trust") :
+            SiteSetting.send("chatbot_open_ai_model_" + opts[:trust_level] + "_trust")
+        else
+          SiteSetting.chatbot_open_ai_model_custom_low_trust ? SiteSetting.chatbot_open_ai_model_custom_name_low_trust : SiteSetting.chatbot_open_ai_model_low_trust
+        end
     end
 
     def get_response(prompt, opts)
