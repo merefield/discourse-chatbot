@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.77
+# version: 0.80
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -26,6 +26,11 @@ module ::DiscourseChatbot
   POST_TYPES_INC_WHISPERS = [1, 4]
   EMBEDDING_MODEL = "text-embedding-ada-002".freeze
   EMBEDDING_CHAR_LIMIT = 11500
+
+  TRUST_LEVELS = ["low", "medium", "high"]
+  HIGH_TRUST_LEVEL = 3
+  MEDIUM_TRUST_LEVEL = 2
+  LOW_TRUST_LEVEL = 1
 
   def progress_debug_message(message)
     puts "Chatbot: #{message}" if SiteSetting.chatbot_enable_verbose_console_logging

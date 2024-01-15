@@ -59,6 +59,7 @@ module ::DiscourseChatbot
             reply_to_message_or_post_id: chat_message.id,
             topic_or_channel_id: channel_id,
             over_quota: over_quota,
+            trust_level: trust_level(user.id),
             message_body: message_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
           }
 

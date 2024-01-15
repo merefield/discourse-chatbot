@@ -7,6 +7,24 @@ module ::DiscourseChatbot
       raise "Overwrite me!"
     end
 
+    def trust_level(user_id)
+      max_trust_level = 0
+
+      GroupUser.where(user_id: user_id).each do |gu|
+        if SiteSetting.chatbot_low_trust_groups.split('|').include? gu.group_id.to_s
+          max_trust_level = LOW_TRUST_LEVEL if max_trust_level < LOW_TRUST_LEVEL
+        end
+        if SiteSetting.chatbot_medium_trust_groups.split('|').include? gu.group_id.to_s
+          max_trust_level = MEDIUM_TRUST_LEVEL if max_trust_level < MEDIUM_TRUST_LEVEL
+        end
+        if SiteSetting.chatbot_high_trust_groups.split('|').include? gu.group_id.to_s
+          max_trust_level = HIGH_TRUST_LEVEL if max_trust_level < HIGH_TRUST_LEVEL
+        end
+      end
+
+      max_trust_level.zero? ? nil : ::DiscourseChatbot::TRUST_LEVELS[max_trust_level - 1]
+    end
+
     def over_quota(user_id)
       max_quota = 0
 
