@@ -108,8 +108,12 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
           end
         end
       end
-      presence = PresenceChannel.new("/chat-reply/#{message.chat_channel_id}")
-      presence.present(user_id: bot_user_id, client_id: "12345")
+      begin
+        presence = PresenceChannel.new("/chat-reply/#{message.chat_channel_id}")
+        presence.present(user_id: bot_user_id, client_id: "12345")
+      rescue
+        # ignore issues with permissions related to communicating presence
+      end
     end
 
     if create_bot_reply

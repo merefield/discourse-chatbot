@@ -14,9 +14,12 @@ module ::DiscourseChatbot
           guardian: @guardian,
           message: @message_body,
         )
-
-        presence = PresenceChannel.new("/chat-reply/#{@topic_or_channel_id}")
-        presence.leave(user_id: @author.id, client_id: "12345")
+        begin
+          presence = PresenceChannel.new("/chat-reply/#{@topic_or_channel_id}")
+          presence.leave(user_id: @author.id, client_id: "12345")
+        rescue
+          # ignore issues with permissions related to communicating presence
+        end
 
         ::DiscourseChatbot.progress_debug_message("6. The Message has been created successfully")
       rescue => e

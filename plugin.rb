@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.81
+# version: 0.82
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -18,7 +18,7 @@ gem "childprocess", "4.1.0"
 gem "safe_ruby", "1.0.4"
 
 module ::DiscourseChatbot
-  PLUGIN_NAME = "discourse-chatbot"
+  PLUGIN_NAME = "discourse-chatbot"q 
   POST = "post"
   MESSAGE = "message"
   CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
