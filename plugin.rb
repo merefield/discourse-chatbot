@@ -55,6 +55,8 @@ after_initialize do
   User.register_custom_field_type('chatbot_user_prefs_disable_quickchat_pm_composer_popup_mobile', :boolean)
   register_editable_user_custom_field :chatbot_user_prefs_disable_quickchat_pm_composer_popup_mobile
 
+  Category.register_custom_field_type('chatbot_auto_response_additional_prompt', :string)
+
   SeedFu.fixture_paths << Rails
     .root
     .join("plugins", "discourse-chatbot", "db", "fixtures")

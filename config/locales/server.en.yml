@@ -30,7 +30,7 @@ en:
     chatbot_can_trigger_from_whisper: "Allow Chatbot to be triggered from a whisper (get creative!)"
     chatbot_permitted_all_categories: "Allow Chatbot to interact in any Category"
     chatbot_permitted_categories: "Allow Chatbot to interact only in these Categories if not allowed to play in all"
-    chatbot_auto_respond_categories: "(EXPERIMENTAL) Categories where Chatbot should reply to every first Post"
+    chatbot_auto_respond_categories: "(EXPERIMENTAL) Categories where Chatbot should reply to every first Post.  See each Category's Settings to inject a special prompt"
     chatbot_bot_user: "The Chatbot User"
     chatbot_quick_access_talk_button: "Display floating button which links to direct discussion one-to-one with the bot on specified channel type"
     chatbot_quick_access_talk_button_bot_icon: "Name of icon used for floating quick bot access button.  If blank it will use bot user's avatar instead. (if icon make sure it's permitted and added to svg_icon_subset if necessary)"
