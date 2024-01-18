@@ -3,7 +3,10 @@ require_relative '../../plugin_helper'
 
 describe ::DiscourseChatbot::PostEvaluation do
   fab!(:user) { Fabricate(:user, refresh_auto_groups: true) }
-  let(:topic) { Fabricate(:topic, user: user) }
+  let(:category) { Fabricate(:category) }
+  let(:auto_category) { Fabricate(:category) }
+  let(:topic) { Fabricate(:topic, user: user, category: category) }
+  let(:topic_in_auto_category) { Fabricate(:topic, category: auto_category) }
   let(:post_args) { { user: topic.user, topic: topic } }
   let(:bot_user) { Fabricate(:user, refresh_auto_groups: true) }
   let(:other_user) { Fabricate(:user, refresh_auto_groups: true) }
@@ -23,6 +26,42 @@ describe ::DiscourseChatbot::PostEvaluation do
     post =
     PostCreator.create!(
       topic.user,
+      title: "hello there, how are we all doing?!",
+      raw: "hello there!"
+    )
+
+    event_evaluation = ::DiscourseChatbot::PostEvaluation.new
+    triggered = event_evaluation.on_submission(post)
+
+    expect(triggered).to equal(false)
+  end
+
+  it "It does trigger a bot to respond when the first post is in a Category included in auto respond Categories" do
+    SiteSetting.chatbot_bot_user = bot_user.username
+    SiteSetting.chatbot_auto_respond_categories = auto_category.id.to_s
+
+    post =
+    PostCreator.create!(
+      topic_in_auto_category.user,
+      topic_id: topic_in_auto_category.id,
+      title: "hello there, how are we all doing?!",
+      raw: "hello there!"
+    )
+
+    event_evaluation = ::DiscourseChatbot::PostEvaluation.new
+    triggered = event_evaluation.on_submission(post)
+
+    expect(triggered).to equal(true)
+  end
+
+  it "It does NOT trigger a bot to respond when the first post is in a Category NOT included in auto respond Categories" do
+    SiteSetting.chatbot_bot_user = bot_user.username
+    SiteSetting.chatbot_auto_respond_categories = auto_category.id.to_s
+
+    post =
+    PostCreator.create!(
+      topic.user,
+      topic_id: topic.id,
       title: "hello there, how are we all doing?!",
       raw: "hello there!"
     )
