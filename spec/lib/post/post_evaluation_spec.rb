@@ -56,7 +56,7 @@ describe ::DiscourseChatbot::PostEvaluation do
 
   it "It does NOT trigger a bot to respond when the first post is in a Category NOT included in auto respond Categories" do
     SiteSetting.chatbot_bot_user = bot_user.username
-    SiteSetting.chatbot_auto_respond_categories = auto_category.to_s
+    SiteSetting.chatbot_auto_respond_categories = auto_category.id.to_s
 
     post =
     PostCreator.create!(
