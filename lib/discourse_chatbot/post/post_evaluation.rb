@@ -30,7 +30,8 @@ module ::DiscourseChatbot
 
         explicit_reply_to_bot = post.reply_to_user_id == bot_user.id
       else
-        if topic.private_message? && (::TopicUser.where(topic_id: topic.id).where(posted: false).uniq(&:user_id).pluck(:user_id).include? bot_user.id)
+        if (topic.private_message? && (::TopicUser.where(topic_id: topic.id).where(posted: false).uniq(&:user_id).pluck(:user_id).include? bot_user.id)) ||
+             (chatbot_auto_respond_categories.include? post.topic.category_id.to_s)
           explicit_reply_to_bot = true
         end
       end
