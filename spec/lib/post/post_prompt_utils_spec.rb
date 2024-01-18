@@ -15,6 +15,11 @@ describe ::DiscourseChatbot::PostPromptUtils do
   let!(:post_10) { Fabricate(:post, topic: topic, post_type: 1, reply_to_post_number: 7) }
   let!(:post_11) { Fabricate(:post, topic: topic, post_type: 1) }
 
+  let(:auto_category) { Fabricate(:category) }
+  let(:topic_in_auto_category) { Fabricate(:topic, category: auto_category) }
+  let(:bot_user) { Fabricate(:user, refresh_auto_groups: true) }
+  let!(:post_1_auto) { Fabricate(:post, topic: topic_in_auto_category, post_type: 1) }
+
   before(:each) do
     SiteSetting.chatbot_enabled = true
     SiteSetting.chatbot_max_look_behind = 10
@@ -48,5 +53,21 @@ describe ::DiscourseChatbot::PostPromptUtils do
     post_9.destroy
     past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11.id)
     expect(past_posts.count).to equal(7)
+  end
+
+  it "adds the category specific prompt when in an auto-response category" do
+    SiteSetting.chatbot_auto_respond_categories = auto_category.id.to_s
+    SiteSetting.chatbot_bot_user = bot_user.username
+    text = "hello, world!"
+    category_text = CategoryCustomField.create!(category_id: auto_category.id, name: "chatbot_auto_response_additional_prompt", value: text)
+    opts = {
+      reply_to_message_or_post_id: post_1_auto.id,
+      bot_user_id: bot_user.id,
+      category_id: auto_category.id
+    }
+
+    prompt = ::DiscourseChatbot::PostPromptUtils.create_prompt(opts)
+
+    expect(prompt[2][:content].to_s).to eq(text.to_s)
   end
 end

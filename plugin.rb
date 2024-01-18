@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.85
+# version: 0.86
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -54,6 +54,8 @@ after_initialize do
   # Allow user to disable quickchat Composer popup on mobile PMs
   User.register_custom_field_type('chatbot_user_prefs_disable_quickchat_pm_composer_popup_mobile', :boolean)
   register_editable_user_custom_field :chatbot_user_prefs_disable_quickchat_pm_composer_popup_mobile
+
+  Category.register_custom_field_type('chatbot_auto_response_additional_prompt', :string)
 
   SeedFu.fixture_paths << Rails
     .root
