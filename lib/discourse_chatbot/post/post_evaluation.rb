@@ -6,6 +6,18 @@ module ::DiscourseChatbot
     def on_submission(submission)
       ::DiscourseChatbot.progress_debug_message("2. evaluation")
 
+      if !(opts = trigger_response(submission)).blank?
+        ::DiscourseChatbot.progress_debug_message("3. invocation")
+
+        job_class = ::Jobs::ChatbotReplyJob
+        invoke_background_job(job_class, opts)
+        true
+      else
+        false
+      end
+    end
+
+    def trigger_response(submission)
       post = submission
 
       user = post.user
@@ -31,7 +43,7 @@ module ::DiscourseChatbot
         explicit_reply_to_bot = post.reply_to_user_id == bot_user.id
       else
         if (topic.private_message? && (::TopicUser.where(topic_id: topic.id).where(posted: false).uniq(&:user_id).pluck(:user_id).include? bot_user.id)) ||
-             (chatbot_auto_respond_categories.include? post.topic.category_id.to_s)
+             (SiteSetting.chatbot_auto_respond_categories.include? post.topic.category_id.to_s)
           explicit_reply_to_bot = true
         end
       end
@@ -57,12 +69,6 @@ module ::DiscourseChatbot
           trust_level: trust_level(user.id),
           message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
         }
-
-        ::DiscourseChatbot.progress_debug_message("3. invocation")
-
-        job_class = ::Jobs::ChatbotReplyJob
-        invoke_background_job(job_class, opts)
-        true
       else
         false
       end
