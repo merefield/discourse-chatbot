@@ -17,7 +17,7 @@ module ::DiscourseChatbot
       if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
         ::OpenAI.configure do |config|
           config.api_type = :azure
-          config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
+          config.api_version = SiteSetting.chatbot_open_ai_embeddings_model_custom_api_version
         end
       end
       @model_name = ::DiscourseChatbot::EMBEDDING_MODEL
