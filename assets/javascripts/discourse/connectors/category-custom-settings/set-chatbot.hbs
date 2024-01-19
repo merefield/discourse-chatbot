@@ -1,0 +1,14 @@
+<section>
+  <h3> {{i18n "chatbot.category.settings_label"}}</h3>
+
+  <section class="field">
+    {{html-safe (i18n "chatbot.category.auto_response_additional_prompt")}}
+    {{input
+      type="textarea"
+      value=category.custom_fields.chatbot_auto_response_additional_prompt
+    }}
+    {{!-- {{i18n "chatbot.category.auto_response_additional_prompt"}} --}}
+
+  </section>
+
+</section>

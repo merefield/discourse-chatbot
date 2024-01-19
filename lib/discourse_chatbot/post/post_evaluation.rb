@@ -22,6 +22,7 @@ module ::DiscourseChatbot
 
       user = post.user
       topic = post.topic
+      category_id = topic.category_id
 
       post_contents = post.raw.to_s
 
@@ -43,7 +44,7 @@ module ::DiscourseChatbot
         explicit_reply_to_bot = post.reply_to_user_id == bot_user.id
       else
         if (topic.private_message? && (::TopicUser.where(topic_id: topic.id).where(posted: false).uniq(&:user_id).pluck(:user_id).include? bot_user.id)) ||
-             (Array(SiteSetting.chatbot_auto_respond_categories).include? post.topic.category_id.to_s)
+             (Array(SiteSetting.chatbot_auto_respond_categories.split("|")).include? post.topic.category_id.to_s)
           explicit_reply_to_bot = true
         end
       end
@@ -65,6 +66,7 @@ module ::DiscourseChatbot
           reply_to_message_or_post_id: post.id,
           original_post_number: post.post_number,
           topic_or_channel_id: topic.id,
+          category_id: category_id,
           over_quota: over_quota(user.id),
           trust_level: trust_level(user.id),
           message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
