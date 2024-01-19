@@ -7,16 +7,31 @@ module ::DiscourseChatbot
     def initialize(opts)
       ::OpenAI.configure do |config|
         config.access_token = SiteSetting.chatbot_open_ai_token
-      end
-      if !SiteSetting.chatbot_open_ai_model_custom_url.blank?
-        ::OpenAI.configure do |config|
-          config.uri_base = SiteSetting.chatbot_open_ai_model_custom_url
+        case opts[:trust_level] 
+        when nil
+          if !SiteSetting.chatbot_open_ai_model_custom_url_low_trust.blank?
+            config.uri_base = SiteSetting.chatbot_open_ai_model_custom_url_low_trust
+          end
+        when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
+          if !SiteSetting.send("chatbot_open_ai_model_custom_url_" + opts[:trust_level] + "_trust").blank?
+            config.uri_base = SiteSetting.send("chatbot_open_ai_model_custom_url_" + opts[:trust_level] + "_trust")
+          end
+        else
+          if !SiteSetting.chatbot_open_ai_model_custom_url_low_trust.blank?
+            config.uri_base = SiteSetting.chatbot_open_ai_model_custom_url_low_trust
+          end
         end
-      end
-      if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
-        ::OpenAI.configure do |config|
+        if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
           config.api_type = :azure
-          config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
+          # config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
+          case opts[:trust_level] 
+          when nil
+            config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version_low_trust
+          when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
+            config.api_version = SiteSetting.send("chatbot_open_ai_model_custom_api_version_" + opts[:trust_level] + "_trust")
+          else
+            config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version_low_trust
+          end
         end
       end
       @client = OpenAI::Client.new do |f|
