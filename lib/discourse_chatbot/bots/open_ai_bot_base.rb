@@ -4,9 +4,11 @@ require "openai"
 module ::DiscourseChatbot
 
   class OpenAIBotBase < Bot
+
     def initialize(opts)
       ::OpenAI.configure do |config|
         config.access_token = SiteSetting.chatbot_open_ai_token
+
         case opts[:trust_level] 
         when nil
           if !SiteSetting.chatbot_open_ai_model_custom_url_low_trust.blank?
@@ -21,9 +23,10 @@ module ::DiscourseChatbot
             config.uri_base = SiteSetting.chatbot_open_ai_model_custom_url_low_trust
           end
         end
+
         if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
           config.api_type = :azure
-          # config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
+
           case opts[:trust_level] 
           when nil
             config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version_low_trust
@@ -34,10 +37,12 @@ module ::DiscourseChatbot
           end
         end
       end
+
       @client = OpenAI::Client.new do |f|
         f.response :logger, Logger.new($stdout), bodies: true if SiteSetting.chatbot_enable_verbose_console_logging
         f.response :logger, Rails.logger, bodies: true if SiteSetting.chatbot_enable_verbose_rails_logging
       end
+
       @model_name =
         case opts[:trust_level]
         when nil
