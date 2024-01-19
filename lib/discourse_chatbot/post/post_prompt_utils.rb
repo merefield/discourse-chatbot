@@ -5,6 +5,7 @@ module ::DiscourseChatbot
 
     def self.create_prompt(opts)
       post_collection = collect_past_interactions(opts[:reply_to_message_or_post_id])
+      original_post_number = opts[:original_post_number]
       bot_user_id = opts[:bot_user_id]
       category_id = opts[:category_id]
       first_post_role = post_collection.first.topic.first_post.user.id == bot_user_id ? "assistant" : "user"
@@ -13,7 +14,7 @@ module ::DiscourseChatbot
 
       messages << { "role": first_post_role, "content": I18n.t("chatbot.prompt.first_post", username: post_collection.first.topic.first_post.user.username, raw: post_collection.first.topic.first_post.raw) }
 
-      if (Array(SiteSetting.chatbot_auto_respond_categories.split("|")).include? category_id.to_s) &&
+      if original_post_number == 1 && (Array(SiteSetting.chatbot_auto_respond_categories.split("|")).include? category_id.to_s) &&
         !CategoryCustomField.find_by(category_id: category_id, name: "chatbot_auto_response_additional_prompt").blank?
         messages << { "role": first_post_role, "content": CategoryCustomField.find_by(category_id: category_id, name: "chatbot_auto_response_additional_prompt").value }
       end

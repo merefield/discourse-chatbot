@@ -63,11 +63,29 @@ describe ::DiscourseChatbot::PostPromptUtils do
     opts = {
       reply_to_message_or_post_id: post_1_auto.id,
       bot_user_id: bot_user.id,
-      category_id: auto_category.id
+      category_id: auto_category.id,
+      original_post_number: 1
     }
 
     prompt = ::DiscourseChatbot::PostPromptUtils.create_prompt(opts)
 
     expect(prompt[2][:content].to_s).to eq(text.to_s)
+  end
+
+  it "does not add the category specific prompt when in an auto-response category for subsequent posts" do
+    SiteSetting.chatbot_auto_respond_categories = auto_category.id.to_s
+    SiteSetting.chatbot_bot_user = bot_user.username
+    text = "hello, world!"
+    category_text = CategoryCustomField.create!(category_id: auto_category.id, name: "chatbot_auto_response_additional_prompt", value: text)
+    opts = {
+      reply_to_message_or_post_id: post_1_auto.id,
+      bot_user_id: bot_user.id,
+      category_id: auto_category.id,
+      original_post_number: 2
+    }
+
+    prompt = ::DiscourseChatbot::PostPromptUtils.create_prompt(opts)
+
+    expect(prompt[2][:content].to_s).not_to eq(text.to_s)
   end
 end
