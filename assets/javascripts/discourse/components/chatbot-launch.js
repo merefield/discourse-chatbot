@@ -23,6 +23,7 @@ export default class ContentLanguageDiscovery extends Component {
     return (
       this.currentUser &&
       this.siteSettings.chatbot_enabled &&
+      this.currentUser.chatbot_access &&
       currentRouteName === `discovery.${defaultHomepage()}` &&
       this.siteSettings.chatbot_quick_access_talk_button !== "off" &&
       ((this.siteSettings.chat_enabled &&
