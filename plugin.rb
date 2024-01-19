@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.87
+# version: 0.88
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -106,6 +106,11 @@ after_initialize do
   end
 
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD, :integer)
+
+
+  add_to_serializer(:current_user, :chatbot_access) do
+    !::DiscourseChatbot::EventEvaluation.new.trust_level(object.id).blank?
+  end
 
   DiscourseEvent.on(:post_created) do |*params|
     post, opts, user = params
