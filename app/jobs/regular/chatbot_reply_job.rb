@@ -120,10 +120,6 @@ class ::Jobs::ChatbotReplyJob < Jobs::Base
       ::DiscourseChatbot.progress_debug_message("4. Retrieving new reply message...")
       begin
         case opts[:trust_level]
-        when nil
-          ::DiscourseChatbot.progress_debug_message("4a. Using basic bot...")
-          opts.merge!(chatbot_bot_type: "basic")
-          bot = ::DiscourseChatbot::OpenAiBotBasic.new(opts)
         when ::DiscourseChatbot::TRUST_LEVELS[0], ::DiscourseChatbot::TRUST_LEVELS[1], ::DiscourseChatbot::TRUST_LEVELS[2]
           if SiteSetting.send("chatbot_bot_type_" + opts[:trust_level] + "_trust") == "RAG"
             ::DiscourseChatbot.progress_debug_message("4a. Using RAG bot...")

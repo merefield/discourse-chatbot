@@ -10,10 +10,6 @@ module ::DiscourseChatbot
         config.access_token = SiteSetting.chatbot_open_ai_token
 
         case opts[:trust_level] 
-        when nil
-          if !SiteSetting.chatbot_open_ai_model_custom_url_low_trust.blank?
-            config.uri_base = SiteSetting.chatbot_open_ai_model_custom_url_low_trust
-          end
         when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
           if !SiteSetting.send("chatbot_open_ai_model_custom_url_" + opts[:trust_level] + "_trust").blank?
             config.uri_base = SiteSetting.send("chatbot_open_ai_model_custom_url_" + opts[:trust_level] + "_trust")
@@ -28,8 +24,6 @@ module ::DiscourseChatbot
           config.api_type = :azure
 
           case opts[:trust_level] 
-          when nil
-            config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version_low_trust
           when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
             config.api_version = SiteSetting.send("chatbot_open_ai_model_custom_api_version_" + opts[:trust_level] + "_trust")
           else
@@ -45,8 +39,6 @@ module ::DiscourseChatbot
 
       @model_name =
         case opts[:trust_level]
-        when nil
-          SiteSetting.chatbot_open_ai_model_custom_low_trust ? SiteSetting.chatbot_open_ai_model_custom_name_low_trust : SiteSetting.chatbot_open_ai_model_low_trust
         when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
           SiteSetting.send("chatbot_open_ai_model_custom_" + opts[:trust_level] + "_trust") ? 
             SiteSetting.send("chatbot_open_ai_model_custom_name_" + opts[:trust_level] + "_trust") :
