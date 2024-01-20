@@ -25,7 +25,7 @@ module ::DiscourseChatbot
   POST_TYPES_REGULAR_ONLY = [1]
   POST_TYPES_INC_WHISPERS = [1, 4]
   EMBEDDING_MODEL = "text-embedding-ada-002".freeze
-  EMBEDDING_CHAR_LIMIT = 11500
+  EMBEDDING_CHAR_LIMIT = 11000
 
   TRUST_LEVELS = ["low", "medium", "high"]
   HIGH_TRUST_LEVEL = 3
