@@ -32,7 +32,7 @@ module ::DiscourseChatbot
           ::Chat::ChannelMembershipManager.new(chat_channel).follow(User.find_by(username: @bot_author.username))
 
           if SiteSetting.chatbot_quick_access_bot_kicks_off
-            last_chat = ::Chat::Message.find(chat_channel.latest_not_deleted_message_id)
+            last_chat = ::Chat::Message.where(chat_channel_id: chat_channel_id, deleted_at: nil).last
 
             unless last_chat && last_chat.message == I18n.t("chatbot.quick_access_kick_off.announcement")
               Chat::CreateMessage.call(
