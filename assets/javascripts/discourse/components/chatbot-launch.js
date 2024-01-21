@@ -51,36 +51,15 @@ export default class ContentLanguageDiscovery extends Component {
 
   @action
   async startChatting() {
-    if (this.siteSettings.chatbot_quick_access_bot_kicks_off) {
-      let result = await ajax("/chatbot/start_bot_convo", {
-        type: "POST",
-      });
+    let result = await ajax("/chatbot/start_bot_convo", {
+      type: "POST",
+    });
 
-      if (
-        this.siteSettings.chatbot_quick_access_talk_button ===
-        "personal message"
-      ) {
+    if (
+      this.siteSettings.chatbot_quick_access_talk_button === "personal message"
+    ) {
+      if (this.siteSettings.chatbot_quick_access_bot_kicks_off) {
         DiscourseURL.redirectTo(`/t/${result.topic_id}`);
-      } else {
-        this.chat
-          .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
-          .then((chatChannel) => {
-            this.router.transitionTo(
-              "chat.channel",
-              ...chatChannel.routeModels
-            );
-          });
-      }
-    } else {
-      if (this.siteSettings.chatbot_quick_access_talk_button === "chat") {
-        this.chat
-          .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
-          .then((chatChannel) => {
-            this.router.transitionTo(
-              "chat.channel",
-              ...chatChannel.routeModels
-            );
-          });
       } else {
         this.composer.focusComposer({
           fallbackToNewTopic: true,
@@ -95,6 +74,17 @@ export default class ContentLanguageDiscovery extends Component {
           },
         });
       }
+    } else {
+      this.chat
+        .upsertDmChannel({
+          usernames: [
+            this.siteSettings.chatbot_bot_user,
+            this.currentUser.username,
+          ],
+        })
+        .then((chatChannel) => {
+          this.router.transitionTo("chat.channel", ...chatChannel.routeModels);
+        });
     }
   }
 }
