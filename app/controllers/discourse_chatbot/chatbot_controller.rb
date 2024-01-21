@@ -17,27 +17,27 @@ module ::DiscourseChatbot
 
       if channel_type == "chat"
 
-        @bot_author = ::User.find_by(username: SiteSetting.chatbot_bot_user)
-        @guardian = Guardian.new(@bot_author)
+        bot_author = ::User.find_by(username: SiteSetting.chatbot_bot_user)
+        guardian = Guardian.new(bot_author)
         chat_channel_id = nil
 
         direct_message = Chat::DirectMessage.for_user_ids([bot_user.id, current_user.id])
 
         if direct_message
-          chat_channel = Chat::Channel.find_by(chatable_id: direct_message)
+          chat_channel = Chat::Channel.find_by(chatable_id: direct_message, type: "DirectMessageChannel")
           chat_channel_id = chat_channel.id
 
           # make both users active on channel or FE will error - TODO this needs further investigation!
           ::Chat::ChannelMembershipManager.new(chat_channel).follow(User.find_by(username: current_user.username))
-          ::Chat::ChannelMembershipManager.new(chat_channel).follow(User.find_by(username: @bot_author.username))
+          ::Chat::ChannelMembershipManager.new(chat_channel).follow(User.find_by(username: bot_author.username))
 
           if SiteSetting.chatbot_quick_access_bot_kicks_off
-            last_chat = ::Chat::Message.where(chat_channel_id: chat_channel_id, deleted_at: nil).last
+            last_chat = ::Chat::Message.find(chat_channel.latest_not_deleted_message_id)
 
             unless last_chat && last_chat.message == I18n.t("chatbot.quick_access_kick_off.announcement")
               Chat::CreateMessage.call(
                 chat_channel_id: chat_channel_id,
-                guardian: @guardian,
+                guardian: guardian,
                 message: I18n.t("chatbot.quick_access_kick_off.announcement"),
               )
             end
