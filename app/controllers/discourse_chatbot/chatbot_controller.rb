@@ -41,6 +41,8 @@ module ::DiscourseChatbot
             end
           end
         end
+
+        response = { channel_id: chat_channel_id }
       elsif channel_type == "personal message"
         default_opts = {
           post_alert_options: { skip_send_email: true },
