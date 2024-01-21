@@ -19,8 +19,10 @@ module ::DiscourseChatbot
 
         @bot_author = ::User.find_by(username: SiteSetting.chatbot_bot_user)
         @guardian = Guardian.new(@bot_author)
+        chat_channel_id = nil
 
         direct_message = Chat::DirectMessage.for_user_ids([bot_user.id, current_user.id])
+
         if direct_message
           chat_channel = Chat::Channel.find_by(chatable_id: direct_message)
           chat_channel_id = chat_channel.id
