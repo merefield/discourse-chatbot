@@ -63,7 +63,7 @@ export default class ContentLanguageDiscovery extends Component {
         DiscourseURL.redirectTo(`/t/${result.topic_id}`);
       } else {
         this.chat
-          .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
+          .upsertDmChannel({ usernames: [this.siteSettings.chatbot_bot_user] })
           .then((chatChannel) => {
             this.router.transitionTo(
               "chat.channel",
@@ -74,7 +74,7 @@ export default class ContentLanguageDiscovery extends Component {
     } else {
       if (this.siteSettings.chatbot_quick_access_talk_button === "chat") {
         this.chat
-          .upsertDmChannelForUsernames([this.siteSettings.chatbot_bot_user])
+          .upsertDmChannel({ usernames: [this.siteSettings.chatbot_bot_user] })
           .then((chatChannel) => {
             this.router.transitionTo(
               "chat.channel",
