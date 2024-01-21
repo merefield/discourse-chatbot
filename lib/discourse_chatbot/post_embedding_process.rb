@@ -46,7 +46,7 @@ module ::DiscourseChatbot
         response = @client.embeddings(
           parameters: {
             model: @model_name,
-            input: post.raw[0..::DiscourseChatbot::EMBEDDING_CHAR_LIMIT]
+            input: post.raw[0..SiteSetting.chatbot_open_ai_embeddings_char_limit]
           }
         )
 
@@ -68,7 +68,7 @@ module ::DiscourseChatbot
       response = @client.embeddings(
         parameters: {
           model: @model_name,
-          input: query[0..::DiscourseChatbot::EMBEDDING_CHAR_LIMIT]
+          input: query[0..SiteSetting.chatbot_open_ai_embeddings_char_limit]
         }
        )
 
