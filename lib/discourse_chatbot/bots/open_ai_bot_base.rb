@@ -22,13 +22,7 @@ module ::DiscourseChatbot
 
         if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
           config.api_type = :azure
-
-          case opts[:trust_level] 
-          when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
-            config.api_version = SiteSetting.send("chatbot_open_ai_model_custom_api_version_" + opts[:trust_level] + "_trust")
-          else
-            config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version_low_trust
-          end
+          config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
         end
       end
 

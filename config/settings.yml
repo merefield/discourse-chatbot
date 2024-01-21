@@ -48,9 +48,6 @@ plugins:
   chatbot_open_ai_model_custom_url_high_trust:
     client: false
     default: ''
-  chatbot_open_ai_model_custom_api_version_high_trust:
-    client: false
-    default: '2023-09-01-preview'
   chatbot_bot_type_medium_trust:
     default: basic
     client: false
@@ -76,9 +73,6 @@ plugins:
   chatbot_open_ai_model_custom_url_medium_trust:
     client: false
     default: ''
-  chatbot_open_ai_model_custom_api_version_medium_trust:
-    client: false
-    default: '2023-09-01-preview'
   chatbot_bot_type_low_trust:
     default: basic
     client: false
@@ -104,21 +98,18 @@ plugins:
   chatbot_open_ai_model_custom_url_low_trust:
     client: false
     default: ''
-  chatbot_open_ai_model_custom_api_version_low_trust:
-    client: false
-    default: '2023-09-01-preview'
   chatbot_open_ai_model_custom_api_type:
     client: false
     default: ''
+  chatbot_open_ai_model_custom_api_version:
+    client: false
+    default: '2023-09-01-preview'
   chatbot_open_ai_embeddings_char_limit:
     client: false
     default: 11500
   chatbot_open_ai_embeddings_model_custom_url:
     client: false
     default: ''
-  chatbot_open_ai_embeddings_model_custom_api_version:
-    client: false
-    default: '2023-09-01-preview'
   chatbot_quick_access_talk_button:
     client: true
     default: chat
