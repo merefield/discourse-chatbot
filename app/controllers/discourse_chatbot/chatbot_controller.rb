@@ -19,8 +19,10 @@ module ::DiscourseChatbot
 
         @bot_author = ::User.find_by(username: SiteSetting.chatbot_bot_user)
         @guardian = Guardian.new(@bot_author)
+        chat_channel_id = nil
 
         direct_message = Chat::DirectMessage.for_user_ids([bot_user.id, current_user.id])
+
         if direct_message
           chat_channel = Chat::Channel.find_by(chatable_id: direct_message)
           chat_channel_id = chat_channel.id
@@ -41,6 +43,8 @@ module ::DiscourseChatbot
             end
           end
         end
+
+        response = { channel_id: chat_channel_id }
       elsif channel_type == "personal message"
         default_opts = {
           post_alert_options: { skip_send_email: true },
