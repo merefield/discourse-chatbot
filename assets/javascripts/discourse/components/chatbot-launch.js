@@ -51,9 +51,12 @@ export default class ContentLanguageDiscovery extends Component {
 
   @action
   async startChatting() {
-    let result = await ajax("/chatbot/start_bot_convo", {
-      type: "POST",
-    });
+    let result = {};
+    if (this.siteSettings.chatbot_quick_access_bot_kicks_off) {
+      result = await ajax("/chatbot/start_bot_convo", {
+        type: "POST",
+      });
+    }
 
     if (
       this.siteSettings.chatbot_quick_access_talk_button === "personal message"
