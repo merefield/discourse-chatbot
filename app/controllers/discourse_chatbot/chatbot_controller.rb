@@ -24,27 +24,21 @@ module ::DiscourseChatbot
         direct_message = Chat::DirectMessage.for_user_ids([bot_user.id, current_user.id])
 
         if direct_message
-          chat_channel = Chat::Channel.find_by(chatable_id: direct_message, type: "DirectMessageChannel")
+          chat_channel = Chat::Channel.find_by(chatable_id: direct_message.id, type: "DirectMessageChannel")
           chat_channel_id = chat_channel.id
 
-          # make both users active on channel or FE will error - TODO this needs further investigation!
-          ::Chat::ChannelMembershipManager.new(chat_channel).follow(User.find_by(username: current_user.username))
-          ::Chat::ChannelMembershipManager.new(chat_channel).follow(User.find_by(username: bot_author.username))
+          last_chat = ::Chat::Message.find(chat_channel.latest_not_deleted_message_id)
 
-          if SiteSetting.chatbot_quick_access_bot_kicks_off
-            last_chat = ::Chat::Message.find(chat_channel.latest_not_deleted_message_id)
-
-            unless last_chat && last_chat.message == I18n.t("chatbot.quick_access_kick_off.announcement")
-              Chat::CreateMessage.call(
-                chat_channel_id: chat_channel_id,
-                guardian: guardian,
-                message: I18n.t("chatbot.quick_access_kick_off.announcement"),
-              )
-            end
+          unless last_chat && last_chat.message == I18n.t("chatbot.quick_access_kick_off.announcement")
+            Chat::CreateMessage.call(
+              chat_channel_id: chat_channel_id,
+              guardian: guardian,
+              message: I18n.t("chatbot.quick_access_kick_off.announcement"),
+            )
           end
-        end
 
-        response = { channel_id: chat_channel_id }
+          response = { channel_id: chat_channel_id }
+        end
       elsif channel_type == "personal message"
         default_opts = {
           post_alert_options: { skip_send_email: true },

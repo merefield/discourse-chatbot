@@ -54,6 +54,8 @@ en:
     chatbot_forum_search_function_reranking_group_promotion: "Posts authored by these Groups are promoted in results set so their Posts are more likely to be seen and taken into account by the bot"
     chatbot_locations_plugin_support: "(EXPERIMENTAL currently user locations only) Natural language querying capability for <a target='_blank' rel='noopener' href='https://github.com/paviliondev/discourse-locations'>Locations Plugin</a> (when using RAG mode, requires Locations Plugin to be installed)"
     chatbot_escalate_to_staff_function: "(EXPERIMENTAL, Chat only) if user requests human assistance or gets irritated, escalate to staff via PM (requires staff group to be populated)"
+    chatbot_escalate_to_staff_groups: "(EXPERIMENTAL, Chat only) groups added to escalation PM, e.g. support team"
+    chatbot_escalate_to_staff_max_history: "(EXPERIMENTAL, Chat only) number of chat messages included in transcript added to escalation PM"
     chatbot_news_api_token: "News API token for news (if left blank, news will never be searched)<a target='_blank' rel='noopener' href='https://newsapi.org/'>Get one at NewsAPI.org</a>"
     chatbot_serp_api_key: "Serp API token for google search (if left blank, google will never be searched). <a target='_blank' rel='noopener' href='https://serpapi.com/'>Get one at SerpAPI.com</a>"
     chatbot_marketstack_key: "Marketstack API key for stock price information (if left blank, Marketstack will never be queried).<a target='_blank' rel='noopener' href='https://marketstack.com/'>Get one at MarketStack.com</a>"
