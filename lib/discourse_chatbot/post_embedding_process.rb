@@ -20,7 +20,7 @@ module ::DiscourseChatbot
           config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
         end
       end
-      @model_name = ::DiscourseChatbot::EMBEDDING_MODEL
+      @model_name = SiteSetting.chatbot_open_ai_embeddings_model
       @client = ::OpenAI::Client.new
 
       allowed_group_ids = [0, 10, 11, 12, 13, 14]  # automated groups only

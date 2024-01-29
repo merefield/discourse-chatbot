@@ -17,6 +17,7 @@ en:
     chatbot_open_ai_model_custom_high_trust: "(HIGH TRUST USERS) Use Custom model name (ADVANCED USERS ONLY)"
     chatbot_open_ai_model_custom_name_high_trust: "(HIGH TRUST USERS, CUSTOM ONLY) Name of model"
     chatbot_open_ai_model_custom_url_high_trust: "Populate it if you want to use proxy to Open AI or Azure OpenAI, e.g. https://custom-domain.openai.azure.com/openai/deployments/custom-name."
+    chatbot_open_ai_embeddings_model: "For Embeddings only.  Open AI model used to capture embeddings for search.  Use latest model for highest performance.  If you change this setting you must recreate embeddings for your entire site by running the rake task: `rake chatbot:refresh_embeddings`.  See supported models at <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/models/embeddings'>OpenAI: Embedding Models</a>"
     chatbot_open_ai_embeddings_char_limit: "Maximum number of Post characters sent to Open AI to calculate embedding.  Keep as high as possible without experiencing an error"
     chatbot_open_ai_embeddings_model_custom_url: "For Embeddings only.  Populate it if you want to use proxy to Open AI or Azure OpenAI, e.g. https://custom-domain.openai.azure.com/openai/deployments/embeddings-custom-name."
     chatbot_open_ai_model_custom_api_version: "Azure OpenAI REST API version. Required only when 'custom_api_type' is set to 'azure'. Refer to: <a target='_blank' rel='noopener' href='https://learn.microsoft.com/en-us/azure/ai-services/openai/reference'>Azure REST API reference</a>"
