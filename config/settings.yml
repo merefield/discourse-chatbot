@@ -104,6 +104,13 @@ plugins:
   chatbot_open_ai_model_custom_api_version:
     client: false
     default: '2023-09-01-preview'
+  chatbot_open_ai_embeddings_model:
+    client: false
+    type: enum
+    default: text-embedding-ada-002
+    choices:
+      - text-embedding-ada-002
+      - text-embedding-3-small
   chatbot_open_ai_embeddings_char_limit:
     client: false
     default: 11500
