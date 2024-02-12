@@ -241,6 +241,9 @@ plugins:
   chatbot_escalate_to_staff_max_history:
     client: false
     default: 10
+  chatbot_escalate_to_staff_user_author:
+    client: false
+    default: true
   chatbot_news_api_token:
     client: false
     default: ''

@@ -13,7 +13,6 @@ module DiscourseChatbot
       I18n.t("chatbot.prompt.function.escalate_to_staff.description")
     end
 
-            # { name: "input", type: String, description: I18n.t("chatbot.prompt.function.escalate_to_staff.parameters.input") } ,
     def parameters
       []
     end
@@ -54,9 +53,6 @@ module DiscourseChatbot
         collect_amount = SiteSetting.chatbot_escalate_to_staff_max_history
   
         while message_collection.length < collect_amount do
-          # if current_message.in_reply_to_id
-          #   current_message = ::Chat::Message.find(current_message.in_reply_to_id)
-          # else
           prior_message = ::Chat::Message.where(chat_channel_id: current_message.chat_channel_id, deleted_at: nil).where('chat_messages.id < ?', current_message.id).last
           if prior_message.nil?
             break
@@ -78,7 +74,9 @@ module DiscourseChatbot
           target_group_names: target_group_names
         }
 
-        post = PostCreator.create!(bot_user, default_opts)
+        posting_user = SiteSetting.chatbot_escalate_to_staff_user_author ? current_user : bot_user
+
+        post = PostCreator.create!(posting_user, default_opts)
 
         url = "https://#{Discourse.current_hostname}/t/slug/#{post.topic_id}"
 
