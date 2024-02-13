@@ -57,7 +57,6 @@ en:
     chatbot_escalate_to_staff_function: "(EXPERIMENTAL, Chat only) if user requests human assistance or gets irritated, escalate to staff via PM (requires staff group to be populated)"
     chatbot_escalate_to_staff_groups: "(EXPERIMENTAL, Chat only) groups added to escalation PM, e.g. support team"
     chatbot_escalate_to_staff_max_history: "(EXPERIMENTAL, Chat only) number of chat messages included in transcript added to escalation PM"
-    chatbot_escalate_to_staff_user_author: "(EXPERIMENTAL, Chat only) make the escalating user the author of the PM instead of the bot"
     chatbot_news_api_token: "News API token for news (if left blank, news will never be searched)<a target='_blank' rel='noopener' href='https://newsapi.org/'>Get one at NewsAPI.org</a>"
     chatbot_serp_api_key: "Serp API token for google search (if left blank, google will never be searched). <a target='_blank' rel='noopener' href='https://serpapi.com/'>Get one at SerpAPI.com</a>"
     chatbot_marketstack_key: "Marketstack API key for stock price information (if left blank, Marketstack will never be queried).<a target='_blank' rel='noopener' href='https://marketstack.com/'>Get one at MarketStack.com</a>"

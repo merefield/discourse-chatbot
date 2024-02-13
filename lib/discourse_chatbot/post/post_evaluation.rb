@@ -43,10 +43,7 @@ module ::DiscourseChatbot
 
         explicit_reply_to_bot = post.reply_to_user_id == bot_user.id
       else
-        if (topic.private_message? &&
-            (::TopicUser.where(topic_id: topic.id).where(posted: false).uniq(&:user_id).pluck(:user_id).include? bot_user.id) &&
-            (!SiteSetting.chatbot_escalate_to_staff_user_author || (SiteSetting.chatbot_escalate_to_staff_user_author && ::TopicUser.where(topic_id: topic.id).count < 3))
-            ) ||
+        if (topic.private_message? && (::TopicUser.where(topic_id: topic.id).where(posted: false).uniq(&:user_id).pluck(:user_id).include? bot_user.id)) ||
              (Array(SiteSetting.chatbot_auto_respond_categories.split("|")).include? post.topic.category_id.to_s)
           explicit_reply_to_bot = true
         end
