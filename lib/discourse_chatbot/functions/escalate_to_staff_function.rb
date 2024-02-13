@@ -74,9 +74,7 @@ module DiscourseChatbot
           target_group_names: target_group_names
         }
 
-        posting_user = SiteSetting.chatbot_escalate_to_staff_user_author ? current_user : bot_user
-
-        post = PostCreator.create!(posting_user, default_opts)
+        post = PostCreator.create!(current_user, default_opts)
 
         url = "https://#{Discourse.current_hostname}/t/slug/#{post.topic_id}"
 
