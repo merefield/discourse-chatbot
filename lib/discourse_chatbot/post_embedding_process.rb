@@ -115,14 +115,14 @@ module ::DiscourseChatbot
       else
         return false if !in_benchmark_user_scope(post_id)
       end
-      return true
+      true
     end
   
     def is_valid(post_id)
       embedding_record = ::DiscourseChatbot::PostEmbedding.find_by(post_id: post_id)
       return false if !embedding_record.present?
       return false if embedding_record.model != SiteSetting.chatbot_open_ai_embeddings_model
-      return true
+      true
     end
   
     def in_categories_scope(post_id)
@@ -158,7 +158,7 @@ module ::DiscourseChatbot
         user
       end
 
-      return benchmark_user
+      benchmark_user
     end
   end
 end
