@@ -36,9 +36,9 @@ plugins:
     default: gpt-3.5-turbo
     choices:
       - gpt-3.5-turbo
-      - gpt-3.5-turbo-16k
       - gpt-4
       - gpt-4-32k
+      - gpt-4-turbo-preview
   chatbot_open_ai_model_custom_high_trust:
     default: false
     client: false
@@ -61,9 +61,9 @@ plugins:
     default: gpt-3.5-turbo
     choices:
       - gpt-3.5-turbo
-      - gpt-3.5-turbo-16k
       - gpt-4
       - gpt-4-32k
+      - gpt-4-turbo-preview
   chatbot_open_ai_model_custom_medium_trust:
     default: false
     client: false
@@ -86,9 +86,9 @@ plugins:
     default: gpt-3.5-turbo
     choices:
       - gpt-3.5-turbo
-      - gpt-3.5-turbo-16k
       - gpt-4
       - gpt-4-32k
+      - gpt-4-turbo-preview
   chatbot_open_ai_model_custom_low_trust:
     default: false
     client: false
