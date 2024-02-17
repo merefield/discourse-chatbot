@@ -5,7 +5,7 @@ module ::DiscourseChatbot
 
   class PostEmbeddingProcess
 
-    def initialize
+    def setup
       ::OpenAI.configure do |config|
         config.access_token = SiteSetting.chatbot_open_ai_token
       end
@@ -22,45 +22,39 @@ module ::DiscourseChatbot
       end
       @model_name = SiteSetting.chatbot_open_ai_embeddings_model
       @client = ::OpenAI::Client.new
-
-      allowed_group_ids = [0, 10, 11, 12, 13, 14]  # automated groups only
-      barred_group_ids = Group.where.not(id: allowed_group_ids).pluck(:id) # no custom groups
-      unsuitable_users = GroupUser.where(group_id: barred_group_ids).pluck(:user_id).uniq # don't choose someone with in a custom group
-      safe_users = User.where.not(id: unsuitable_users).distinct.pluck(:id) # exclude them and find a suitable vanilla, junior user
-      benchmark_user = User.where(id: safe_users).where(trust_level: SiteSetting.chatbot_embeddings_benchmark_user_trust_level, active: true, admin: false, suspended_at: nil).last
-      if benchmark_user.nil?
-        raise StandardError, "No benchmark user exists for Post embedding suitability check, please add a basic user"
-      end
-      @benchmark_user_guardian = Guardian.new(benchmark_user)
     end
 
     def upsert(post_id)
-      post = ::Post.find_by(id: post_id)
-      topic = ::Topic.find_by(id: post.topic_id)
+      if in_scope(post_id)
+        if !is_valid(post_id)
+          self.setup
 
-      return if post.nil? || topic.nil?
-      return if topic.archetype == Archetype.private_message
-      return if @benchmark_user_guardian.nil?
+          begin
+            post = ::Post.find_by(id: post_id)
+            topic = ::Topic.find_by(id: post.topic_id)
+            response = @client.embeddings(
+              parameters: {
+                model: @model_name,
+                input: post.raw[0..SiteSetting.chatbot_open_ai_embeddings_char_limit]
+              }
+            )
 
-      if @benchmark_user_guardian.can_see?(post)
-        response = @client.embeddings(
-          parameters: {
-            model: @model_name,
-            input: post.raw[0..SiteSetting.chatbot_open_ai_embeddings_char_limit]
-          }
-        )
-
-        if response.dig("error")
-          error_text = "ERROR when trying to create Embedding for post id '#{post.id}' in topic id '#{topic.id}': #{response.dig("error", "message")}"
-          puts "\n\n#{error_text}\n\n"
-
-          Rails.logger.error("Chatbot: #{error_text}")
-          return
+            if response.dig("error")
+              error_text = response.dig("error", "message")
+              raise StandardError, error_text
+            end
+          rescue StandardError => e
+            Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Embedding for post id '#{post_id}' in topic id '#{topic.id}': #{e.message}")
+            raise e
+          end
+  
+          embedding_vector = response.dig("data", 0, "embedding")
+  
+          ::DiscourseChatbot::PostEmbedding.upsert({ post_id: post_id, model: SiteSetting.chatbot_open_ai_embeddings_model, embedding: "#{embedding_vector}" }, on_duplicate: :update, unique_by: :post_id)
         end
-
-        embedding_vector = response.dig("data", 0, "embedding")
-
-        ::DiscourseChatbot::PostEmbedding.upsert({ post_id: post_id, embedding: "#{embedding_vector}" }, on_duplicate: :update, unique_by: :post_id)
+      else
+        post_embedding = ::DiscourseChatbot::PostEmbedding.find_by(post_id: post_id)
+        post_embedding.delete if post_embedding
       end
     end
 
@@ -110,6 +104,59 @@ module ::DiscourseChatbot
          raise MissingEmbeddingError
         end
       reranked_results.map {|p| p.post_id}
+    end
+
+    def in_scope(post_id)
+      return false if !::Post.find_by(id: post_id).present? 
+      if SiteSetting.chatbot_embeddings_strategy == "categories"
+        return false if !in_categories_scope(post_id)
+      else
+        return false if !in_benchmark_user_scope(post_id)
+      end
+      return true
+    end
+  
+    def is_valid(post_id)
+      embedding_record = ::DiscourseChatbot::PostEmbedding.find_by(post_id: post_id)
+      return false if !embedding_record.present?
+      return false if !embedding_record..model != SiteSetting.chatbot_open_ai_embeddings_model
+      return true
+    end
+  
+    def in_categories_scope(post_id)
+      post = ::Post.find_by(id: post_id)
+      return false if post.nil?
+      topic = ::Topic.find_by(id: post.topic_id)
+      return false if topic.nil?
+      return false if topic.archetype == ::Archetype.private_message
+      SiteSetting.chatbot_embeddings_categories.split("|").include?(topic.category_id.to_s)
+    end
+  
+    def in_benchmark_user_scope(post_id)
+      return false if self.benchmark_user.nil?
+      post = ::Post.find_by(id: post_id)
+      return false if post.nil?
+      topic = ::Topic.find_by(id: post.topic_id)
+      return false if topic.nil?
+      return false if topic.archetype == ::Archetype.private_message
+      Guardian.new(self.benchmark_user).can_see?(post)
+    end
+
+    def benchmark_user
+      cache_key = "chatbot_benchmark_user"
+      benchmark_user = Discourse.cache.fetch(cache_key, expires_in: 1.hour) do
+        allowed_group_ids = [0, 10, 11, 12, 13, 14]  # automated groups only
+        barred_group_ids = ::Group.where.not(id: allowed_group_ids).pluck(:id) # no custom groups
+        unsuitable_users = ::GroupUser.where(group_id: barred_group_ids).pluck(:user_id).uniq # don't choose someone with in a custom group
+        safe_users = ::User.where.not(id: unsuitable_users).distinct.pluck(:id) # exclude them and find a suitable vanilla, junior user
+        user = ::User.where(id: safe_users).where(trust_level: SiteSetting.chatbot_embeddings_benchmark_user_trust_level, active: true, admin: false, suspended_at: nil)&.last
+        if user.nil?
+          raise StandardError, "Chatbot: No benchmark user exists for Post embedding suitability check, please add a basic user"
+        end
+        user
+      end
+
+      return benchmark_user
     end
   end
 end

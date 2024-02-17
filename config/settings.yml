@@ -104,6 +104,9 @@ plugins:
   chatbot_open_ai_model_custom_api_version:
     client: false
     default: '2023-09-01-preview'
+  chatbot_embeddings_enabled:
+    default: false
+    client: false
   chatbot_open_ai_embeddings_model:
     client: false
     type: enum
@@ -117,6 +120,18 @@ plugins:
   chatbot_open_ai_embeddings_model_custom_url:
     client: false
     default: ''
+  chatbot_embeddings_strategy:
+    default: benchmark_user
+    client: false
+    type: enum
+    choices:
+      - benchmark_user
+      - categories
+  chatbot_search_visible_categories:
+    client: false
+    default: ''
+    type: category_list
+    list_type: "compact"
   chatbot_quick_access_talk_button:
     client: true
     default: chat
