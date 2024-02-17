@@ -119,7 +119,7 @@ module ::DiscourseChatbot
     def is_valid(post_id)
       embedding_record = ::DiscourseChatbot::PostEmbedding.find_by(post_id: post_id)
       return false if !embedding_record.present?
-      return false if !embedding_record..model != SiteSetting.chatbot_open_ai_embeddings_model
+      return false if !embedding_record.model != SiteSetting.chatbot_open_ai_embeddings_model
       return true
     end
   
