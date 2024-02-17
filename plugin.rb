@@ -30,7 +30,7 @@ module ::DiscourseChatbot
   MEDIUM_TRUST_LEVEL = 2
   LOW_TRUST_LEVEL = 1
 
-  EMBEDDING_PROCESS_CHUNK = 50
+  EMBEDDING_PROCESS_CHUNK = 300
 
   def progress_debug_message(message)
     puts "Chatbot: #{message}" if SiteSetting.chatbot_enable_verbose_console_logging

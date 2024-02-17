@@ -127,7 +127,7 @@ plugins:
     choices:
       - benchmark_user
       - categories
-  chatbot_search_visible_categories:
+  chatbot_embeddings_categories:
     client: false
     default: ''
     type: category_list

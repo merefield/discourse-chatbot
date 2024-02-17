@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-class ::Jobs::ChatbotEmbeddingsSetCompleterJob < ::Jobs::Scheduled
+class ::Jobs::ChatbotEmbeddingsSetCompleter < ::Jobs::Scheduled
   sidekiq_options retry: false
 
   every 5.minutes
