@@ -64,8 +64,8 @@ after_initialize do
 
   %w(
     ../lib/discourse_chatbot/event_evaluation.rb
-    ../app/models/post_embedding.rb
-    ../app/models/post_embeddings_bookmark.rb
+    ../app/models/discourse_chatbot/post_embedding.rb
+    ../app/models/discourse_chatbot/post_embeddings_bookmark.rb
     ../lib/discourse_chatbot/post_embedding_process.rb
     ../lib/discourse_chatbot/embedding_completionist_process.rb
     ../lib/discourse_chatbot/message/message_evaluation.rb
