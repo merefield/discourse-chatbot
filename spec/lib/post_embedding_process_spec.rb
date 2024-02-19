@@ -46,4 +46,15 @@ RSpec.describe DiscourseChatbot::PostEmbeddingProcess do
       expect(subject.in_scope(post_out_of_scope.id)).to eq(false)
     end
   end
+
+  describe 'validity' do
+    it "checks if a post embedding is valid" do
+      SiteSetting.chatbot_open_ai_embeddings_model = "text-embedding-ada-002"
+      post = Fabricate(:post)
+      post_embedding = ::DiscourseChatbot::PostEmbedding.create!(post_id: post.id, model: "text-embedding-3-small", embedding: "[#{(1..1536).to_a.join(",")}]")
+      expect(subject.is_valid(post.id)).to eq(false)
+      post_embedding = ::DiscourseChatbot::PostEmbedding.upsert({post_id: post.id, model: "text-embedding-ada-002", embedding: "[#{(1..1536).to_a.join(",")}]"}, on_duplicate: :update, unique_by: :post_id)
+      expect(subject.is_valid(post.id)).to eq(true)
+    end
+  end
 end
