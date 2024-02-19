@@ -44,24 +44,8 @@ module DiscourseChatbot
 
         message_or_post_id = opts[:reply_to_message_or_post_id]
 
-        current_message = ::Chat::Message.find(message_or_post_id)
-
-        message_collection = []
+        message_collection = get_messages(message_or_post_id)
   
-        message_collection << current_message
-  
-        collect_amount = SiteSetting.chatbot_escalate_to_staff_max_history
-  
-        while message_collection.length < collect_amount do
-          prior_message = ::Chat::Message.where(chat_channel_id: current_message.chat_channel_id, deleted_at: nil).where('chat_messages.id < ?', current_message.id).last
-          if prior_message.nil?
-            break
-          else
-            current_message = prior_message
-          end
-          message_collection << current_message
-        end
-
         content = generate_transcript(message_collection, bot_user)
 
         default_opts = {
@@ -90,6 +74,27 @@ module DiscourseChatbot
         .new(messages.first.chat_channel, acting_user, messages_or_ids: messages.map(&:id))
         .generate_markdown
         .chomp
+    end
+
+    def get_messages(message_or_post_id)
+      current_message = ::Chat::Message.find(message_or_post_id)
+
+      message_collection = []
+
+      message_collection << current_message
+
+      collect_amount = SiteSetting.chatbot_escalate_to_staff_max_history
+
+      while message_collection.length < collect_amount do
+        prior_message = ::Chat::Message.where(chat_channel_id: current_message.chat_channel_id, deleted_at: nil).where('chat_messages.id < ?', current_message.id).last
+        if prior_message.nil?
+          break
+        else
+          current_message = prior_message
+        end
+        message_collection << current_message
+      end
+      message_collection
     end
   end
 end
