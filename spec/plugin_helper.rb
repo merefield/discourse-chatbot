@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
-require 'webmock/rspec'
 require 'rails_helper'
-
-# frozen_string_literal: true
 
 def get_chatbot_fixture(path)
   JSON.parse(

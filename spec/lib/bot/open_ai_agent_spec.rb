@@ -17,9 +17,9 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     second_query = [system_entry, { :role => "user", "content" => "what is 3 * 23.452432?" }, { "role" => "assistant", "content" => nil, "function_call" => { "name" => "calculate", "arguments" => "{\n  \"input\": \"3 * 23.452432\"\n}" } }, { "role" => "function", "name" => "calculate", "content" => "The answer is 70.357296." }]
     final_query = [system_entry, { :role => "user", "content" => "what is 3 * 23.452432?" }, { "role" => "assistant", "content" => "To answer the question I will use these step by step instructions.\n\nI will use the calculate function to calculate the answer with arguments {\n  \"input\": \"3 * 23.452432\"\n}.\n\nThe answer is 70.357296.\n\n Based on the above, I will now answer the question, this message will only be seen by me so answer with the assumption with that the user has not seen this message." }]
 
-    ::DiscourseChatbot::OpenAiBotRag.any_instance.expects(:create_chat_completion).with(query).returns(llm_function_response)
-    ::DiscourseChatbot::OpenAiBotRag.any_instance.expects(:create_chat_completion).with(second_query).returns(llm_interim_response)
-    ::DiscourseChatbot::OpenAiBotRag.any_instance.expects(:create_chat_completion).with(final_query, false).returns(llm_final_response)
+    described_class.any_instance.expects(:create_chat_completion).with(query).returns(llm_function_response)
+    described_class.any_instance.expects(:create_chat_completion).with(second_query).returns(llm_interim_response)
+    described_class.any_instance.expects(:create_chat_completion).with(final_query, false).returns(llm_final_response)
 
     expect(rag.get_response(query, opts)[:reply]).to eq(llm_final_response["choices"][0]["message"]["content"])
   end

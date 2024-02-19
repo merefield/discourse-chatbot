@@ -5,7 +5,7 @@ module ::DiscourseChatbot
 
   class PostEmbeddingProcess
 
-    def setup
+    def setup_api
       ::OpenAI.configure do |config|
         config.access_token = SiteSetting.chatbot_open_ai_token
       end
@@ -27,28 +27,8 @@ module ::DiscourseChatbot
     def upsert(post_id)
       if in_scope(post_id)
         if !is_valid(post_id)
-          self.setup
 
-          begin
-            post = ::Post.find_by(id: post_id)
-            topic = ::Topic.find_by(id: post.topic_id)
-            response = @client.embeddings(
-              parameters: {
-                model: @model_name,
-                input: post.raw[0..SiteSetting.chatbot_open_ai_embeddings_char_limit]
-              }
-            )
-
-            if response.dig("error")
-              error_text = response.dig("error", "message")
-              raise StandardError, error_text
-            end
-          rescue StandardError => e
-            Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Embedding for post id '#{post_id}' in topic id '#{topic.id}': #{e.message}")
-            raise e
-          end
-  
-          embedding_vector = response.dig("data", 0, "embedding")
+          embedding_vector = get_embedding_from_api(post_id)
   
           ::DiscourseChatbot::PostEmbedding.upsert({ post_id: post_id, model: SiteSetting.chatbot_open_ai_embeddings_model, embedding: "#{embedding_vector}" }, on_duplicate: :update, unique_by: :post_id)
         end
@@ -58,8 +38,34 @@ module ::DiscourseChatbot
       end
     end
 
+    def get_embedding_from_api(post_id)
+      begin
+        self.setup_api
+
+        post = ::Post.find_by(id: post_id)
+        topic = ::Topic.find_by(id: post.topic_id)
+        response = @client.embeddings(
+          parameters: {
+            model: @model_name,
+            input: post.raw[0..SiteSetting.chatbot_open_ai_embeddings_char_limit]
+          }
+        )
+
+        if response.dig("error")
+          error_text = response.dig("error", "message")
+          raise StandardError, error_text
+        end
+      rescue StandardError => e
+        Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Embedding for post id '#{post_id}' in topic id '#{topic.id}': #{e.message}")
+        raise e
+      end
+
+      embedding_vector = response.dig("data", 0, "embedding")
+    end
+
+
     def semantic_search(query)
-      self.setup
+      self.setup_api
 
       response = @client.embeddings(
         parameters: {
@@ -135,16 +141,16 @@ module ::DiscourseChatbot
     end
   
     def in_benchmark_user_scope(post_id)
-      return false if self.benchmark_user.nil?
+      return false if benchmark_user.nil?
       post = ::Post.find_by(id: post_id)
       return false if post.nil?
       topic = ::Topic.find_by(id: post.topic_id)
       return false if topic.nil?
       return false if topic.archetype == ::Archetype.private_message
-      Guardian.new(self.benchmark_user).can_see?(post)
+      Guardian.new(benchmark_user).can_see?(post)
     end
 
-    def benchmark_user
+    def self.benchmark_user
       cache_key = "chatbot_benchmark_user"
       benchmark_user = Discourse.cache.fetch(cache_key, expires_in: 1.hour) do
         allowed_group_ids = [0, 10, 11, 12, 13, 14]  # automated groups only
