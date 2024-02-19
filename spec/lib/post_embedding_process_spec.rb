@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require_relative '../plugin_helper'
 
 RSpec.describe DiscourseChatbot::PostEmbeddingProcess do
@@ -29,16 +30,20 @@ RSpec.describe DiscourseChatbot::PostEmbeddingProcess do
 
       described_class.any_instance.stubs(:benchmark_user).returns(user)
       expect(subject.in_benchmark_user_scope(post_in_benchmark_scope.id)).to eq(true)
+      expect(subject.in_scope(post_in_benchmark_scope.id)).to eq(true)
 
       described_class.any_instance.stubs(:benchmark_user).returns(some_other_user)
       expect(subject.in_benchmark_user_scope(post_in_benchmark_scope.id)).to eq(false)
+      expect(subject.in_scope(post_in_benchmark_scope.id)).to eq(false)
     end
 
     it "includes the right posts in scope when using categories strategy" do
       SiteSetting.chatbot_embeddings_strategy = "categories"
       SiteSetting.chatbot_embeddings_categories = "#{category_in_scope.id}"
       expect(subject.in_categories_scope(post_in_scope.id)).to eq(true)
+      expect(subject.in_scope(post_in_scope.id)).to eq(true)
       expect(subject.in_categories_scope(post_out_of_scope.id)).to eq(false)
+      expect(subject.in_scope(post_out_of_scope.id)).to eq(false)
     end
   end
 end
