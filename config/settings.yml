@@ -228,6 +228,11 @@ plugins:
     client: true
     type: username
     default: Chatbot
+  chatbot_forum_search_function_max_results:
+    client: false
+    default: 10
+    max: 100
+    min: 10
   chatbot_forum_search_function_similarity_threshold:
     client: false
     default: 0.8

@@ -29,7 +29,7 @@ module DiscourseChatbot
         super(args)
         query = args[parameters[0][:name]]
         number_of_posts = args[parameters[1][:name]].blank? ? 3 : args[parameters[1][:name]]
-        number_of_posts = number_of_posts > 10 ? 10 : number_of_posts
+        number_of_posts = number_of_posts > SiteSetting.chatbot_forum_search_function_max_results ? SiteSetting.chatbot_forum_search_function_max_results : number_of_posts
 
         process_post_embedding = ::DiscourseChatbot::PostEmbeddingProcess.new
         results = process_post_embedding.semantic_search(query)
@@ -40,6 +40,9 @@ module DiscourseChatbot
 
         top_results.each_with_index do |result, index|
           current_post = ::Post.find(result.to_i)
+          # exclude if not in scope for embeddings (job hasn't caught up yet)
+          next if !::DiscourseChatbot::PostEmbeddingProcess.new.in_scope(current_post.id) || !::DiscourseChatbot::PostEmbeddingProcess.new.is_valid(current_post.id)
+
           url = "https://#{Discourse.current_hostname}/t/slug/#{current_post.topic_id}/#{current_post.post_number}"
           raw = current_post.raw
           username = User.find(current_post.user_id).username
