@@ -114,12 +114,6 @@ plugins:
     choices:
       - text-embedding-ada-002
       - text-embedding-3-small
-  chatbot_open_ai_embeddings_char_limit:
-    client: false
-    default: 11500
-  chatbot_open_ai_embeddings_model_custom_url:
-    client: false
-    default: ''
   chatbot_embeddings_strategy:
     default: benchmark_user
     client: false
@@ -132,6 +126,12 @@ plugins:
     default: ''
     type: category_list
     list_type: "compact"
+  chatbot_open_ai_embeddings_char_limit:
+    client: false
+    default: 11500
+  chatbot_open_ai_embeddings_model_custom_url:
+    client: false
+    default: ''
   chatbot_quick_access_talk_button:
     client: true
     default: chat
