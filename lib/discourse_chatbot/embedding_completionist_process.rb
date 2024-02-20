@@ -6,18 +6,18 @@ module ::DiscourseChatbot
   class EmbeddingCompletionist
 
     def self.process
-      bookmarked_post_id = ::DiscourseChatbot::PostEmbeddingsBookmark.first&.post_id || 1
+      bookmarked_post_id = ::DiscourseChatbot::PostEmbeddingsBookmark.first&.post_id || ::Post.first.id
 
-      post_ids_for_check_this_time = (bookmarked_post_id..(bookmarked_post_id + EMBEDDING_PROCESS_CHUNK)).to_a
+      post_range = ::Post.where("id >= ?", bookmarked_post_id).order(:id).limit(EMBEDDING_PROCESS_CHUNK).pluck(:id)
 
-      benchmark_user = ::DiscourseChatbot::PostEmbeddingProcess.new.benchmark_user
-
-      post_ids_for_check_this_time.each do |post_id|
+      post_range.each do |post_id|
         Jobs.enqueue(:chatbot_post_embedding, id: post_id)
-        bookmarked_post_id += 1
-        bookmarked_post_id = 1 if bookmarked_post_id > ::Post.maximum(:id)
+
+        bookmarked_post_id = ::Post.where("id > ?", post_id).order(:id).limit(1).pluck(:id)&.first
       end
 
+      bookmarked_post_id = ::Post.first.id if bookmarked_post_id.nil?
+           
       bookmark = ::DiscourseChatbot::PostEmbeddingsBookmark.first
 
       if bookmark
@@ -27,6 +27,7 @@ module ::DiscourseChatbot
       end
 
       bookmark.save!
+      bookmark.post_id
     end
   end
 end
