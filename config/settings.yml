@@ -121,6 +121,11 @@ plugins:
     choices:
       - benchmark_user
       - categories
+  chatbot_embeddings_benchmark_user_trust_level:
+    client: false
+    default: 1
+    min: 0
+    max: 4
   chatbot_embeddings_categories:
     client: false
     default: ''
@@ -223,11 +228,6 @@ plugins:
     client: true
     type: username
     default: Chatbot
-  chatbot_embeddings_benchmark_user_trust_level: 
-    client: false
-    default: 1
-    min: 0
-    max: 4
   chatbot_forum_search_function_similarity_threshold:
     client: false
     default: 0.8
