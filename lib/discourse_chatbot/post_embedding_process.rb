@@ -163,7 +163,7 @@ module ::DiscourseChatbot
       Guardian.new(benchmark_user).can_see?(post)
     end
 
-    def self.benchmark_user
+    def benchmark_user
       cache_key = "chatbot_benchmark_user"
       benchmark_user = Discourse.cache.fetch(cache_key, expires_in: 1.hour) do
         allowed_group_ids = [0, 10, 11, 12, 13, 14]  # automated groups only
