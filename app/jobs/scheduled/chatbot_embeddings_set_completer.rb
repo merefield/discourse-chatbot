@@ -5,7 +5,6 @@ class ::Jobs::ChatbotEmbeddingsSetCompleter < ::Jobs::Scheduled
   every 5.minutes
 
   def execute(args)
-    return if !SiteSetting.chatbot_enabled
     return if !SiteSetting.chatbot_embeddings_enabled
 
     ::DiscourseChatbot::EmbeddingCompletionist.process
