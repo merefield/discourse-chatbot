@@ -27,6 +27,11 @@ module ::DiscourseChatbot
       end
 
       bookmark.save!
+      ::DiscourseChatbot.progress_debug_message <<~EOS
+      ---------------------------------------------------------------------------------------------------------------
+      Post Embeddings Completion Bookmark is now at Post: #{bookmark.post_id}
+      ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      EOS
       bookmark.post_id
     end
   end

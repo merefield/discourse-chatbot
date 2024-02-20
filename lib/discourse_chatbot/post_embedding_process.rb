@@ -31,10 +31,23 @@ module ::DiscourseChatbot
           embedding_vector = get_embedding_from_api(post_id)
   
           ::DiscourseChatbot::PostEmbedding.upsert({ post_id: post_id, model: SiteSetting.chatbot_open_ai_embeddings_model, embedding: "#{embedding_vector}" }, on_duplicate: :update, unique_by: :post_id)
+
+          ::DiscourseChatbot.progress_debug_message <<~EOS
+          ---------------------------------------------------------------------------------------------------------------
+          Post Embeddings: I found an embedding that needed populating or updating, id: #{post_id}
+          ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+          EOS
         end
       else
         post_embedding = ::DiscourseChatbot::PostEmbedding.find_by(post_id: post_id)
-        post_embedding.delete if post_embedding
+        if post_embedding
+          ::DiscourseChatbot.progress_debug_message <<~EOS
+          ---------------------------------------------------------------------------------------------------------------
+          Post Embeddings: I found a Post that was out of scope for embeddings, so deleted the embedding, id: #{post_id}
+          ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+          EOS
+          post_embedding.delete
+        end
       end
     end
 
