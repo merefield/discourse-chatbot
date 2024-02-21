@@ -124,7 +124,7 @@ module ::DiscourseChatbot
           )
          raise MissingEmbeddingError
         end
-      reranked_results.map {|p| p.post_id}
+      reranked_results.map {|p| { post_id: p.post_id, user_id: p.user_id, score: (1 - p.cosine_distance) } }
     end
 
     def in_scope(post_id)

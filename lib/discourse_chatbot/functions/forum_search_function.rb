@@ -39,15 +39,16 @@ module DiscourseChatbot
         response = I18n.t("chatbot.prompt.function.forum_search.answer_summary", number_of_posts: number_of_posts)
 
         top_results.each_with_index do |result, index|
-          current_post = ::Post.find(result.to_i)
+          current_post = ::Post.find(result[:post_id].to_i)
           # exclude if not in scope for embeddings (job hasn't caught up yet)
           next if !::DiscourseChatbot::PostEmbeddingProcess.new.in_scope(current_post.id) || !::DiscourseChatbot::PostEmbeddingProcess.new.is_valid(current_post.id)
 
+          score = result[:score]
           url = "https://#{Discourse.current_hostname}/t/slug/#{current_post.topic_id}/#{current_post.post_number}"
           raw = current_post.raw
           username = User.find(current_post.user_id).username
           date = current_post.created_at.to_date
-          response += I18n.t("chatbot.prompt.function.forum_search.answer", url: url, username: username, date: date, raw: raw, rank: index + 1)
+          response += I18n.t("chatbot.prompt.function.forum_search.answer", url: url, username: username, date: date, raw: raw, score: score, rank: index + 1)
         end
         response
       rescue
