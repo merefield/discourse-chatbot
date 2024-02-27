@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # Job is triggered on an update to a Post.
-class ::Jobs::ChatbotPostEmbeddingJob < Jobs::Base
-  sidekiq_options retry: 5, dead: false
+class ::Jobs::ChatbotPostEmbedding < Jobs::Base
+  sidekiq_options retry: 5, dead: false, queue: 'low'
 
   def execute(opts)
     begin

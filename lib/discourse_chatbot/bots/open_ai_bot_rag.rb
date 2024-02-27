@@ -38,15 +38,19 @@ module ::DiscourseChatbot
       wikipedia_function = ::DiscourseChatbot::WikipediaFunction.new
       news_function = ::DiscourseChatbot::NewsFunction.new
       google_search_function = ::DiscourseChatbot::GoogleSearchFunction.new
-      forum_search_function = ::DiscourseChatbot::ForumSearchFunction.new
       stock_data_function = ::DiscourseChatbot::StockDataFunction.new
       escalate_to_staff_function = ::DiscourseChatbot::EscalateToStaffFunction.new
+      forum_search_function = nil
       user_search_from_user_location_function = nil
       user_search_from_location_function = nil
       user_distance_from_location_function = nil
       get_coords_of_location_function = nil
       get_distance_between_locations = nil
       get_user_address = nil
+
+      if SiteSetting.chatbot_embeddings_enabled
+        forum_search_function = ::DiscourseChatbot::ForumSearchFunction.new
+      end
 
       if SiteSetting.chatbot_locations_plugin_support && defined?(Locations) == 'constant' && Locations.class == Module &&
          defined?(::Locations::UserLocation) == 'constant' && ::Locations::UserLocation.class == Class && ::Locations::UserLocation.count > 0
@@ -58,7 +62,9 @@ module ::DiscourseChatbot
         get_user_address = ::DiscourseChatbot::ForumGetUserAddressFunction.new
       end
 
-      functions = [calculator_function, wikipedia_function, forum_search_function]
+      functions = [calculator_function, wikipedia_function]
+
+      functions << forum_search_function if forum_search_function
 
       functions << user_search_from_location_function if user_search_from_location_function
       functions << user_search_from_user_location_function if user_search_from_user_location_function

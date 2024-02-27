@@ -65,7 +65,7 @@ module ::DiscourseChatbot
 
         ::DiscourseChatbot.progress_debug_message("3. invocation")
 
-        job_class = ::Jobs::ChatbotReplyJob
+        job_class = ::Jobs::ChatbotReply
         invoke_background_job(job_class, opts)
         true
       else

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Job is triggered on a Post destruction.
-class ::Jobs::ChatbotPostEmbeddingDeleteJob < Jobs::Base
+class ::Jobs::ChatbotPostEmbeddingDelete < Jobs::Base
   sidekiq_options retry: false
 
   def execute(opts)

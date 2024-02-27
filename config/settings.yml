@@ -36,9 +36,9 @@ plugins:
     default: gpt-3.5-turbo
     choices:
       - gpt-3.5-turbo
-      - gpt-3.5-turbo-16k
       - gpt-4
       - gpt-4-32k
+      - gpt-4-turbo-preview
   chatbot_open_ai_model_custom_high_trust:
     default: false
     client: false
@@ -61,9 +61,9 @@ plugins:
     default: gpt-3.5-turbo
     choices:
       - gpt-3.5-turbo
-      - gpt-3.5-turbo-16k
       - gpt-4
       - gpt-4-32k
+      - gpt-4-turbo-preview
   chatbot_open_ai_model_custom_medium_trust:
     default: false
     client: false
@@ -86,9 +86,9 @@ plugins:
     default: gpt-3.5-turbo
     choices:
       - gpt-3.5-turbo
-      - gpt-3.5-turbo-16k
       - gpt-4
       - gpt-4-32k
+      - gpt-4-turbo-preview
   chatbot_open_ai_model_custom_low_trust:
     default: false
     client: false
@@ -104,6 +104,9 @@ plugins:
   chatbot_open_ai_model_custom_api_version:
     client: false
     default: '2023-09-01-preview'
+  chatbot_embeddings_enabled:
+    default: false
+    client: false
   chatbot_open_ai_embeddings_model:
     client: false
     type: enum
@@ -111,6 +114,23 @@ plugins:
     choices:
       - text-embedding-ada-002
       - text-embedding-3-small
+  chatbot_embeddings_strategy:
+    default: benchmark_user
+    client: false
+    type: enum
+    choices:
+      - benchmark_user
+      - categories
+  chatbot_embeddings_benchmark_user_trust_level:
+    client: false
+    default: 1
+    min: 0
+    max: 4
+  chatbot_embeddings_categories:
+    client: false
+    default: ''
+    type: category_list
+    list_type: "compact"
   chatbot_open_ai_embeddings_char_limit:
     client: false
     default: 11500
@@ -208,11 +228,11 @@ plugins:
     client: true
     type: username
     default: Chatbot
-  chatbot_embeddings_benchmark_user_trust_level: 
+  chatbot_forum_search_function_max_results:
     client: false
-    default: 1
-    min: 0
-    max: 4
+    default: 10
+    max: 100
+    min: 10
   chatbot_forum_search_function_similarity_threshold:
     client: false
     default: 0.8

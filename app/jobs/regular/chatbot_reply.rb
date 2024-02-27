@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Job is triggered to respond to Message or Post appropriately, checking user's quota.
-class ::Jobs::ChatbotReplyJob < Jobs::Base
+class ::Jobs::ChatbotReply < Jobs::Base
   sidekiq_options retry: 5, dead: false
 
   sidekiq_retries_exhausted do |msg, ex|

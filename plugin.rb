@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.819
+# version: 0.9
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -29,6 +29,8 @@ module ::DiscourseChatbot
   HIGH_TRUST_LEVEL = 3
   MEDIUM_TRUST_LEVEL = 2
   LOW_TRUST_LEVEL = 1
+
+  EMBEDDING_PROCESS_CHUNK = 300
 
   def progress_debug_message(message)
     puts "Chatbot: #{message}" if SiteSetting.chatbot_enable_verbose_console_logging
@@ -62,9 +64,10 @@ after_initialize do
 
   %w(
     ../lib/discourse_chatbot/event_evaluation.rb
-    ../app/models/embedding.rb
+    ../app/models/discourse_chatbot/post_embedding.rb
+    ../app/models/discourse_chatbot/post_embeddings_bookmark.rb
     ../lib/discourse_chatbot/post_embedding_process.rb
-    ../app/jobs/regular/chatbot_post_embedding_job.rb
+    ../lib/discourse_chatbot/embedding_completionist_process.rb
     ../lib/discourse_chatbot/message/message_evaluation.rb
     ../lib/discourse_chatbot/post/post_evaluation.rb
     ../lib/discourse_chatbot/bot.rb
@@ -96,9 +99,11 @@ after_initialize do
     ../lib/discourse_chatbot/reply_creator.rb
     ../lib/discourse_chatbot/post/post_reply_creator.rb
     ../lib/discourse_chatbot/message/message_reply_creator.rb
-    ../app/jobs/regular/chatbot_reply_job.rb
-    ../app/jobs/scheduled/chatbot_quota_reset_job.rb
     ../app/controllers/discourse_chatbot/chatbot_controller.rb
+    ../app/jobs/regular/chatbot_reply.rb
+    ../app/jobs/regular/chatbot_post_embedding.rb
+    ../app/jobs/scheduled/chatbot_quota_reset.rb
+    ../app/jobs/scheduled/chatbot_embeddings_set_completer.rb
   ).each do |path|
     load File.expand_path(path, __FILE__)
   end
@@ -115,7 +120,7 @@ after_initialize do
 
     if SiteSetting.chatbot_enabled
       if post.post_type == 1
-        job_class = ::Jobs::ChatbotPostEmbeddingJob
+        job_class = ::Jobs::ChatbotPostEmbedding
         job_class.perform_async(post.as_json)
       end
 
@@ -137,7 +142,7 @@ after_initialize do
     post, opts = params
 
     if SiteSetting.chatbot_enabled && post.post_type == 1
-      job_class = ::Jobs::ChatbotPostEmbeddingJob
+      job_class = ::Jobs::ChatbotPostEmbedding
       job_class.perform_async(post.as_json)
     end
   end
@@ -146,7 +151,7 @@ after_initialize do
     post, opts = params
 
     if SiteSetting.chatbot_enabled && post.post_type == 1
-      job_class = ::Jobs::ChatbotPostEmbeddingJob
+      job_class = ::Jobs::ChatbotPostEmbedding
       job_class.perform_async(post.as_json)
     end
   end
@@ -155,7 +160,7 @@ after_initialize do
     post, opts, user = params
 
     if SiteSetting.chatbot_enabled && post.post_type == 1
-      job_class = ::Jobs::ChatbotPostEmbeddingDeleteJob
+      job_class = ::Jobs::ChatbotPostEmbeddingDelete
       job_class.perform_async(post.as_json)
     end
   end

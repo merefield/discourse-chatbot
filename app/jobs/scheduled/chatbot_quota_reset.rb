@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-class ::Jobs::ChatbotQuotaResetJob < ::Jobs::Scheduled
+class ::Jobs::ChatbotQuotaReset < ::Jobs::Scheduled
   sidekiq_options retry: false
 
   every 1.week
