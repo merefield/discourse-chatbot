@@ -32,7 +32,7 @@ module DiscourseChatbot
 
         current_user = User.find(opts[:user_id])
         bot_user = User.find(opts[:bot_user_id])
-        target_usernames = [current_user.username, bot_user.username].join(",")
+        target_usernames = current_user.username
 
         target_group_names = []
 
