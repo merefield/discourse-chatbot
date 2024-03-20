@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.9.1
+# version: 0.9.2
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -113,6 +113,25 @@ after_initialize do
 
   add_to_serializer(:current_user, :chatbot_access) do
     !::DiscourseChatbot::EventEvaluation.new.trust_level(object.id).blank?
+  end
+
+  #TODO this prevents a NotFound error in reads controller. This is a bit of a hack, we should really be finding the source of the issue and fixing it there
+  module ChatUpdateUserLastReadExtension
+    def fetch_active_membership(guardian:, channel:)
+      bot_user = ::User.find_by(username: SiteSetting.chatbot_bot_user)
+      bot_guardian = Guardian.new(bot_user)
+      bot_membership = ::Chat::ChannelMembershipManager.new(channel).find_for_user(bot_guardian.user)
+      if bot_membership.nil?
+        membership =  ::Chat::ChannelMembershipManager.new(channel).find_for_user(guardian.user, following: true)
+      else
+        membership =  ::Chat::ChannelMembershipManager.new(channel).find_for_user(guardian.user)
+      end
+      membership
+    end
+  end
+
+  class ::Chat::UpdateUserLastRead
+    prepend ChatUpdateUserLastReadExtension
   end
 
   DiscourseEvent.on(:post_created) do |*params|

@@ -27,6 +27,14 @@ module ::DiscourseChatbot
           chat_channel = Chat::Channel.find_by(chatable_id: direct_message.id, type: "DirectMessageChannel")
           chat_channel_id = chat_channel.id
 
+          #TODO we might need to add a membership if it doesn't exist to prevent a NotFound error in reads controller
+          # membership = Chat::UserChatChannelMembership.find_by(user_id: current_user.id, chat_channel_id: chat_channel_id)
+
+          # if membership
+          #   membership.update!(following: true)
+          #   membership.save!
+          # end
+
           last_chat = ::Chat::Message.find(chat_channel.latest_not_deleted_message_id)
 
           unless last_chat && last_chat.message == I18n.t("chatbot.quick_access_kick_off.announcement")
