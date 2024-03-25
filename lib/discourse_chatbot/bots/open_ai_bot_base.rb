@@ -32,14 +32,15 @@ module ::DiscourseChatbot
       end
 
       @model_name =
-        case opts[:trust_level]
-        when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
-          SiteSetting.send("chatbot_open_ai_model_custom_" + opts[:trust_level] + "_trust") ? 
-            SiteSetting.send("chatbot_open_ai_model_custom_name_" + opts[:trust_level] + "_trust") :
-            SiteSetting.send("chatbot_open_ai_model_" + opts[:trust_level] + "_trust")
-        else
-          SiteSetting.chatbot_open_ai_model_custom_low_trust ? SiteSetting.chatbot_open_ai_model_custom_name_low_trust : SiteSetting.chatbot_open_ai_model_low_trust
-        end
+        opts[:chatbot_bot_type] != "RAG" && SiteSetting.chatbot_support_vision ? SiteSetting.chatbot_open_ai_vision_model :
+          case opts[:trust_level]
+          when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
+            SiteSetting.send("chatbot_open_ai_model_custom_" + opts[:trust_level] + "_trust") ? 
+              SiteSetting.send("chatbot_open_ai_model_custom_name_" + opts[:trust_level] + "_trust") :
+              SiteSetting.send("chatbot_open_ai_model_" + opts[:trust_level] + "_trust")
+          else
+            SiteSetting.chatbot_open_ai_model_custom_low_trust ? SiteSetting.chatbot_open_ai_model_custom_name_low_trust : SiteSetting.chatbot_open_ai_model_low_trust
+          end
     end
 
     def get_response(prompt, opts)

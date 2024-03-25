@@ -20,7 +20,8 @@ en:
     chatbot_open_ai_model_custom_api_version: "Azure OpenAI REST API version. Required only when 'custom_api_type' is set to 'azure'. Refer to: <a target='_blank' rel='noopener' href='https://learn.microsoft.com/en-us/azure/ai-services/openai/reference'>Azure REST API reference</a>"
     chatbot_open_ai_model_custom_api_type: "Fill in 'azure' if you use Azure OpenAI, otherwise will use Open AI"
     chatbot_open_ai_model: "(UNLESS CUSTOM) The model to be accessed. More on supported models at <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/models/overview'>OpenAI: Model overview</a>"
-    chatbot_support_vision: "(EXPERIMENTAL) Bot 'Vision': support sharing of images with bot.  Must be supported by selected model.  Images must be uploaded to forum and not hotlinked."
+    chatbot_support_vision: "(EXPERIMENTAL) Bot 'Vision': support sharing of images with bot so you can ask it to describe them.  Images must be uploaded to forum and not hotlinked and in RAG mode bot can only see images in current Post it's responding to.  DANGER: if enabled with Basic mode will be used for every call which could get expensive."
+    chatbot_open_ai_vision_model: "(EXPERIMENTAL) Open AI Vision model"
     chatbot_reply_job_time_delay: 'Number of seconds before reply job is run. This helps prevent rate limits being hit and discourages spamming.'
     chatbot_include_whispers_in_post_history: "Include content of whispers in Post history bot sees (careful!)"
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
@@ -121,14 +122,11 @@ en:
           error:  "'%{query}': my search for this on the forum failed."
         vision:
           description: |
-            Get a description of what appears in the supplied image via url.
-
-            Input should be a valid url.
-
-            Outputs a text description of the contents of the image
+            Get a description of what appears in the posts image.  Outputs a text description of the contents of the image
           parameters:
-            url: "the url of the image you wish to describe"
-          answer: "The followin is the description of the image provided by link: %{description}.\n\n"
+            query: "the users query about the image"
+          default_query: "please describe the contents of the image"
+          answer: "The following is the description of the image in the post: %{description}.\n\n"
           error:  "There was an error when trying to access the image: '%{error}'"
         escalate_to_staff:
           description: |

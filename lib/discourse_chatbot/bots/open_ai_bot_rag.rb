@@ -52,7 +52,7 @@ module ::DiscourseChatbot
         forum_search_function = ::DiscourseChatbot::ForumSearchFunction.new
       end
 
-      if SiteSetting.chatbot_vision_enabled
+      if SiteSetting.chatbot_support_vision
         vision_function = ::DiscourseChatbot::VisionFunction.new
       end
 
@@ -198,7 +198,7 @@ module ::DiscourseChatbot
         if ["escalate_to_staff"].include?(func_name)
           res = func.process(args, opts)
         elsif ["vision"].include?(func_name)
-          res = func.process(args, @client)
+          res = func.process(args, opts, @client)
         else
           res = func.process(args)
         end
