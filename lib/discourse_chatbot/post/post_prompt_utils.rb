@@ -26,6 +26,8 @@ module ::DiscourseChatbot
         text = (p.user_id == bot_user_id ? "#{p.raw}" : I18n.t("chatbot.prompt.post", username: p.user.username, raw: post_content))
         content = []
         content << { "type": "text", "text": text }
+        pp opts
+        byebug
         if SiteSetting.chatbot_support_vision
           if p.image_upload_id
             url = resolve_full_url(Upload.find(p.image_upload_id).url)

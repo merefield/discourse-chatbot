@@ -119,6 +119,17 @@ en:
           answer_summary: "The top %{number_of_posts} posts on the forum related to this query are, best match first:\n\n"
           answer: "Number %{rank}: the post is at this web address: %{url}, it was written by '%{username}' on %{date}, the text is '%{raw}' and the match score was: %{score}.\n\n"
           error:  "'%{query}': my search for this on the forum failed."
+        vision:
+          description: |
+            Get a description of what appears in the supplied image via url.
+
+            Input should be a valid url.
+
+            Outputs a text description of the contents of the image
+          parameters:
+            url: "the url of the image you wish to describe"
+          answer: "The followin is the description of the image provided by link: %{description}.\n\n"
+          error:  "There was an error when trying to access the image: '%{error}'"
         escalate_to_staff:
           description: |
             This function should be called whenever the customer confirms they have had their question answered or are getting angry with the bot and the conversation needs to be moved to a Private Message for staff to handle.  You must provide the user with a url of the new Private Message in your Chat response.
