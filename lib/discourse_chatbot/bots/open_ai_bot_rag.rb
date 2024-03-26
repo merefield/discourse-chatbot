@@ -52,6 +52,10 @@ module ::DiscourseChatbot
         forum_search_function = ::DiscourseChatbot::ForumSearchFunction.new
       end
 
+      if SiteSetting.chatbot_support_vision
+        vision_function = ::DiscourseChatbot::VisionFunction.new
+      end
+
       if SiteSetting.chatbot_locations_plugin_support && defined?(Locations) == 'constant' && Locations.class == Module &&
          defined?(::Locations::UserLocation) == 'constant' && ::Locations::UserLocation.class == Class && ::Locations::UserLocation.count > 0
         user_search_from_location_function = ::DiscourseChatbot::ForumUserSearchFromLocationFunction.new
@@ -65,6 +69,7 @@ module ::DiscourseChatbot
       functions = [calculator_function, wikipedia_function]
 
       functions << forum_search_function if forum_search_function
+      functions << vision_function if vision_function
 
       functions << user_search_from_location_function if user_search_from_location_function
       functions << user_search_from_user_location_function if user_search_from_user_location_function
@@ -192,6 +197,8 @@ module ::DiscourseChatbot
         func = @func_mapping[func_name]
         if ["escalate_to_staff"].include?(func_name)
           res = func.process(args, opts)
+        elsif ["vision"].include?(func_name)
+          res = func.process(args, opts, @client)
         else
           res = func.process(args)
         end

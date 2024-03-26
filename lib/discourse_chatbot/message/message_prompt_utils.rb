@@ -15,7 +15,7 @@ module ::DiscourseChatbot
         text = (cm.user_id == bot_user_id ? "#{cm.message}" : I18n.t("chatbot.prompt.post", username: username, raw: cm.message))
         content = []
         content << { "type": "text", "text": text }
-        if SiteSetting.chatbot_support_vision
+        if SiteSetting.chatbot_support_vision && opts[:chatbot_bot_type] != "RAG"
           cm.uploads.each do |ul|
             if ["png", "webp", "jpg", "jpeg", "gif", "ico", "avif"].include?(ul.extension)
               url = resolve_full_url(ul.url)
