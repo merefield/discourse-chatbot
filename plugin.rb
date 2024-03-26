@@ -5,7 +5,6 @@
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
-gem 'openssl', '3.2.0', { require: false }
 gem 'multipart-post', '2.4.0', { require: false }
 gem 'faraday-multipart', '1.0.4', { require: false }
 gem 'event_stream_parser', '1.0.0', { require: false }
