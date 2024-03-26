@@ -14,8 +14,11 @@
   * Search Google*
   * Return current End Of Day market data for stocks.*
   * Do "complex" maths accurately (with no made up or "hallucinated" answers!)
+* EXPERIMENTAL Vision support - the bot can see your pictures and answer questions on them! (turn `chatbot_support_vision` ON)
 * Uses cutting edge Open AI API and functions capability of their excellent, industry leading Large Language Models.
 * Includes a special quota system to manage access to the bot: more trusted and/or paying members can have greater access to the bot!
+* Also supports Azure and proxy server connections
+  * Use third party proxy processes to translate the calls to support alternative LLMs like Gemini e.g. [this one](https://github.com/PublicAffairs/openai-gemini)
 
 <sup>*sign-up for external (not affiliated) API services required. Links in settings.
 
@@ -28,109 +31,51 @@ There are two modes:
 
 ### :biohazard: **Bot access and privacy :biohazard:
 
-This bot can be used in public spaces on your forum.  To make the bot especially useful there is the new (currently experimental) Agent mode.  This is not set by default.
+This bot can be used in public spaces on your forum.  To make the bot especially useful there is RAG mode (one setting per bot trust level).  This is not set by default.
 
-In this mode the bot is, by default, privy to all content a Trust Level 1 user would see.  Thus, if interacted with in a public facing Topic, there is a possibility the bot could  "leak" information if you tend to gate content at the Trust Level 0 or 1 level via Category permissions.  This level was chosen because through experience most sites usually do not gate sensitive content at low trust levels but it depends on your specific needs. This can be eliminated by only using the bot in normal mode or mitigated with moderation of course.
+In RAG mode the bot is, by default, goverened by setting `chatbot embeddings strategy` (default `benchmark_user`) privy to all content a Trust Level 1 user would see.  Thus, if interacted with in a public facing Topic, there is a possibility the bot could  "leak" information if you tend to gate content at the Trust Level 0 or 1 level via Category permissions.  This level was chosen because through experience most sites usually do not gate sensitive content at low trust levels but it depends on your specific needs.
+
+For this mode, make sure you have at least one user with Trust Level 1 and no additional group membership beyond the automated groups.  (bear in mind the bot will then know everything a TL1 level user would know and can share it).  You can choose to lower `chatbot embeddings benchmark user trust level` if you have a Trust Level 0 user with no additional group membership beyond automated groups.
+
+Alternatively:
+
+* Switch `chatbot embeddings strategy` to `category` and populate `chatbot embeddings categories` with Categories you wish the bot to know about.  (Be aware that if you add any private Categories, it should know about those and anything the bot says in public, anywhere might leak to less privileged users so just be a bit careful on what you add).
+* only use the bot in `basic` mode (but the bot then won't see any posts)
+* mitigate with moderation
 
 You can see that this setup is a compromise.  In order to make the bot useful it needs to be knowledgeable about the content on your site.  Currently it is not possible for the bot to selectively read members only content and share that only with members which some admins might find limiting but there is no way to easily solve the that whilst the bot is able to talk in public. Contact me if you have special needs and would like to sponsor some work in this space. Bot permissioning with semantic search is a non-trivial problem.  The system is currently optimised for speed.  NB Private Messages are never read by the bot.
 
 # FYI's
 
-* May not work on mulit-site installs (not explicitly tested), but PR welcome to improve support :+1: 
 * Open AI API response can be slow at times on more advanced models due to high demand.  However Chatbot supports GPT 3.5 too which is fast and responsive and perfectly capable.
-* Is extensible and supporting other cloud bots is intended (hence the generic name for the plugin), but currently 'only' supports interaction with Open AI Large Language Models (LLM) such as "ChatGPT". This may change in the future. Please contact me if you wish to add additional bot types or want to support me to add more. PR welcome.
+* Is extensible and supporting other cloud bots is intended (hence the generic name for the plugin), but currently 'only' supports interaction with Open AI Large Language Models (LLM) such as GPT-4 natively. Please contact me if you wish to add additional bot types or want to support me to add more. PR welcome.  Can already use proxy servers to access other services without code changes though!
 * Is extensible to support the searching of other content beyond just the current set provided.
 
 # Setup
 
-## Intro
-
-Be patient, it's worth it.  Also be aware there are some special steps involved in uninstalling this plugin, see the guide below.
-
-## Required changes to app.yml
-
-These additions were required for the `pgembeddings` extension which is now deprecated in favour of using `pgvector` which is available as standard within the standard install.
-
-It is important to follow the right path here depending on whether you've previously installed Chatbot or not.
-
-Note, because the (current) lastest version of `pgvector` is now required (>= 0.5.1), new installs require a minor command added to ensure you have the latest version installed.
-
-### I've never installed Chatbot before
-
-Please add the following to app.yml in the `after_code:` section but before the plugins are cloned:
-
-```
-    - exec:
-        cd: $home
-        cmd:
-          - su postgres -c 'psql discourse -c "ALTER EXTENSION vector UPDATE;"' 
-```
-
-After one succcesful build with the plugin, you should be able to remove these additional lines and should be able to rebuild afterwards without issue.
-
-### I've already installed Chatbot before/have it installed
-
-Please add/ensure you have the following in app.yml in the `after_code:` section but before the plugins are cloned (note that there are three new commands than before):
-
-
-```
-    - exec:
-        cd: $home
-        cmd:
-          - sudo apt-get install wget ca-certificates
-    - exec:
-        cd: $home
-        cmd:
-          - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-    - exec:
-        cd: $home
-        cmd:
-          - sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
-    - exec:
-        cd: $home
-        cmd:
-          - apt-get update
-    - exec:
-        cd: $home
-        cmd:
-          - apt-get -y install -y postgresql-server-dev-${PG_MAJOR}
-    - exec:
-        cd: $home/tmp
-        cmd:
-          - git clone https://github.com/neondatabase/pg_embedding.git
-    - exec:
-        cd: $home/tmp/pg_embedding
-        cmd:
-          - make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config
-    - exec:
-        cd: $home/tmp/pg_embedding
-        cmd:
-          - make PG_CONFIG=/usr/lib/postgresql/${PG_MAJOR}/bin/pg_config install
-    - exec:
-        cd: $home
-        cmd:
-          - su postgres -c 'psql discourse -c "create extension if not exists embedding;"'
-    - exec:
-        cd: $home
-        cmd:
-          - su postgres -c 'psql discourse -c "DROP INDEX IF EXISTS hnsw_index_on_chatbot_post_embeddings;"'
-    - exec:
-        cd: $home
-        cmd:
-          - su postgres -c 'psql discourse -c "DROP EXTENSION IF EXISTS embedding;"'
-    - exec:
-        cd: $home
-        cmd:
-          - su postgres -c 'psql discourse -c "ALTER EXTENSION vector UPDATE;"' 
-```
-
-After one succcesful build with the plugin, you should be able to remove these additional lines and should be able to rebuild afterwards without issue.
-
 ## Creating the Embeddings
 
-Only necessary if you want to use the agent type bot and ensure it is aware of the content on your forum, not just the current Topic.
+If you wish Chatbot to know about the content on your site, turn this setting ON:
 
-Once built, we need to create the embeddings for all posts, so the bot can find forum information.
+`chatbot_embeddings_enabled`
+
+Only necessary if you want to use the RAG type bot and ensure it is aware of the content on your forum, not just the current Topic.
+
+Initially, we need to create the embeddings for all in-scope posts, so the bot can find forum information.  This now happens in the background once this setting is enabled and you do not need to do anything.
+
+This seeding job can take a period of days for very big sites.
+
+### Embeddings Scope
+
+This is determined by several settings:
+
+* `chatbot_embeddings_strategy` which can be either "benchmark_user" or "category"
+* `chatbot_embeddings_benchmark_user_trust_level` sets the relevant trust level for the former
+* `chatbot_embeddings_categories` if `category` strategy is set, gives the bot access to consider all posts in specified Category.
+
+If you change these settings, over time, the population of Embeddings will morph.
+
+### To speed population up
 
 Enter the container:
 
@@ -140,17 +85,97 @@ and run the following rake command:
 
 `rake chatbot:refresh_embeddings[1]`
 
-which at present will run twice due to unknown reason (sorry! feel free to PR) but the `[1]` ensures the second time it will only add missing embeddings (ie none immediately after first run).
+which at present will run twice due to unknown reason (sorry! feel free to PR) but the `[1]` ensures the second time it will only add missing embeddings (ie none immediately after first run) so is somewhat moot.
+
+In the unlikely event you get rate limited by OpenAI (unlikely!) you can complete the embeddings by doing this:
+
+`rake chatbot:refresh_embeddings[1,1]`
+
+which will fill in the missing ones (so nothing lost from the error) but will continue more cautiously putting a 1 second delay between each call to Open AI.
 
 Compared to bot interactions, embeddings are not expensive to create, but do watch your usage on your Open AI dashboard in any case.
 
 NB Embeddings are only created for Posts and only those Posts for which a Trust Level One user would have access.  This seemed like a reasonable compromise.  It will not create embeddings for posts from Trust Level 2+ only accessible content.
 
-## Bot Type and Model considerations
+### Useful Data Explorer query to monitor embeddings population
 
-Take a moment to read through the entire set of Plugin settings.  The `chatbot bot type` setting is key.
+@37Rb writes: "Here’s a SQL query I’m using with the [Data Explorer](https://meta.discourse.org/t/discourse-data-explorer/32566) plugin to monitor & verify embeddings… in case it helps anyone else."
 
-Agent mode is superior but will make more calls to the API, potentially increasing cost.  That said, the reduction in its propensity to ultimately output 'hallucinations' may facilitate you being able to drop down from GPT-4 to GPT-3.5 and you may end up spending less despite the significant increase in usefulness and reliability of the output.  GPT 3.5 is also a better fit for the Agent type based on response times.  A potential win-win! Experiment!
+```
+SELECT e.id, e.post_id AS post, p.topic_id AS topic, p.post_number,
+       p.topic_id, e.created_at, e.updated_at, p.deleted_at AS post_deleted
+FROM chatbot_post_embeddings e LEFT JOIN posts p ON e.post_id = p.id
+```
+
+### Error when you are trying to get an embedding for too many characters.
+
+You might get an error like this:
+
+```
+OpenAI HTTP Error (spotted in ruby-openai 6.3.1): {"error"=>{"message"=>"This model's maximum context length is 8192 tokens, however you requested 8528 tokens (8528 in your prompt; 0 for the completion). Please reduce your prompt; or completion length.", "type"=>"invalid_request_error", "param"=>nil, "code"=>nil}}
+```
+This is how you resolve it ...
+
+As per your error message, the embedding model has a limit of:
+
+`8192 tokens`
+
+`however you requested 8528`
+
+You need to drop the current value of this setting:
+
+`chatbot_open_ai_embeddings_char_limit:`
+
+by about 4 x the diff and see if it works (a token is *roughly* 4 characters).
+
+So, in this example, 4 x (8528 - 8192) = 1344
+
+So drop `chatbot_open_ai_embeddings_char_limit` current value by 1500 to be safe. However, the default value was set according to a lot of testing for English Posts, but for other languages it may need lowering.
+
+This will then cut off more text and request tokens and hopefully the embedding will go through. If not you will need to confirm the difference and reduce it further accordingly. Eventually it will be low enough so you don’t need to look at it again.
+
+### How To Switch Embeddings model
+
+You don't need to do anything but change the setting: the background job will take care of things, if gradually.
+
+If you really want to speed the process up, do:
+
+* Change the setting `chatbot_open_ai_embeddings_model` to your new preferred model
+* It's best to first delete all your current embeddings:
+  * go into the container `./launcher enter app`
+  * enter the rails console `rails c`
+  * run `::DiscourseChatbot::PostEmbedding.delete_all`
+  * `exit` (to return to root within container)
+* run `rake chatbot:refresh_embeddings[1]`
+* if for any Open AI side reason that fails part way through, run it again until you get to 100%
+* the new model is known to be more accurate, so you might have to drop `chatbot_forum_search_function_similarity_threshold` or you might get no results :).  I dropped my default value from `0.8` to `0.6`, but your mileage may vary.
+
+## Bot Type
+
+Take a moment to read through the entire set of Plugin settings.  The `chatbot bot type` setting is key, and there is one for each chatbot "Trust Level":
+
+![image|642x125](upload://cydPijPWWd5FHp8pagYtfofqRU2.png)
+
+RAG mode is superior but will make more calls to the API, potentially increasing cost.  That said, the reduction in its propensity to ultimately output 'hallucinations' may facilitate you being able to drop down from GPT-4 to GPT-3.5 and you may end up spending less despite the significant increase in usefulness and reliability of the output.  GPT 3.5 is also a better fit for the Agent type based on response times.  A potential win-win! Experiment!
+
+For Chatbot to work in Chat you must have Chat enabled.
+
+## Bot's speed of response
+
+This is governed mostly by a setting: `‎chatbot_reply_job_time_delay‎` over which you have discretion.
+
+The intention of having this setting is to:
+
+* protect you from reaching rate limits of Open AI
+* protect your site from users that would like to spam the bot and cost you money.
+
+It is now default '1' second and can now be reduced to zero :racing_car: , but be aware of the above risks.
+
+Setting this zero and the bot, even in 'agent' mode, becomes a lot more 'snappy'.
+
+Obviously this can be a bit artificial and no real person would actually type that fast ... but set it to your taste and wallet size.
+
+NB I cannot directly control the speed of response of Open AI's API - and the general rule is the more sophisticated the model you set the slower this response will usually be.  So GPT 3.5 is much faster that GPT 4 ... although this may change with the newer GPT 4 Turbo model.
 
 For Chatbot to work in Chat you must have Chat enabled.
 
@@ -208,11 +233,15 @@ The bot supports Chat Messages and Topic Posts, including Private Messages (if c
 
 You can prompt the bot to respond by replying to it, or @ mentioning it. You can set how far the bot looks behind to get context for a response. The bigger the value the more costly will be each call.
 
-There's a floating quick chat button that connects you immediately to the bot. Its styling is a little experimental (modifying some z-index values of your base forum on mobile) and it may clash on some pages. This can be disabled in settings.  PR welcome to improve how it behaves.
+There's a floating quick chat button that connects you immediately to the bot. This can be disabled in settings. You can choose whether to load the bot into a 1 to 1 chat or a Personal Message.
+
+Now you can choose your preferred icon (default :robot: ) or if setting left blank, will pick up the bot user's avatar! :sunglasses: 
+
+And remember, you can also customise the text that appears when it is expanded by editing the locale text using Admin -> Customize -> Text `chatbot.`
 
 # Uninstalling the plugin
 
-Due to recent efforts to simplify the plugin, the only step necessary to remove it is to delete the clone statement from your `app.yml`.
+The only step necessary to remove it is to delete the clone statement from your `app.yml`.
 
 **Disclaimer**: I'm *not* responsible for what the bot responds with. Consider the plugin to be at Beta stage and things could go wrong. It will improve with feedback.  But not necessarily the bots response :rofl:  Please understand the pro's and con's of a LLM and what they are and aren't capable of and their limitations.  They are very good at creating convincing text but can often be factually wrong.
 
