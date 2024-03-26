@@ -154,8 +154,6 @@ If you really want to speed the process up, do:
 
 Take a moment to read through the entire set of Plugin settings.  The `chatbot bot type` setting is key, and there is one for each chatbot "Trust Level":
 
-![image|642x125](upload://cydPijPWWd5FHp8pagYtfofqRU2.png)
-
 RAG mode is superior but will make more calls to the API, potentially increasing cost.  That said, the reduction in its propensity to ultimately output 'hallucinations' may facilitate you being able to drop down from GPT-4 to GPT-3.5 and you may end up spending less despite the significant increase in usefulness and reliability of the output.  GPT 3.5 is also a better fit for the Agent type based on response times.  A potential win-win! Experiment!
 
 For Chatbot to work in Chat you must have Chat enabled.
@@ -243,8 +241,14 @@ And remember, you can also customise the text that appears when it is expanded b
 
 The only step necessary to remove it is to delete the clone statement from your `app.yml`.
 
-**Disclaimer**: I'm *not* responsible for what the bot responds with. Consider the plugin to be at Beta stage and things could go wrong. It will improve with feedback.  But not necessarily the bots response :rofl:  Please understand the pro's and con's of a LLM and what they are and aren't capable of and their limitations.  They are very good at creating convincing text but can often be factually wrong.
+# Disclaimer
 
-**Important Privacy Note**: whatever you write on your forum may get forwarded to Open AI as part of the bots scan of the last few posts once it is prompted to reply (obviously this is restricted to the current Topic or Chat Channel).  Whilst it almost certainly won't be incorporated into their pre-trained models, they will use the data in their analytics and logging.  **Be sure to add this fact into your forum's TOS & privacy statements**.  Related links:  https://openai.com/policies/terms-of-use, https://openai.com/policies/privacy-policy, https://platform.openai.com/docs/data-usage-policies
+I'm *not* responsible for what the bot responds with. Consider the plugin to be at Beta stage and things could go wrong. It will improve with feedback.  But not necessarily the bots response :rofl:  Please understand the pro's and con's of a LLM and what they are and aren't capable of and their limitations.  They are very good at creating convincing text but can often be factually wrong.
 
-**Copyright**: Open AI made a statement about Copyright here: https://help.openai.com/en/articles/5008634-will-openai-claim-copyright-over-what-outputs-i-generate-with-the-api
+# Privacy Note
+
+Whatever you write on your forum may get forwarded to Open AI as part of the bots scan of the last few posts once it is prompted to reply (obviously this is restricted to the current Topic or Chat Channel).  Whilst it almost certainly won't be incorporated into their pre-trained models, they will use the data in their analytics and logging.  **Be sure to add this fact into your forum's TOS & privacy statements**.  Related links:  https://openai.com/policies/terms-of-use, https://openai.com/policies/privacy-policy, https://platform.openai.com/docs/data-usage-policies
+
+# Copyright
+
+Open AI made a statement about Copyright here: https://help.openai.com/en/articles/5008634-will-openai-claim-copyright-over-what-outputs-i-generate-with-the-api
