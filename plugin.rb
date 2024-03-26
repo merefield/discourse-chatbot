@@ -14,7 +14,7 @@ gem "google_search_results", '2.2.0'
 # wikipedia
 gem "wikipedia-client", '1.17.0'
 # safe ruby for calculations and date functions
-gem "childprocess", "4.1.0"
+gem "childprocess", "5.0.0"
 gem "safe_ruby", "1.0.4"
 
 module ::DiscourseChatbot
