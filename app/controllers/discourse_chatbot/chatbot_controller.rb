@@ -20,6 +20,7 @@ module ::DiscourseChatbot
         bot_author = ::User.find_by(username: SiteSetting.chatbot_bot_user)
         guardian = Guardian.new(bot_author)
         chat_channel_id = nil
+        byebug
 
         direct_message = Chat::DirectMessage.for_user_ids([bot_user.id, current_user.id])
 
@@ -35,7 +36,7 @@ module ::DiscourseChatbot
           #   membership.save!
           # end
 
-          last_chat = ::Chat::Message.find(chat_channel.latest_not_deleted_message_id)
+          last_chat = ::Chat::Message.find_by(id: chat_channel.latest_not_deleted_message_id)
 
           unless last_chat && last_chat.message == I18n.t("chatbot.quick_access_kick_off.announcement")
             Chat::CreateMessage.call(
