@@ -37,7 +37,7 @@ module ::DiscourseChatbot
 
           last_chat = ::Chat::Message.find_by(id: chat_channel.latest_not_deleted_message_id)
 
-          unless (last_chat && last_chat.message == I18n.t("chatbot.quick_access_kick_off.announcement")) || last_chat.nil?
+          if (last_chat && last_chat.message != I18n.t("chatbot.quick_access_kick_off.announcement")) || last_chat.nil?
             Chat::CreateMessage.call(
               chat_channel_id: chat_channel_id,
               guardian: guardian,
