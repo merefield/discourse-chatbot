@@ -179,6 +179,18 @@ plugins:
   chatbot_quota_low_trust:
     default: 10
     client: false
+  chatbot_quota_reach_escalation_groups:
+    client: false
+    type: group_list
+    list_type: compact
+    default: ""
+    allow_any: false
+    refresh: true
+  chatbot_quota_reach_escalation_cool_down_period:
+    client: false
+    default: 1
+    min: 0
+    max: 7
   chatbot_max_look_behind:
     default: 5
     max: 160

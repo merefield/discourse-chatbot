@@ -46,6 +46,14 @@ class ::Jobs::ChatbotReply < Jobs::Base
 
     if over_quota
       reply_and_thoughts[:reply] = I18n.t('chatbot.errors.overquota')
+
+      escalation_date = UserCustomField.find_by(name: ::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_FIELD, user_id: opts[:user_id])
+
+      if !SiteSetting.chatbot_quota_reach_escalation_cool_down_period.nil? &&
+         escalation_date.value < SiteSetting.chatbot_quota_reach_escalation_cool_down_period.days.ago
+        escalate_quota_breach(opts[:user_id])
+      end
+
     elsif type == ::DiscourseChatbot::POST && post
       is_private_msg = post.topic.private_message?
       opts.merge!(is_private_msg: is_private_msg)
@@ -148,5 +156,31 @@ class ::Jobs::ChatbotReply < Jobs::Base
       reply_creator = ::DiscourseChatbot::MessageReplyCreator.new(opts)
     end
     reply_creator.create
+  end
+
+  def escalate_quota_breach(user_id)
+    user = User.find_by(id: user_id)
+
+    target_group_names = []
+
+    Array(SiteSetting.chatbot_quota_reach_escalation_groups).each do |g|
+      target_group_names << Group.find(g.to_i).name
+    end
+
+    target_group_names = target_group_names.join(",")
+
+    default_opts = {
+      post_alert_options: { skip_send_email: true },
+      raw: I18n.t("chatbot.quota_reached.escalation_message", user: user.username),
+      skip_validations: true,
+      title: I18n.t("chatbot.quota_reached.title"),
+      archetype: Archetype.private_message,
+      target_group_names: target_group_names
+    }
+
+    post = PostCreator.create!(current_user, default_opts)
+
+    user.custom_fields[::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_FIELD] = Date.now
+    user.save_custom_fields
   end
 end

@@ -40,6 +40,8 @@ en:
     chatbot_quota_high_trust: "The allowed number of bot responses allowed by prompting user per week - high trust groups"
     chatbot_quota_medium_trust: "The allowed number of bot responses allowed by prompting user per week - medium trust groups"
     chatbot_quota_low_trust: "The allowed number of bot responses allowed by prompting user per week - low trust groups"
+    chatbot_quota_reach_escalation_group: "The group to which the bot will escalate when the quota is reached"
+    chatbot_quota_reach_escalation_cool_down_period: "The number of days the bot will wait before escalating again after reaching the quota"
     chatbot_high_trust_groups: "Groups considered high trust for bot interaction"
     chatbot_medium_trust_groups: "Groups considered medium trust for bot interaction"
     chatbot_low_trust_groups: "Groups considered low trust for bot interaction"
@@ -73,6 +75,9 @@ en:
     pm_prefix: "A Discussion with Chatbot"
     quick_access_kick_off:
       announcement: "Hello, how can I help you?"
+    quota_reached:
+      escalation_title: "Chatbot Quota Reached: %{username}"
+      escalation_message: "I'm afraid %{username} has reached their weekly quota for bot interactions.  I'm escalating this issue to staff for further assistance."
     prompt:
       system:
         basic:
