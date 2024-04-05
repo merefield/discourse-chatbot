@@ -40,6 +40,8 @@ en:
     chatbot_quota_high_trust: "The allowed number of bot responses allowed by prompting user per week - high trust groups"
     chatbot_quota_medium_trust: "The allowed number of bot responses allowed by prompting user per week - medium trust groups"
     chatbot_quota_low_trust: "The allowed number of bot responses allowed by prompting user per week - low trust groups"
+    chatbot_quota_reach_escalation_groups: "The group(s) to which the bot will escalate when the quota is reached"
+    chatbot_quota_reach_escalation_cool_down_period: "The number of days the bot will wait before escalating again after reaching the quota"
     chatbot_high_trust_groups: "Groups considered high trust for bot interaction"
     chatbot_medium_trust_groups: "Groups considered medium trust for bot interaction"
     chatbot_low_trust_groups: "Groups considered low trust for bot interaction"
@@ -73,6 +75,10 @@ en:
     pm_prefix: "A Discussion with Chatbot"
     quick_access_kick_off:
       announcement: "Hello, how can I help you?"
+    quota_reached:
+      escalation:
+        title: "Chatbot Quota Reached: %{username}"
+        message: "I'm afraid user '%{username}' has reached their weekly quota for Chatbot interactions.  I'm escalating this issue to staff for further assistance."
     prompt:
       system:
         basic:
@@ -134,6 +140,7 @@ en:
           title:  "Support bot chat escalation"
           announcement: "This is a follow-up Personal Message which includes Staff.  The following chat conversation was had between the user and the bot:\n\n%{content}"
           answer_summary: "The function ran and this chat has been successfully escalated and raised to the attention of staff.  A Personal Message to discuss things further with Staff has been created at the following url: %{url}.  I must now share this news & the url with the user.  There is no need for me to do anything more than communicate this fact with the web link and wish the user a good day."
+          no_escalation_groups: "No escalation groups have been set up for this function.  Please contact your administrator."
           wrong_type_error: "This function cannot be used outside of Chat Messages"
           error:  "Escalation of user and bot chat failed"
         forum_get_user_address:

@@ -37,32 +37,38 @@ module DiscourseChatbot
         target_group_names = []
 
         Array(SiteSetting.chatbot_escalate_to_staff_groups).each do |g|
-          target_group_names << Group.find(g.to_i).name
+          unless g.to_i == 0
+            target_group_names << Group.find(g.to_i).name
+          end
         end
 
-        target_group_names = target_group_names.join(",")
+        if !target_group_names.empty?
+          target_group_names = target_group_names.join(",")
 
-        message_or_post_id = opts[:reply_to_message_or_post_id]
+          message_or_post_id = opts[:reply_to_message_or_post_id]
 
-        message_collection = get_messages(message_or_post_id)
-  
-        content = generate_transcript(message_collection, bot_user)
+          message_collection = get_messages(message_or_post_id)
 
-        default_opts = {
-          post_alert_options: { skip_send_email: true },
-          raw: I18n.t("chatbot.prompt.function.escalate_to_staff.announcement", content: content),
-          skip_validations: true,
-          title: I18n.t("chatbot.prompt.function.escalate_to_staff.title"),
-          archetype: Archetype.private_message,
-          target_usernames: target_usernames,
-          target_group_names: target_group_names
-        }
+          content = generate_transcript(message_collection, bot_user)
 
-        post = PostCreator.create!(current_user, default_opts)
+          default_opts = {
+            post_alert_options: { skip_send_email: true },
+            raw: I18n.t("chatbot.prompt.function.escalate_to_staff.announcement", content: content),
+            skip_validations: true,
+            title: I18n.t("chatbot.prompt.function.escalate_to_staff.title"),
+            archetype: Archetype.private_message,
+            target_usernames: target_usernames,
+            target_group_names: target_group_names
+          }
 
-        url = "https://#{Discourse.current_hostname}/t/slug/#{post.topic_id}"
+          post = PostCreator.create!(current_user, default_opts)
 
-        response = I18n.t("chatbot.prompt.function.escalate_to_staff.answer_summary", url: url)
+          url = "https://#{Discourse.current_hostname}/t/slug/#{post.topic_id}"
+
+          response = I18n.t("chatbot.prompt.function.escalate_to_staff.answer_summary", url: url)
+        else
+          response = I18n.t("chatbot.prompt.function.escalate_to_staff.no_escalation_groups")
+        end
       rescue
         I18n.t("chatbot.prompt.function.escalate_to_staff.error", parameter: args[parameters[0][:name]])
       end

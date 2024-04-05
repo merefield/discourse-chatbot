@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.9.7
+# version: 0.9.8
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -22,6 +22,7 @@ module ::DiscourseChatbot
   POST = "post"
   MESSAGE = "message"
   CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
+  CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD = "chatbot_queries_quota_reach_escalation_date"
   POST_TYPES_REGULAR_ONLY = [1]
   POST_TYPES_INC_WHISPERS = [1, 4]
 
@@ -110,6 +111,8 @@ after_initialize do
   end
 
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD, :integer)
+
+  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD, :date)
 
 
   add_to_serializer(:current_user, :chatbot_access) do

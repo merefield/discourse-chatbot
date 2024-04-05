@@ -2,6 +2,7 @@
 require_relative '../plugin_helper'
 
 CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
+CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD = "chatbot_queries_quota_reach_escalation_date"
 
 describe ::DiscourseChatbot::EventEvaluation do
   let(:normal_user) { Fabricate(:user, trust_level: TrustLevel[1], refresh_auto_groups: true) }
@@ -12,6 +13,7 @@ describe ::DiscourseChatbot::EventEvaluation do
 
   before(:each) do
     SiteSetting.chatbot_enabled = true
+    SiteSetting.chatbot_quota_reach_escalation_groups = "3"
   end
 
   it "returns the correct trust level for user in high trust group" do
@@ -54,7 +56,7 @@ describe ::DiscourseChatbot::EventEvaluation do
     expect(event.over_quota(high_trust_user.id)).to equal(false)
   end
 
-  it "returns the correct quota decision if user is in high trust group and user is outside of quota" do
+  it "returns the correct quota decision if user is in high trust group and user is outside of quota and escalates" do
     UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: 3)
     SiteSetting.chatbot_high_trust_groups = "13|14"
     SiteSetting.chatbot_medium_trust_groups = "11|12"
@@ -64,6 +66,22 @@ describe ::DiscourseChatbot::EventEvaluation do
     SiteSetting.chatbot_quota_low_trust = 1
 
     event = ::DiscourseChatbot::EventEvaluation.new
+    expect { event.over_quota(high_trust_user.id) }.to change { Topic.where(archetype: Archetype.private_message).count }.by(1)
+    expect(event.over_quota(high_trust_user.id)).to equal(true)
+  end
+
+  it "returns the correct quota decision if user is in high trust group and user is outside of quota but doesn't escalate" do
+    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: 3)
+    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD, value: 30.minutes.ago)
+    SiteSetting.chatbot_high_trust_groups = "13|14"
+    SiteSetting.chatbot_medium_trust_groups = "11|12"
+    SiteSetting.chatbot_low_trust_groups = "10"
+    SiteSetting.chatbot_quota_high_trust = 3
+    SiteSetting.chatbot_quota_medium_trust = 2
+    SiteSetting.chatbot_quota_low_trust = 1
+
+    event = ::DiscourseChatbot::EventEvaluation.new
+    expect { event.over_quota(high_trust_user.id) }.not_to change { Topic.where(archetype: Archetype.private_message).count }
     expect(event.over_quota(high_trust_user.id)).to equal(true)
   end
 
