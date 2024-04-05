@@ -77,24 +77,28 @@ module ::DiscourseChatbot
       target_group_names = []
 
       Array(SiteSetting.chatbot_quota_reach_escalation_groups).each do |g|
-        target_group_names << Group.find(g.to_i).name
+        unless g.to_i == 0
+          target_group_names << Group.find(g.to_i).name
+        end
       end
 
-      target_group_names = target_group_names.join(",")
+      if !target_group_names.empty?
+        target_group_names = target_group_names.join(",")
 
-      default_opts = {
-        post_alert_options: { skip_send_email: true },
-        raw: I18n.t("chatbot.quota_reached.escalation.message", username: user.username),
-        skip_validations: true,
-        title: I18n.t("chatbot.quota_reached.escalation.title", username: user.username),
-        archetype: Archetype.private_message,
-        target_group_names: target_group_names
-      }
+        default_opts = {
+          post_alert_options: { skip_send_email: true },
+          raw: I18n.t("chatbot.quota_reached.escalation.message", username: user.username),
+          skip_validations: true,
+          title: I18n.t("chatbot.quota_reached.escalation.title", username: user.username),
+          archetype: Archetype.private_message,
+          target_group_names: target_group_names
+        }
 
-      post = PostCreator.create!(system_user, default_opts)
+        post = PostCreator.create!(system_user, default_opts)
 
-      user.custom_fields[::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD] = DateTime.now
-      user.save_custom_fields
+        user.custom_fields[::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD] = DateTime.now
+        user.save_custom_fields
+      end
     end
 
     private

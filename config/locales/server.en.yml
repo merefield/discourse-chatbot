@@ -140,6 +140,7 @@ en:
           title:  "Support bot chat escalation"
           announcement: "This is a follow-up Personal Message which includes Staff.  The following chat conversation was had between the user and the bot:\n\n%{content}"
           answer_summary: "The function ran and this chat has been successfully escalated and raised to the attention of staff.  A Personal Message to discuss things further with Staff has been created at the following url: %{url}.  I must now share this news & the url with the user.  There is no need for me to do anything more than communicate this fact with the web link and wish the user a good day."
+          no_escalation_groups: "No escalation groups have been set up for this function.  Please contact your administrator."
           wrong_type_error: "This function cannot be used outside of Chat Messages"
           error:  "Escalation of user and bot chat failed"
         forum_get_user_address:

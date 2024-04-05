@@ -13,6 +13,7 @@ describe ::DiscourseChatbot::EventEvaluation do
 
   before(:each) do
     SiteSetting.chatbot_enabled = true
+    SiteSetting.chatbot_quota_reach_escalation_groups = "3"
   end
 
   it "returns the correct trust level for user in high trust group" do
