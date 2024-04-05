@@ -80,7 +80,7 @@ describe ::DiscourseChatbot::EventEvaluation do
     SiteSetting.chatbot_quota_low_trust = 1
 
     event = ::DiscourseChatbot::EventEvaluation.new
-    expect { event.over_quota(high_trust_user.id) }.to change { Topic.where(archetype: Archetype.private_message).count }.by(0)
+    expect { event.over_quota(high_trust_user.id) }.not_to change { Topic.where(archetype: Archetype.private_message).count }
     expect(event.over_quota(high_trust_user.id)).to equal(true)
   end
 
