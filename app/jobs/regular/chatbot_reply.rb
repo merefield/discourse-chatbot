@@ -46,7 +46,6 @@ class ::Jobs::ChatbotReply < Jobs::Base
 
     if over_quota
       reply_and_thoughts[:reply] = I18n.t('chatbot.errors.overquota')
-
     elsif type == ::DiscourseChatbot::POST && post
       is_private_msg = post.topic.private_message?
       opts.merge!(is_private_msg: is_private_msg)
