@@ -14,6 +14,10 @@ class ::Jobs::ChatbotQuotaReset < ::Jobs::Scheduled
         current_queries = "0"
         UserCustomField.create!(user_id: u.id, name: ::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD, value: current_queries)
       end
+
+      if current_record = UserCustomField.find_by(user_id: u.id, name: ::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD)
+        current_record.delete
+      end
     end
 
   end

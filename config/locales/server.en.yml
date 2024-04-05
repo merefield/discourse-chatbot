@@ -76,8 +76,9 @@ en:
     quick_access_kick_off:
       announcement: "Hello, how can I help you?"
     quota_reached:
-      escalation_title: "Chatbot Quota Reached: %{username}"
-      escalation_message: "I'm afraid %{username} has reached their weekly quota for bot interactions.  I'm escalating this issue to staff for further assistance."
+      escalation:
+        title: "Chatbot Quota Reached: %{username}"
+        message: "I'm afraid user '%{username}' has reached their weekly quota for Chatbot interactions.  I'm escalating this issue to staff for further assistance."
     prompt:
       system:
         basic:

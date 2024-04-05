@@ -15,6 +15,9 @@ module ::DiscourseChatbot
       bot_user = ::User.find_by(username: bot_username)
       channel_type = SiteSetting.chatbot_quick_access_talk_button
 
+      evaluation = ::DiscourseChatbot::EventEvaluation.new
+      over_quota = evaluation.over_quota(current_user.id)
+
       if channel_type == "chat"
 
         bot_author = ::User.find_by(username: SiteSetting.chatbot_bot_user)
@@ -37,11 +40,11 @@ module ::DiscourseChatbot
 
           last_chat = ::Chat::Message.find_by(id: chat_channel.latest_not_deleted_message_id)
 
-          if (last_chat && last_chat.message != I18n.t("chatbot.quick_access_kick_off.announcement")) || last_chat.nil?
+          if (last_chat && (over_quota && last_chat.message != I18n.t('chatbot.errors.overquota') || !over_quota && last_chat.message != I18n.t("chatbot.quick_access_kick_off.announcement"))) || last_chat.nil?
             Chat::CreateMessage.call(
               chat_channel_id: chat_channel_id,
               guardian: guardian,
-              message: I18n.t("chatbot.quick_access_kick_off.announcement"),
+              message: over_quota ? I18n.t('chatbot.errors.overquota') : I18n.t("chatbot.quick_access_kick_off.announcement"),
             )
           end
 
@@ -50,7 +53,7 @@ module ::DiscourseChatbot
       elsif channel_type == "personal message"
         default_opts = {
           post_alert_options: { skip_send_email: true },
-          raw: I18n.t("chatbot.quick_access_kick_off.announcement"),
+          raw: over_quota ? I18n.t('chatbot.errors.overquota') : I18n.t("chatbot.quick_access_kick_off.announcement"),
           skip_validations: true,
           title: I18n.t("chatbot.pm_prefix"),
           archetype: Archetype.private_message,
