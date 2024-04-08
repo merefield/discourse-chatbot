@@ -123,8 +123,15 @@ en:
           parameters:
             query: "search query for looking up information on the forum"
             number_of_posts: "specify the number of posts you want returned from your query"
-          answer_summary: "The top %{number_of_posts} posts on the forum related to this query are, best match first:\n\n"
-          answer: "Number %{rank}: the post is at this web address: %{url}, it was written by '%{username}' on %{date}, the text is '%{raw}' and the match score was: %{score}.\n\n"
+          answer:
+            post:
+              summary: "The top %{number_of_posts} posts on the forum related to this query are, best match first:\n\n"
+              each: "Number %{rank}: the post is at this web address: %{url}, it was written by '%{username}' on %{date}, the text is '%{raw}' and the match score was: %{score}.\n\n"
+            topic:
+              summary: "The top %{number_of_topics} topics on the forum related to this query are, best match first:\n\n"
+              each:
+                topic: "Number %{rank}: the topic with title '%{title}' is at this web address: %{url}, the match score was: %{score} and contains the following posts:\n\n"
+                post: "Post %{post_number}: the post was written by '%{username}' on %{date} and the text is '%{raw}'.\n\n"
           error:  "'%{query}': my search for this on the forum failed."
         vision:
           description: |
