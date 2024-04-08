@@ -267,7 +267,16 @@ plugins:
     choices:
       - "post"
       - "topic"
-  chatbot_forum_search_function_results_posts_count:
+  chatbot_forum_search_function_results_topic_max_posts_count_strategy:
+    client: false
+    default: "just_enough"
+    type: "enum"
+    choices:
+      - "all"
+      - "just_enough"
+      - "stretch_if_required"
+      - "exact"
+  chatbot_forum_search_function_results_topic_max_posts_count:
     client: false
     default: 3
     min: 1
