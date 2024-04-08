@@ -60,6 +60,9 @@ en:
     chatbot_forum_search_function_max_results: "Maximum number of Posts shown to bot from a forum search"
     chatbot_forum_search_function_similarity_threshold: "Fraction of 1.  The point at which a Post is included in the results is defined by how similar it is to the query with 1 being identical and zero being nothing like the query"
     chatbot_forum_search_function_reranking_group_promotion: "Posts authored by these Groups are promoted in results set so their Posts are more likely to be seen and taken into account by the bot"
+    chatbot_forum_search_function_results_content_type: "The scope of content to be returned in the search results.  Choose 'posts' for just ranking Posts, 'topics' for the entire Topics that contain those ranked Posts"
+    chatbot_forum_search_function_results_topic_max_posts_count_strategy: "The strategy used to determine the maximum number of Posts to be returned in the search results if content_type is 'topics'. Choose 'all' for all Posts, 'just_enough' to limit the Posts to only those up to including the ranked Post, 'stretch_if_required' to include all Posts up to the ranked Post regardless of the max setting, 'exact' for exactly the number of Posts specified in the max setting"
+    chatbot_forum_search_function_results_topic_max_posts_count: "The maximum number of Posts to be returned in the search results if content_type is 'topics'"
     chatbot_locations_plugin_support: "(EXPERIMENTAL currently user locations only) Natural language querying capability for <a target='_blank' rel='noopener' href='https://github.com/paviliondev/discourse-locations'>Locations Plugin</a> (when using RAG mode, requires Locations Plugin to be installed)"
     chatbot_escalate_to_staff_function: "(EXPERIMENTAL, Chat only) if user requests human assistance or gets irritated, escalate to staff via PM (requires staff group to be populated)"
     chatbot_escalate_to_staff_groups: "(EXPERIMENTAL, Chat only) groups added to escalation PM, e.g. support team"
@@ -123,8 +126,15 @@ en:
           parameters:
             query: "search query for looking up information on the forum"
             number_of_posts: "specify the number of posts you want returned from your query"
-          answer_summary: "The top %{number_of_posts} posts on the forum related to this query are, best match first:\n\n"
-          answer: "Number %{rank}: the post is at this web address: %{url}, it was written by '%{username}' on %{date}, the text is '%{raw}' and the match score was: %{score}.\n\n"
+          answer:
+            post:
+              summary: "The top %{number_of_posts} posts on the forum related to this query are, best match first:\n\n"
+              each: "Number %{rank}: the post is at this web address: %{url}, it was written by '%{username}' on %{date}, the text is '%{raw}' and the match score was: %{score}.\n\n"
+            topic:
+              summary: "The top %{number_of_topics} topics on the forum related to this query are, best match first:\n\n"
+              each:
+                topic: "Number %{rank}: the topic with title '%{title}' is at this web address: %{url}, the match score was: %{score} and contains the following posts:\n\n"
+                post: "Post %{post_number}: the post was written by '%{username}' on %{date} and the text is '%{raw}'.\n\n"
           error:  "'%{query}': my search for this on the forum failed."
         vision:
           description: |

@@ -260,6 +260,27 @@ plugins:
     default: ""
     allow_any: false
     refresh: true
+  chatbot_forum_search_function_results_content_type:
+    client: false
+    default: "post"
+    type: enum
+    choices:
+      - "post"
+      - "topic"
+  chatbot_forum_search_function_results_topic_max_posts_count_strategy:
+    client: false
+    default: "just_enough"
+    type: "enum"
+    choices:
+      - "all"
+      - "just_enough"
+      - "stretch_if_required"
+      - "exact"
+  chatbot_forum_search_function_results_topic_max_posts_count:
+    client: false
+    default: 3
+    min: 1
+    max: 20
   chatbot_locations_plugin_support:
     client: false
     default: false
