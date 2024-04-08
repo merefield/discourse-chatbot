@@ -59,22 +59,20 @@ module DiscourseChatbot
             response += I18n.t("chatbot.prompt.function.forum_search.answer.topic.each.topic", url: url, title: title, score: score, rank: index + 1)
             post_number = 1
 
-            max_post_number = case SiteSetting.chatbot_forum_search_function_results_max_posts_count_strategy
+            max_post_number = case SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count_strategy
               when "all"
                 Topic.find(topic_id).highest_post_number
               when "just_enough"
                 original_post_number
               when "stretch_if_required"
-                original_post_number > SiteSetting.chatbot_forum_search_function_results_max_posts_count ? original_post_number : SiteSetting.chatbot_forum_search_function_results_max_posts_count
+                original_post_number > SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count ? original_post_number : SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count
               else
-                SiteSetting.chatbot_forum_search_function_results_max_posts_count
+                SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count
               end
-
-              max_post_number = SiteSetting.chatbot_forum_search_function_results_max_posts_count ? SiteSetting.chatbot_forum_search_function_results_max_posts_count : original_post_number
             while post_number <= max_post_number do
               post = ::Post.find_by(topic_id: topic_id, post_number: post_number )
-              next if post.deleted_at || !accepted_post_types.includes?(post.post_type)
               break if post.nil?
+              next if post.deleted_at || !accepted_post_types.include?(post.post_type)
               response += I18n.t("chatbot.prompt.function.forum_search.answer.topic.each.post", post_number: post_number, username: post.user.username, date: post.created_at, raw: post.raw)
               post_number += 1
             end
