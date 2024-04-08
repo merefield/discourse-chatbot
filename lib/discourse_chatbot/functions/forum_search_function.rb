@@ -84,18 +84,3 @@ module DiscourseChatbot
     end
   end
 end
-
-
-chatbot_forum_search_function_results_content_type:
-client: false
-default: "matching_post"
-type: enum
-choices:
-  - "matching_post"
-  - "posts_topic_with_title"
-  - "posts_topic_without_title"
-chatbot_forum_search_function_results_posts_count:
-client: false
-default: 3
-min: 1
-max: 20
