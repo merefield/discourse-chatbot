@@ -52,7 +52,7 @@ module ::DiscourseChatbot
         forum_search_function = ::DiscourseChatbot::ForumSearchFunction.new
       end
 
-      if SiteSetting.chatbot_support_vision
+      if SiteSetting.chatbot_support_vision == "via_function"
         vision_function = ::DiscourseChatbot::VisionFunction.new
       end
 
@@ -83,6 +83,7 @@ module ::DiscourseChatbot
       functions << stock_data_function if !SiteSetting.chatbot_marketstack_key.blank?
 
       @functions = parse_functions(functions)
+      @tools = @functions.map { |func| { "type": "function", "function": func } }
       @func_mapping = create_func_mapping(functions)
       @chat_history = []
     end
@@ -104,19 +105,29 @@ module ::DiscourseChatbot
         value of messages is: #{messages}
         +++++++++++++++++++++++++++++++
       EOS
-      if use_functions && @functions
+      if use_functions && @tools
         res = @client.chat(
           parameters: {
             model: @model_name,
             messages: messages,
-            functions: @functions
+            tools: @tools,
+            max_tokens: SiteSetting.chatbot_max_response_tokens,
+            temperature: SiteSetting.chatbot_request_temperature / 100.0,
+            top_p: SiteSetting.chatbot_request_top_p / 100.0,
+            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
           }
         )
       else
         res = @client.chat(
           parameters: {
             model: @model_name,
-            messages: messages
+            messages: messages,
+            max_tokens: SiteSetting.chatbot_max_response_tokens,
+            temperature: SiteSetting.chatbot_request_temperature / 100.0,
+            top_p: SiteSetting.chatbot_request_top_p / 100.0,
+            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
           }
         )
       end
@@ -152,9 +163,8 @@ module ::DiscourseChatbot
         finish_reason = res["choices"][0]["finish_reason"]
 
         if finish_reason == 'stop' || @inner_thoughts.length > 5
-          final_thought = final_thought_answer
           final_res = create_chat_completion(
-            @chat_history + [final_thought],
+            @chat_history + @inner_thoughts,
             false
           )
 
@@ -165,7 +175,7 @@ module ::DiscourseChatbot
           end
 
           return final_res
-        elsif finish_reason == 'function_call'
+        elsif finish_reason == 'tool_calls'
           handle_function_call(res, opts)
         else
           raise "Unexpected finish reason: #{finish_reason}"
@@ -175,13 +185,27 @@ module ::DiscourseChatbot
     end
 
     def handle_function_call(res, opts)
-      first_message = res["choices"][0]["message"]
-      @inner_thoughts << first_message.to_hash
-      func_name = first_message["function_call"]["name"]
-      args_str = first_message["function_call"]["arguments"]
-      result = call_function(func_name, args_str, opts)
-      res_msg = { 'role' => 'function', 'name' => func_name, 'content' => I18n.t("chatbot.prompt.rag.handle_function_call.answer", result: result) }
-      @inner_thoughts << res_msg
+      res_msgs = []
+      functions_called = res["choices"][0]["message"]
+
+      tools_called =  functions_called["tool_calls"]
+
+      tools_thought = {
+        "role": "assistant",
+        "content": nil,
+        "tool_calls": tools_called
+      }
+      pp tools_thought
+
+      @inner_thoughts << tools_thought
+
+      tools_called.each do |function_called|
+        func_name = function_called["function"]["name"]
+        args_str = function_called["function"]["arguments"]
+        tool_call_id = function_called["id"]
+        result = call_function(func_name, args_str, opts)
+        @inner_thoughts << { 'role' => 'tool', 'tool_call_id' => tool_call_id, 'content' => result }
+      end
     end
 
     def call_function(func_name, args_str, opts)
@@ -206,24 +230,6 @@ module ::DiscourseChatbot
        rescue
          I18n.t("chatbot.prompt.rag.call_function.error")
       end
-    end
-
-    def final_thought_answer
-      thoughts = I18n.t("chatbot.prompt.rag.final_thought_answer.opener")
-      @inner_thoughts.each do |thought|
-        if thought.key?('function_call')
-          thoughts += I18n.t("chatbot.prompt.rag.final_thought_answer.thought_declaration", function_name: thought['function_call']['name'], arguments: thought['function_call']['arguments'])
-        else
-          thoughts += "#{thought['content']}\n\n"
-        end
-      end
-
-      final_thought = {
-        'role' => 'assistant',
-        'content' => I18n.t("chatbot.prompt.rag.final_thought_answer.final_thought", thoughts: thoughts)
-      }
-
-      final_thought
     end
   end
 end
