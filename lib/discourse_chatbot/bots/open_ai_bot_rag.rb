@@ -195,7 +195,6 @@ module ::DiscourseChatbot
         "content": nil,
         "tool_calls": tools_called
       }
-      pp tools_thought
 
       @inner_thoughts << tools_thought
 
