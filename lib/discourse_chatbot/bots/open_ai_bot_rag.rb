@@ -206,7 +206,7 @@ module ::DiscourseChatbot
         args_str = function_called["function"]["arguments"]
         tool_call_id = function_called["id"]
         result = call_function(func_name, args_str, opts)
-        @inner_thoughts << { :role => 'tool', :tool_call_id => tool_call_id, :content => result.to_s }
+        @inner_thoughts << { role: 'tool', tool_call_id: tool_call_id, content: result.to_s }
       end
     end
 
