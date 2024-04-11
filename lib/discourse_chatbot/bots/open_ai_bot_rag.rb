@@ -162,7 +162,7 @@ module ::DiscourseChatbot
 
         finish_reason = res["choices"][0]["finish_reason"]
 
-        if finish_reason == 'stop' || @inner_thoughts.length > 5
+        if finish_reason == 'stop' || 'length' || @inner_thoughts.length > 7
           return res
         elsif finish_reason == 'tool_calls'
           handle_function_call(res, opts)
