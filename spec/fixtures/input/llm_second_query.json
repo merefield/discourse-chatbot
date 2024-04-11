@@ -1,0 +1,24 @@
+[
+  {
+    "role": "user",
+    "content": "merefield said what is 3 * 23.452432?"
+  },
+  {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+      {
+        "id": "call_3gMT5DrKF5TqM8sJoCYjfXOF",
+        "function": {
+          "name": "calculate",
+          "arguments": "{\n  \"input\": \"3 * 23.452432\"\n}"
+        }
+      }
+    ]
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_3gMT5DrKF5TqM8sJoCYjfXOF",
+    "content": "70.357296"
+  }
+]

@@ -163,18 +163,7 @@ module ::DiscourseChatbot
         finish_reason = res["choices"][0]["finish_reason"]
 
         if finish_reason == 'stop' || @inner_thoughts.length > 5
-          final_res = create_chat_completion(
-            @chat_history + @inner_thoughts,
-            false
-          )
-
-          if final_res.dig("error")
-            error_text = "ERROR when trying to perform final chat completion: #{final_res.dig("error", "message")}"
-
-            Rails.logger.error("Chatbot: #{error_text}")
-          end
-
-          return final_res
+          return res
         elsif finish_reason == 'tool_calls'
           handle_function_call(res, opts)
         else
@@ -190,10 +179,24 @@ module ::DiscourseChatbot
 
       tools_called =  functions_called["tool_calls"]
 
+      # Convert the semi-JSON string to Ruby objects so we can make tests pass otherwise
+      # format of tools_called is generated won't match what is expected in the tests
+      # even though without it the code works fine
+
+      ruby_object_array = []
+
+      tools_called.each do |tool_called|
+        json_str = tool_called.to_json
+        ruby_objects = JSON.parse(json_str, symbolize_names: true)
+        ruby_object_array << ruby_objects
+      end
+
+      # end of section of code to make tests pass
+
       tools_thought = {
         "role": "assistant",
-        "content": nil,
-        "tool_calls": tools_called
+        "content": "",
+        "tool_calls": ruby_object_array
       }
 
       @inner_thoughts << tools_thought
@@ -203,7 +206,7 @@ module ::DiscourseChatbot
         args_str = function_called["function"]["arguments"]
         tool_call_id = function_called["id"]
         result = call_function(func_name, args_str, opts)
-        @inner_thoughts << { 'role' => 'tool', 'tool_call_id' => tool_call_id, 'content' => result }
+        @inner_thoughts << { :role => 'tool', :tool_call_id => tool_call_id, :content => result.to_s }
       end
     end
 
