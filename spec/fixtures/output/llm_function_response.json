@@ -8,12 +8,16 @@
       "message": {
         "role": "assistant",
         "content": null,
-        "function_call": {
-          "name": "calculate",
-          "arguments": "{\n  \"input\": \"3 * 23.452432\"\n}"
-        }
+        "tool_calls": [
+          { "id": "call_3gMT5DrKF5TqM8sJoCYjfXOF",
+            "function": {
+              "name": "calculate",
+              "arguments": "{\n  \"input\": \"3 * 23.452432\"\n}"
+            }
+          }
+        ]
       },
-      "finish_reason": "function_call"
+      "finish_reason": "tool_calls"
     }
   ],
   "usage": {
