@@ -70,7 +70,7 @@ module ::DiscourseChatbot
       query_vector = response.dig("data", 0, "embedding")
 
       begin
-        threshold = SiteSetting.chatbot_forum_search_function_similarity_threshold_title
+        threshold = SiteSetting.chatbot_forum_search_function_similarity_threshold
         results = 
           DB.query(<<~SQL, query_embedding: query_vector, threshold: threshold, limit: 100)
             SELECT
@@ -104,7 +104,7 @@ module ::DiscourseChatbot
           )
          raise MissingEmbeddingError
         end
-      reranked_results.map {|p| { topic_id: p.topic_id, user_id: p.user_id, score: (1 - p.cosine_distance) } }
+      reranked_results.map {|t| { topic_id: t.topic_id, user_id: t.user_id, score: (1 - t.cosine_distance) } }
     end
 
     def in_scope(topic_id)
