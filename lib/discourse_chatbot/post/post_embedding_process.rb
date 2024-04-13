@@ -90,22 +90,42 @@ module ::DiscourseChatbot
               embedding <=> '[:query_embedding]'
             LIMIT :limit
           SQL
+      rescue PG::Error => e
+        Rails.logger.error(
+          "Error #{e} querying embeddings for search #{query}",
+        )
+       raise MissingEmbeddingError
+      end
 
+      # exclude if not in scope for embeddings (job hasn't caught up yet)
+      results = results.filter { |result| in_scope(result.post_id) && is_valid( result.post_id)}
+
+      results = results.map {|p| { post_id: p.post_id, user_id: p.user_id, score: (1 - p.cosine_distance), rank_modifier: 0 } }
+
+      if ["group_promotion", "both"].include?(SiteSetting.chatbot_forum_search_function_reranking_strategy)
         high_ranked_users = []
 
-        SiteSetting.chatbot_forum_search_function_reranking_group_promotion_map.each do |g|
+        SiteSetting.chatbot_forum_search_function_reranking_groups.split("|").each do |g|
           high_ranked_users = high_ranked_users | GroupUser.where(group_id: g).pluck(:user_id)
         end
 
-        reranked_results = results.filter {|r| high_ranked_users.include?(r.user_id)} + results.filter {|r| !high_ranked_users.include?(r.user_id)}.first(20)
-
-        rescue PG::Error => e
-          Rails.logger.error(
-            "Error #{e} querying embeddings for search #{query}",
-          )
-         raise MissingEmbeddingError
+        results.each do |r|
+          r[:rank_modifier] += 1 if high_ranked_users.include?(r[:user_id])
         end
-      reranked_results.map {|p| { post_id: p.post_id, user_id: p.user_id, score: (1 - p.cosine_distance) } }
+      end
+
+      if ["tag_promotion", "both"].include?(SiteSetting.chatbot_forum_search_function_reranking_strategy)
+        high_ranked_tags = SiteSetting.chatbot_forum_search_function_reranking_tags.split("|")
+
+        results.each do |r|
+          post = ::Post.find_by(id: r[:post_id])
+          tag_ids = ::TopicTag.where(topic_id: post.topic_id).pluck(:tag_id)
+          tags = ::Tag.where(id: tag_ids).pluck(:name)
+          r[:rank_modifier] += 1 if (high_ranked_tags & tags).any?
+        end
+      end
+
+      results.sort_by { |r| [r[:rank_modifier], r[:score]] }.reverse.first(SiteSetting.chatbot_forum_search_function_max_results)
     end
 
     def in_scope(post_id)
