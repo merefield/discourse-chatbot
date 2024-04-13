@@ -25,12 +25,12 @@ RSpec.describe DiscourseChatbot::EmbeddingCompletionist do
 
       DiscourseChatbot.const_set(:EMBEDDING_PROCESS_POSTS_CHUNK, 3)
       DiscourseChatbot::PostEmbeddingsBookmark.new(post_id: post_1.id).save!
-      expect(described_class.process).to eq(post_4.id)
+      expect(described_class.process_posts).to eq(post_4.id)
       bookmark = DiscourseChatbot::PostEmbeddingsBookmark.first
       expect(bookmark).to be_present
       expect(bookmark.post_id).to eq(post_4.id)
-      expect(described_class.process).to eq(post_1.id)
-      expect(described_class.process).to eq(post_4.id)
+      expect(described_class.process_posts).to eq(post_1.id)
+      expect(described_class.process_posts).to eq(post_4.id)
     end
   end
 end

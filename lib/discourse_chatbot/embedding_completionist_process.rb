@@ -13,9 +13,9 @@ module ::DiscourseChatbot
     def self.process_topics
       bookmarked_topic_id = ::DiscourseChatbot::TopicEmbeddingsBookmark.first&.topic_id || ::Topic.first.id
 
-      limit = EMBEDDING_PROCESS_POSTS_CHUNK * (Topic.count/Post.count)
+      limit = (EMBEDDING_PROCESS_POSTS_CHUNK * (::Topic.count.fdiv(::Post.count))).ceil
 
-      topic_range = ::Topic.where("id >= ?", bookmarked_topic_id).order(:id).limit(limit.ceil).pluck(:id)
+      topic_range = ::Topic.where("id >= ?", bookmarked_topic_id).order(:id).limit(limit).pluck(:id)
 
       topic_range.each do |topic_id|
         Jobs.enqueue(:chatbot_topic_title_embedding, id: topic_id)
@@ -36,7 +36,7 @@ module ::DiscourseChatbot
       bookmark.save!
       ::DiscourseChatbot.progress_debug_message <<~EOS
       ---------------------------------------------------------------------------------------------------------------
-      Topic Embeddings Completion Bookmark is now at Post: #{bookmark.topic_id}
+      Topic Embeddings Completion Bookmark is now at Topic: #{bookmark.topic_id}
       ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       EOS
       bookmark.topic_id

@@ -67,6 +67,8 @@ after_initialize do
     ../lib/discourse_chatbot/event_evaluation.rb
     ../app/models/discourse_chatbot/post_embedding.rb
     ../app/models/discourse_chatbot/post_embeddings_bookmark.rb
+    ../app/models/discourse_chatbot/topic_title_embedding.rb
+    ../app/models/discourse_chatbot/topic_embeddings_bookmark.rb
     ../lib/discourse_chatbot/embedding_process.rb
     ../lib/discourse_chatbot/post/post_embedding_process.rb
     ../lib/discourse_chatbot/topic/topic_title_embedding_process.rb
@@ -193,21 +195,17 @@ after_initialize do
     end
   end
 
-  DiscourseEvent.on(:topic_edited) do |*params|
-    topic, opts = params
-
-    if SiteSetting.chatbot_enabled
-      job_class = ::Jobs::ChatbotTopicTitleEmbedding
-      job_class.perform_async(topic.as_json)
-    end
-  end
-
   DiscourseEvent.on(:post_edited) do |*params|
-    post, opts = params
+    post, topic_changed, opts = params
 
     if SiteSetting.chatbot_enabled && post.post_type == 1
       job_class = ::Jobs::ChatbotPostEmbedding
       job_class.perform_async(post.as_json)
+
+      if post.is_first_post? && topic_changed
+        job_class = ::Jobs::ChatbotTopicTitleEmbedding
+        job_class.perform_async(post.topic.as_json)
+      end
     end
   end
 
