@@ -27,32 +27,61 @@ module DiscourseChatbot
     def process(args)
       begin
         super(args)
+
         top_topics = []
+        top_topics_from_post_results = []
+        top_topics_from_topic_title_results = []
+        top_topic_title_results = []
         query = args[parameters[0][:name]]
         number_of_posts = args[parameters[1][:name]].blank? ? 3 : args[parameters[1][:name]]
         number_of_posts = number_of_posts > SiteSetting.chatbot_forum_search_function_max_results ? SiteSetting.chatbot_forum_search_function_max_results : number_of_posts
 
         process_post_embedding = ::DiscourseChatbot::PostEmbeddingProcess.new
         results = process_post_embedding.semantic_search(query)
-
         top_results = results[0..(number_of_posts - 1)]
 
-        # exclude if not in scope for embeddings (job hasn't caught up yet)
-        top_results.select { |result| !::DiscourseChatbot::PostEmbeddingProcess.new.in_scope(result[:post_id]) || !::DiscourseChatbot::PostEmbeddingProcess.new.is_valid( result[:post_id])}
+        if SiteSetting.chatbot_forum_search_function_include_topic_titles
+          process_topic_title_embedding = ::DiscourseChatbot::TopicTitleEmbeddingProcess.new
+          topic_title_results = process_topic_title_embedding.semantic_search(query)
+          top_topic_title_results = topic_title_results[0..(number_of_posts - 1)]
 
-        if SiteSetting.chatbot_forum_search_function_results_content_type == "topic"
-          top_topics = top_results.map { |result| ::Post.find(result[:post_id].to_i).topic_id }.uniq
+          # exclude if not in scope for embeddings (job hasn't caught up yet)
+          top_topic_title_results = top_topic_title_results.filter { |result| ::DiscourseChatbot::TopicTitleEmbeddingProcess.new.in_scope(result[:topic_id]) && ::DiscourseChatbot::TopicTitleEmbeddingProcess.new.is_valid(result[:topic_id])}
+        end
+
+        # exclude if not in scope for embeddings (job hasn't caught up yet)
+        top_results = top_results.filter { |result| ::DiscourseChatbot::PostEmbeddingProcess.new.in_scope(result[:post_id]) && ::DiscourseChatbot::PostEmbeddingProcess.new.is_valid( result[:post_id])}
+
+        if SiteSetting.chatbot_forum_search_function_results_content_type == "topic" || top_topic_title_results.length > 0
+          top_topics_from_post_results = top_results.map { |result| ::Post.find(result[:post_id].to_i).topic_id }.uniq
+          top_topics_from_topic_title_results = top_topic_title_results.map { |result| result[:topic_id].to_i }.uniq
+          top_topics = (top_topics_from_post_results + top_topics_from_topic_title_results).uniq
+
           response = I18n.t("chatbot.prompt.function.forum_search.answer.topic.summary", number_of_topics: top_topics.length)
 
           accepted_post_types = SiteSetting.chatbot_include_whispers_in_post_history ? ::DiscourseChatbot::POST_TYPES_INC_WHISPERS : ::DiscourseChatbot::POST_TYPES_REGULAR_ONLY
 
           top_topics.each_with_index do |topic_id, index|
-            top_result = top_results.find do |result|
+            top_post_result = {}
+            top_post_result = top_results.find do |result|
               post_topic_id = ::Post.find(result[:post_id].to_i).topic_id
               post_topic_id == topic_id
             end
-            score = top_result[:score]
-            original_post_number = ::Post.find(top_result[:post_id]).post_number
+
+            top_topic_title_result = {}
+            top_topic_title_result = top_topic_title_results.find do |result|
+              topic_id == result[:topic_id]
+            end
+
+            original_post_number = nil
+
+            if !top_post_result.blank?
+              score = top_post_result[:score]
+              original_post_number = ::Post.find(top_post_result[:post_id]).post_number
+            else
+              score = top_topic_title_result[:score]
+            end
+
             current_topic = ::Topic.find(topic_id)
             url = "https://#{Discourse.current_hostname}/t/slug/#{current_topic.id}"
             title = current_topic.title
@@ -63,12 +92,13 @@ module DiscourseChatbot
               when "all"
                 Topic.find(topic_id).highest_post_number
               when "just_enough"
-                original_post_number
+                original_post_number || SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count
               when "stretch_if_required"
-                original_post_number > SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count ? original_post_number : SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count
+                (original_post_number || 0) > SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count ? original_post_number : SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count
               else
                 SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count
               end
+
             while post_number <= max_post_number do
               post = ::Post.find_by(topic_id: topic_id, post_number: post_number )
               break if post.nil?
@@ -90,7 +120,8 @@ module DiscourseChatbot
           end
         end
         response
-      rescue
+      rescue StandardError => e
+        Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Forum Search results for query '#{query}': #{e.message}")
         I18n.t("chatbot.prompt.function.forum_search.error", query: args[parameters[0][:name]])
       end
     end

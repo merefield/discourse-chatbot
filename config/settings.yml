@@ -265,6 +265,9 @@ plugins:
     default: ""
     allow_any: false
     refresh: true
+  chatbot_forum_search_function_include_topic_titles:
+    client: false
+    default: false
   chatbot_forum_search_function_results_content_type:
     client: false
     default: "post"
