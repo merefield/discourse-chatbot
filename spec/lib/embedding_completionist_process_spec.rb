@@ -9,10 +9,10 @@ RSpec.describe DiscourseChatbot::EmbeddingCompletionist do
     let(:post_3) { Fabricate(:post) }
     let(:post_4) { Fabricate(:post) }
     let(:post_5) { Fabricate(:post) }
-    @original_constant = DiscourseChatbot::EMBEDDING_PROCESS_CHUNK
+    @original_constant = DiscourseChatbot::EMBEDDING_PROCESS_POSTS_CHUNK
 
     after(:each) do
-      DiscourseChatbot.const_set(:EMBEDDING_PROCESS_CHUNK, @original_constant)
+      DiscourseChatbot.const_set(:EMBEDDING_PROCESS_POSTS_CHUNK, @original_constant)
     end
 
     it 'should process a chunk each time its called and reset to start once it gets to end' do
@@ -23,7 +23,7 @@ RSpec.describe DiscourseChatbot::EmbeddingCompletionist do
       expect(post_4).to be_present
       expect(post_5).to be_present
 
-      DiscourseChatbot.const_set(:EMBEDDING_PROCESS_CHUNK, 3)
+      DiscourseChatbot.const_set(:EMBEDDING_PROCESS_POSTS_CHUNK, 3)
       DiscourseChatbot::PostEmbeddingsBookmark.new(post_id: post_1.id).save!
       expect(described_class.process).to eq(post_4.id)
       bookmark = DiscourseChatbot::PostEmbeddingsBookmark.first

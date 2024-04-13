@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.9.12
+# version: 0.9.13
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -31,7 +31,7 @@ module ::DiscourseChatbot
   MEDIUM_TRUST_LEVEL = 2
   LOW_TRUST_LEVEL = 1
 
-  EMBEDDING_PROCESS_CHUNK = 300
+  EMBEDDING_PROCESS_POSTS_CHUNK = 300
 
   def progress_debug_message(message)
     puts "Chatbot: #{message}" if SiteSetting.chatbot_enable_verbose_console_logging
@@ -67,7 +67,9 @@ after_initialize do
     ../lib/discourse_chatbot/event_evaluation.rb
     ../app/models/discourse_chatbot/post_embedding.rb
     ../app/models/discourse_chatbot/post_embeddings_bookmark.rb
-    ../lib/discourse_chatbot/post_embedding_process.rb
+    ../lib/discourse_chatbot/embedding_process.rb
+    ../lib/discourse_chatbot/post/post_embedding_process.rb
+    ../lib/discourse_chatbot/topic/topic_title_embedding_process.rb
     ../lib/discourse_chatbot/embedding_completionist_process.rb
     ../lib/discourse_chatbot/message/message_evaluation.rb
     ../lib/discourse_chatbot/post/post_evaluation.rb
@@ -104,6 +106,9 @@ after_initialize do
     ../app/controllers/discourse_chatbot/chatbot_controller.rb
     ../app/jobs/regular/chatbot_reply.rb
     ../app/jobs/regular/chatbot_post_embedding.rb
+    ../app/jobs/regular/chatbot_post_embedding_delete.rb
+    ../app/jobs/regular/chatbot_topic_title_embedding.rb
+    ../app/jobs/regular/chatbot_topic_title_embedding_delete.rb
     ../app/jobs/scheduled/chatbot_quota_reset.rb
     ../app/jobs/scheduled/chatbot_embeddings_set_completer.rb
   ).each do |path|
@@ -158,6 +163,42 @@ after_initialize do
           event_evaluation.on_submission(post)
         end
       end
+    end
+  end
+
+  DiscourseEvent.on(:topic_destroyed) do |*params|
+    topic, opts, user = params
+
+    if SiteSetting.chatbot_enabled
+      job_class = ::Jobs::ChatbotTopicTitleEmbeddingDelete
+      job_class.perform_async(topic.as_json)
+    end
+  end
+
+  DiscourseEvent.on(:topic_recovered) do |*params|
+    topic, opts = params
+
+    if SiteSetting.chatbot_enabled
+      job_class = ::Jobs::ChatbotTopicTitleEmbedding
+      job_class.perform_async(topic.as_json)
+    end
+  end
+
+  DiscourseEvent.on(:topic_created) do |*params|
+    topic, opts = params
+
+    if SiteSetting.chatbot_enabled
+      job_class = ::Jobs::ChatbotTopicTitleEmbedding
+      job_class.perform_async(topic.as_json)
+    end
+  end
+
+  DiscourseEvent.on(:topic_edited) do |*params|
+    topic, opts = params
+
+    if SiteSetting.chatbot_enabled
+      job_class = ::Jobs::ChatbotTopicTitleEmbedding
+      job_class.perform_async(topic.as_json)
     end
   end
 
