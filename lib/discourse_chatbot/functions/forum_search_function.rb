@@ -120,7 +120,8 @@ module DiscourseChatbot
           end
         end
         response
-      rescue
+      rescue StandardError => e
+        Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Forum Search results for query '#{query}': #{e.message}")
         I18n.t("chatbot.prompt.function.forum_search.error", query: args[parameters[0][:name]])
       end
     end
