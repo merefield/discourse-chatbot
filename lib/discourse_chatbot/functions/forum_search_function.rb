@@ -44,13 +44,7 @@ module DiscourseChatbot
           process_topic_title_embedding = ::DiscourseChatbot::TopicTitleEmbeddingProcess.new
           topic_title_results = process_topic_title_embedding.semantic_search(query)
           top_topic_title_results = topic_title_results[0..(number_of_posts - 1)]
-
-          # exclude if not in scope for embeddings (job hasn't caught up yet)
-          top_topic_title_results = top_topic_title_results.filter { |result| ::DiscourseChatbot::TopicTitleEmbeddingProcess.new.in_scope(result[:topic_id]) && ::DiscourseChatbot::TopicTitleEmbeddingProcess.new.is_valid(result[:topic_id])}
         end
-
-        # exclude if not in scope for embeddings (job hasn't caught up yet)
-        top_results = top_results.filter { |result| ::DiscourseChatbot::PostEmbeddingProcess.new.in_scope(result[:post_id]) && ::DiscourseChatbot::PostEmbeddingProcess.new.is_valid( result[:post_id])}
 
         if SiteSetting.chatbot_forum_search_function_results_content_type == "topic" || top_topic_title_results.length > 0
           top_topics_from_post_results = top_results.map { |result| ::Post.find(result[:post_id].to_i).topic_id }.uniq
