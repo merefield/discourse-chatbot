@@ -105,7 +105,7 @@ module ::DiscourseChatbot
       max_semantic_score = results.map { |r| r[:score] }.max || 1
 
       if SiteSetting.chatbot_forum_search_function_hybrid_search
-        search = Search.new("query", { search_type: :full_page })
+        search = Search.new(query, { search_type: :full_page })
 
         keyword_search = search.execute.posts.pluck(:id, :user_id, :score)
 
