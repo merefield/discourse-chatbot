@@ -100,7 +100,25 @@ module ::DiscourseChatbot
       # exclude if not in scope for embeddings (job hasn't caught up yet)
       results = results.filter { |result| in_scope(result.post_id) && is_valid( result.post_id)}
 
-      results = results.map {|p| { post_id: p.post_id, user_id: p.user_id, score: (1 - p.cosine_distance), rank_modifier: 0 } }
+      results = results.map {|p| { post_id: p.post_id, user_id: p.user_id, score: (1 - p.cosine_distance), rank_modifier: 0, source: "semantic" } }
+
+      max_semantic_score = results.map { |r| r[:score] }.max || 1
+
+      if SiteSetting.chatbot_forum_search_function_hybrid_search
+        search = Search.new("query", { search_type: :full_page })
+
+        keyword_search = search.execute.posts.pluck(:id, :user_id, :score)
+
+        keyword_search_array_of_hashes = keyword_search.map { |id, user_id, score| {post_id: id, user_id: user_id, score: score, rank_modifier: 0, source: "keyword" } }
+
+        keyword_search_max_score = keyword_search_array_of_hashes.map { |k| k[:score] }.max || 1
+
+        keyword_search_array_of_hashes = keyword_search_array_of_hashes.each { |k| k[:score] = k[:score] / keyword_search_max_score * max_semantic_score}
+
+        keyword_search_array_of_hashes.each do |k|
+          results << k if !results.map { |r| r[:post_id] }.include?(k[:post_id])
+        end
+      end
 
       if ["group_promotion", "both"].include?(SiteSetting.chatbot_forum_search_function_reranking_strategy)
         high_ranked_users = []
