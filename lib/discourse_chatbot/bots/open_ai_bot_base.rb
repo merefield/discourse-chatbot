@@ -33,7 +33,7 @@ module ::DiscourseChatbot
       end
 
       @model_name =
-        opts[:chatbot_bot_type] != "RAG" && SiteSetting.chatbot_support_vision ? SiteSetting.chatbot_open_ai_vision_model :
+        opts[:chatbot_bot_type] != "RAG" && SiteSetting.chatbot_support_vision == "directly" ? SiteSetting.chatbot_open_ai_vision_model :
           case opts[:trust_level]
           when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
             SiteSetting.send("chatbot_open_ai_model_custom_" + opts[:trust_level] + "_trust") ? 
