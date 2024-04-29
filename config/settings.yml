@@ -305,6 +305,9 @@ plugins:
     default: 3
     min: 1
     max: 20
+  chatbot_forum_search_function_force:
+    client: false
+    default: false
   chatbot_forum_search_function_hybrid_search:
     client: false
     default: false

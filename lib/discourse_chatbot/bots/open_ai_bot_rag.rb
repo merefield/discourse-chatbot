@@ -98,14 +98,14 @@ module ::DiscourseChatbot
       functions.each_with_object({}) { |func, mapping| mapping[func.name] = func }
     end
 
-    def create_chat_completion(messages, use_functions = true)
+    def create_chat_completion(messages, use_functions = true, force_search = false)
       ::DiscourseChatbot.progress_debug_message <<~EOS
         I called the LLM to help me
         ------------------------------
         value of messages is: #{messages}
         +++++++++++++++++++++++++++++++
       EOS
-      if use_functions && @tools
+      if use_functions && @tools && !force_search
         res = @client.chat(
           parameters: {
             model: @model_name,
@@ -116,6 +116,20 @@ module ::DiscourseChatbot
             top_p: SiteSetting.chatbot_request_top_p / 100.0,
             frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
             presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
+          }
+        )
+      elsif use_functions && @tools && force_search
+        res = @client.chat(
+          parameters: {
+            model: @model_name,
+            messages: messages,
+            tools: @tools,
+            max_tokens: SiteSetting.chatbot_max_response_tokens,
+            temperature: SiteSetting.chatbot_request_temperature / 100.0,
+            top_p: SiteSetting.chatbot_request_top_p / 100.0,
+            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
+            tool_choice: {"type": "function", "function": {"name": "local_forum_search"}}
           }
         )
       else
@@ -152,7 +166,7 @@ module ::DiscourseChatbot
           # Iteration: #{iteration}
           -------------------------------
         EOS
-        res = create_chat_completion(@chat_history + @inner_thoughts)
+        res = create_chat_completion(@chat_history + @inner_thoughts, true, iteration == 1 && SiteSetting.chatbot_forum_search_function_force)
 
         if res.dig("error")
           error_text = "ERROR when trying to perform chat completion: #{res.dig("error", "message")}"
@@ -162,9 +176,10 @@ module ::DiscourseChatbot
 
         finish_reason = res["choices"][0]["finish_reason"]
 
-        if ['stop','length'].include?(finish_reason) || @inner_thoughts.length > 7
+        if (['stop','length'].include?(finish_reason) || @inner_thoughts.length > 7) &&
+          !(iteration == 1 && SiteSetting.chatbot_forum_search_function_force)
           return res
-        elsif finish_reason == 'tool_calls'
+        elsif finish_reason == 'tool_calls' || (iteration == 1 && SiteSetting.chatbot_forum_search_function_force)
           handle_function_call(res, opts)
         else
           raise "Unexpected finish reason: #{finish_reason}"
