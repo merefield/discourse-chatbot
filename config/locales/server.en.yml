@@ -21,7 +21,7 @@ en:
     chatbot_open_ai_model_custom_api_type: "Fill in 'azure' if you use Azure OpenAI, otherwise will use Open AI"
     chatbot_open_ai_model: "(UNLESS CUSTOM) The model to be accessed. More on supported models at <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/models/overview'>OpenAI: Model overview</a>"
     chatbot_support_vision: "(EXPERIMENTAL) Bot 'Vision': support sharing of images with bot so you can ask it to describe them.  Images must be uploaded to forum and not hotlinked and in RAG mode bot can only see images in current Post it's responding to.  Requires compatible model to be selected.  'false' switches vision off, 'directly' will share images potentially on every call, 'via_function' will only share images when requested by a function which might turn out to be cheaper if main model is older generation"
-    chatbot_open_ai_vision_model: "(EXPERIMENTAL) Open AI Vision model used when 'via_function' option is selected"
+    chatbot_open_ai_vision_model: "(EXPERIMENTAL) Open AI Vision model used when 'via_function' or 'directly' options are selected.  Use for all interaction if 'directly' is set - caution: this will be expensive!"
     chatbot_reply_job_time_delay: 'Number of seconds before reply job is run. This helps prevent rate limits being hit and discourages spamming.'
     chatbot_include_whispers_in_post_history: "Include content of whispers in Post history bot sees (careful!)"
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
