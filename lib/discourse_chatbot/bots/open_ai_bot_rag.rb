@@ -105,46 +105,24 @@ module ::DiscourseChatbot
         value of messages is: #{messages}
         +++++++++++++++++++++++++++++++
       EOS
-      if use_functions && @tools && !force_search
-        res = @client.chat(
-          parameters: {
-            model: @model_name,
-            messages: messages,
-            tools: @tools,
-            max_tokens: SiteSetting.chatbot_max_response_tokens,
-            temperature: SiteSetting.chatbot_request_temperature / 100.0,
-            top_p: SiteSetting.chatbot_request_top_p / 100.0,
-            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
-          }
-        )
-      elsif use_functions && @tools && force_search
-        res = @client.chat(
-          parameters: {
-            model: @model_name,
-            messages: messages,
-            tools: @tools,
-            max_tokens: SiteSetting.chatbot_max_response_tokens,
-            temperature: SiteSetting.chatbot_request_temperature / 100.0,
-            top_p: SiteSetting.chatbot_request_top_p / 100.0,
-            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
-            tool_choice: {"type": "function", "function": {"name": "local_forum_search"}}
-          }
-        )
-      else
-        res = @client.chat(
-          parameters: {
-            model: @model_name,
-            messages: messages,
-            max_tokens: SiteSetting.chatbot_max_response_tokens,
-            temperature: SiteSetting.chatbot_request_temperature / 100.0,
-            top_p: SiteSetting.chatbot_request_top_p / 100.0,
-            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
-          }
-        )
-      end
+      parameters = {
+        model: @model_name,
+        messages: messages,
+        max_tokens: SiteSetting.chatbot_max_response_tokens,
+        temperature: SiteSetting.chatbot_request_temperature / 100.0,
+        top_p: SiteSetting.chatbot_request_top_p / 100.0,
+        frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+        presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
+      }
+
+      parameters.merge!(tools: @tools) if use_functions && @tools
+
+      parameters.merge!(tool_choice: {"type": "function", "function": {"name": "local_forum_search"}}) if use_functions && @tools && force_search
+
+      res = @client.chat(
+        parameters: parameters
+      )
+
       ::DiscourseChatbot.progress_debug_message <<~EOS
         +++++++++++++++++++++++++++++++++++++++
         The llm responded with
