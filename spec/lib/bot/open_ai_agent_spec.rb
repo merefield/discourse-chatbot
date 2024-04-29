@@ -17,8 +17,8 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     first_query =  get_chatbot_input_fixture("llm_first_query").unshift(system_entry)
     second_query = get_chatbot_input_fixture("llm_second_query").unshift(system_entry)
 
-    described_class.any_instance.expects(:create_chat_completion).with(first_query).returns(llm_function_response)
-    described_class.any_instance.expects(:create_chat_completion).with(second_query).returns(llm_final_response)
+    described_class.any_instance.expects(:create_chat_completion).with(first_query, true, false).returns(llm_function_response)
+    described_class.any_instance.expects(:create_chat_completion).with(second_query, true, false).returns(llm_final_response)
 
     expect(rag.get_response(query, opts)[:reply]).to eq(llm_final_response["choices"][0]["message"]["content"])
   end
