@@ -99,37 +99,46 @@ module ::DiscourseChatbot
     end
 
     def create_chat_completion(messages, use_functions = true, force_search = false)
-      ::DiscourseChatbot.progress_debug_message <<~EOS
-        I called the LLM to help me
-        ------------------------------
-        value of messages is: #{messages}
-        +++++++++++++++++++++++++++++++
-      EOS
-      parameters = {
-        model: @model_name,
-        messages: messages,
-        max_tokens: SiteSetting.chatbot_max_response_tokens,
-        temperature: SiteSetting.chatbot_request_temperature / 100.0,
-        top_p: SiteSetting.chatbot_request_top_p / 100.0,
-        frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-        presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
-      }
+      begin
+        ::DiscourseChatbot.progress_debug_message <<~EOS
+          I called the LLM to help me
+          ------------------------------
+          value of messages is: #{messages}
+          +++++++++++++++++++++++++++++++
+        EOS
+        parameters = {
+          model: @model_name,
+          messages: messages,
+          max_tokens: SiteSetting.chatbot_max_response_tokens,
+          temperature: SiteSetting.chatbot_request_temperature / 100.0,
+          top_p: SiteSetting.chatbot_request_top_p / 100.0,
+          frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+          presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
+        }
 
-      parameters.merge!(tools: @tools) if use_functions && @tools
+        parameters.merge!(tools: @tools) if use_functions && @tools
 
-      parameters.merge!(tool_choice: {"type": "function", "function": {"name": "local_forum_search"}}) if use_functions && @tools && force_search
+        parameters.merge!(tool_choice: {"type": "function", "function": {"name": "local_forum_search"}}) if use_functions && @tools && force_search
 
-      res = @client.chat(
-        parameters: parameters
-      )
+        res = @client.chat(
+          parameters: parameters
+        )
 
-      ::DiscourseChatbot.progress_debug_message <<~EOS
-        +++++++++++++++++++++++++++++++++++++++
-        The llm responded with
-        #{res}
-        +++++++++++++++++++++++++++++++++++++++
-      EOS
-      res
+        ::DiscourseChatbot.progress_debug_message <<~EOS
+          +++++++++++++++++++++++++++++++++++++++
+          The llm responded with
+          #{res}
+          +++++++++++++++++++++++++++++++++++++++
+        EOS
+        res
+      rescue => e
+        if e.respond_to?(:response)
+          status = e.response[:status]
+          message = e.response[:body]["error"]["message"]
+          Rails.logger.error("Chatbot: There was a problem with Chat Completion: status: #{status}, message: #{message}")
+        end
+        raise e
+      end
     end
 
     def generate_response(opts)
