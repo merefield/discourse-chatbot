@@ -275,7 +275,7 @@ module ::DiscourseChatbot
         end
       end
 
-      return true
+      true
     end
   end
 end
