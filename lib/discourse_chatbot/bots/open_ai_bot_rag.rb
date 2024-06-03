@@ -22,6 +22,8 @@ module ::DiscourseChatbot
       prompt.unshift(system_message)
 
       @inner_thoughts = []
+      @posts_ids_found = []
+      @topic_ids_found = []
 
       @chat_history += prompt
 
@@ -165,7 +167,15 @@ module ::DiscourseChatbot
 
         if (['stop','length'].include?(finish_reason) || @inner_thoughts.length > 7) &&
           !(iteration == 1 && SiteSetting.chatbot_forum_search_function_force)
-          return res
+          if SiteSetting.chatbot_url_integrity_check
+            if legal_urls?(res["choices"][0]["message"]["content"], @posts_ids_found, @topic_ids_found)
+              return res
+            else
+              @inner_thoughts << { role: 'user', content: I18n.t("chatbot.prompt.rag.illegal_urls") }
+            end
+          else
+            return res
+          end
         elsif finish_reason == 'tool_calls' || (iteration == 1 && SiteSetting.chatbot_forum_search_function_force)
           handle_function_call(res, opts)
         else
@@ -207,7 +217,14 @@ module ::DiscourseChatbot
         func_name = function_called["function"]["name"]
         args_str = function_called["function"]["arguments"]
         tool_call_id = function_called["id"]
-        result = call_function(func_name, args_str, opts)
+        if func_name == "local_forum_search"
+          result_hash = call_function(func_name, args_str, opts)
+          result, post_ids_found, topic_ids_found = result_hash.values_at(:result, :post_ids_found, :topic_ids_found)
+          @posts_ids_found = (@posts_ids_found.to_set | post_ids_found.to_set).to_a
+          @topic_ids_found = (@topic_ids_found.to_set | topic_ids_found.to_set).to_a
+        else
+          result = call_function(func_name, args_str, opts)
+        end
         @inner_thoughts << { role: 'tool', tool_call_id: tool_call_id, content: result.to_s }
       end
     end
@@ -234,6 +251,35 @@ module ::DiscourseChatbot
        rescue
          I18n.t("chatbot.prompt.rag.call_function.error")
       end
+    end
+
+    def legal_urls?(res, post_ids_found, topic_ids_found)
+
+      post_url_regex = %r{\/t/[^/]+/(\d+)/(\d+)}
+      topic_url_regex = %r{\/t/[^/]+/(\d+)(?!\d|\/)}
+
+      topic_ids_in_text = res.scan(topic_url_regex).flatten
+      post_combos_in_text = res.scan(post_url_regex)
+
+
+      topic_ids_in_text.each do |topic_id_in_text|
+        if !topic_ids_found.include?(topic_id_in_text.to_i)
+          return false
+        end
+      end
+
+      post_combos_in_text.each do |post_combo|
+        topic_id_in_text = post_combo[0]
+        post_number_in_text = post_combo[1]
+
+        post = ::Post.find_by(topic_id: topic_id_in_text.to_i, post_number: post_number_in_text.to_i)
+
+        if post.nil? || !post_ids_found.include?(post.id)
+          return false
+        end
+      end
+
+      true
     end
   end
 end

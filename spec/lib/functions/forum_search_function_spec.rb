@@ -42,7 +42,11 @@ describe ::DiscourseChatbot::ForumSearchFunction do
     expect(topic_1).not_to be_nil
     expect(topic_2).not_to be_nil
     expect(topic_3).not_to be_nil
-    expect(subject.process(args)).to include(post_3.raw)
+    expect(subject.process(args)[:topic_ids_found]).to eq([])
+    expect(subject.process(args)[:post_ids_found]).to include(post_5.id)
+    expect(subject.process(args)[:post_ids_found]).to include(post_3.id)
+    expect(subject.process(args)[:post_ids_found]).not_to include(post_2.id)
+    expect(subject.process(args)[:result]).to include(post_3.raw)
   end
 
   it "returns contents of a high ranking Topic" do
@@ -59,11 +63,12 @@ describe ::DiscourseChatbot::ForumSearchFunction do
     expect(topic_1).not_to be_nil
     expect(topic_2).not_to be_nil
     expect(topic_3).not_to be_nil
-    expect(subject.process(args)).to include(post_1.raw)
-    expect(subject.process(args)).to include(post_2.raw)
-    expect(subject.process(args)).to include(post_3.raw)
-    expect(subject.process(args)).to include(topic_1.title)
-    expect(subject.process(args)).not_to include(topic_3.title)
-    expect(subject.process(args)).not_to include(post_4.raw)
+    expect(subject.process(args)[:topic_ids_found]).to include(topic_1.id)
+    expect(subject.process(args)[:result]).to include(post_1.raw)
+    expect(subject.process(args)[:result]).to include(post_2.raw)
+    expect(subject.process(args)[:result]).to include(post_3.raw)
+    expect(subject.process(args)[:result]).to include(topic_1.title)
+    expect(subject.process(args)[:result]).not_to include(topic_3.title)
+    expect(subject.process(args)[:result]).not_to include(post_4.raw)
   end
 end
