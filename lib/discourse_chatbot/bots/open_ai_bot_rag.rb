@@ -167,10 +167,14 @@ module ::DiscourseChatbot
 
         if (['stop','length'].include?(finish_reason) || @inner_thoughts.length > 7) &&
           !(iteration == 1 && SiteSetting.chatbot_forum_search_function_force)
-          if legal_urls?(res["choices"][0]["message"]["content"], @posts_ids_found, @topic_ids_found)
-            return res
+          if SiteSetting.chatbot_url_integrity_check
+            if legal_urls?(res["choices"][0]["message"]["content"], @posts_ids_found, @topic_ids_found)
+              return res
+            else
+              @inner_thoughts << { role: 'user', content: I18n.t("chatbot.prompt.rag.illegal_urls") }
+            end
           else
-            @inner_thoughts << { role: 'user', content: I18n.t("chatbot.prompt.rag.illegal_urls") }
+            return res
           end
         elsif finish_reason == 'tool_calls' || (iteration == 1 && SiteSetting.chatbot_forum_search_function_force)
           handle_function_call(res, opts)

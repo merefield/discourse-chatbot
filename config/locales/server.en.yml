@@ -68,6 +68,7 @@ en:
     chatbot_forum_search_function_results_topic_max_posts_count: "The maximum number of Posts to be returned in the search results if content_type is 'topics'"
     chatbot_forum_search_function_force: "(EXPERIMENTAL): Force the bot to search the forum for information at the start of every response cycle.  Will likely significantly increase token usage but potentially help with knowledge."
     chatbot_forum_search_function_hybrid_search: "(EXPERIMENTAL): Enable hybrid search mode.  This will cause the bot to search using native keyword search in addition to embedding based semantic search and it will attempt to blend the results"
+    chatbot_url_integrity_check: "(EXPERIMENTAL): Enable URL integrity check.  If the LLM has returned an invalid forum URL, this will be highlighted back to the LLM"
     chatbot_locations_plugin_support: "(EXPERIMENTAL currently user locations only) Natural language querying capability for <a target='_blank' rel='noopener' href='https://github.com/paviliondev/discourse-locations'>Locations Plugin</a> (when using RAG mode, requires Locations Plugin to be installed)"
     chatbot_escalate_to_staff_function: "(EXPERIMENTAL, Chat only) if user requests human assistance or gets irritated, escalate to staff via PM (requires staff group to be populated)"
     chatbot_escalate_to_staff_groups: "(EXPERIMENTAL, Chat only) groups added to escalation PM, e.g. support team"
