@@ -6,6 +6,14 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   let(:rag) { ::DiscourseChatbot::OpenAiBotRag.new(opts) }
   let(:llm_function_response) { get_chatbot_output_fixture("llm_function_response") }
   let(:llm_final_response) { get_chatbot_output_fixture("llm_final_response") }
+  let(:post_ids_found) { [] }
+  let(:topic_ids_found) { [111, 222, 3333] }
+
+  fab!(:topic_1) { Fabricate(:topic, id: 112) }
+  fab!(:post_1) { Fabricate(:post, topic: topic_1, post_number: 2) }
+  let(:post_ids_found_2) { [post_1.id] }
+  let(:res) {"the value is 90 and I found that informaiton in [this topic](https://discourse.example.com/t/slug/112)"}
+  let(:res_2) {"the value is 99 and I found that informaiton in [this post](https://discourse.example.com/t/slug/112/2)"}
 
   it "calls function on returning a function request from LLN" do
     DateTime.expects(:current).returns("2023-08-18T10:11:44+00:00")
@@ -21,5 +29,17 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     described_class.any_instance.expects(:create_chat_completion).with(second_query, true, false).returns(llm_final_response)
 
     expect(rag.get_response(query, opts)[:reply]).to eq(llm_final_response["choices"][0]["message"]["content"])
+  end
+
+  it "returns correct status for a response that includes and illegal topic id" do
+    result = rag.legal_urls?(res, post_ids_found, topic_ids_found)
+
+    expect(result).to eq(false)
+  end
+
+  it "returns correct status for a response that includes a legal post id" do
+    expect(post_1).to be_present
+    result = rag.legal_urls?(res_2, post_ids_found_2, topic_ids_found)
+    expect(result).to eq(true)
   end
 end

@@ -32,6 +32,8 @@ module DiscourseChatbot
         top_topics_from_post_results = []
         top_topics_from_topic_title_results = []
         top_topic_title_results = []
+        post_ids_found = []
+        topic_ids_found = []
         query = args[parameters[0][:name]]
         number_of_posts = args[parameters[1][:name]].blank? ? 3 : args[parameters[1][:name]]
         number_of_posts = number_of_posts > SiteSetting.chatbot_forum_search_function_max_results ? SiteSetting.chatbot_forum_search_function_max_results : number_of_posts
@@ -80,6 +82,7 @@ module DiscourseChatbot
             url = "https://#{Discourse.current_hostname}/t/slug/#{current_topic.id}"
             title = current_topic.title
             response += I18n.t("chatbot.prompt.function.forum_search.answer.topic.each.topic", url: url, title: title, score: score, rank: index + 1)
+            topic_ids_found << topic_id
             post_number = 1
 
             max_post_number = case SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count_strategy
@@ -98,6 +101,7 @@ module DiscourseChatbot
               break if post.nil?
               next if post.deleted_at || !accepted_post_types.include?(post.post_type)
               response += I18n.t("chatbot.prompt.function.forum_search.answer.topic.each.post", post_number: post_number, username: post.user.username, date: post.created_at, raw: post.raw)
+              post_ids_found << post.id
               post_number += 1
             end
           end
@@ -111,12 +115,13 @@ module DiscourseChatbot
             username = User.find(current_post.user_id).username
             date = current_post.created_at.to_date
             response += I18n.t("chatbot.prompt.function.forum_search.answer.post.each", url: url, username: username, date: date, raw: raw, score: score, rank: index + 1)
+            post_ids_found << current_post.id
           end
         end
-        response
+        { result: response, topic_ids_found: topic_ids_found, post_ids_found: post_ids_found }
       rescue StandardError => e
         Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Forum Search results for query '#{query}': #{e.message}")
-        I18n.t("chatbot.prompt.function.forum_search.error", query: args[parameters[0][:name]])
+        { result: I18n.t("chatbot.prompt.function.forum_search.error", query: args[parameters[0][:name]]), topic_ids_found: [], post_ids_found: [] }
       end
     end
   end
