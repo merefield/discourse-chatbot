@@ -43,6 +43,8 @@ class SafeRuby
 
     data = read.read
     begin
+      # The whole point of this library is to run code in a safe way
+      # rubocop:disable Security/MarshalLoad
       Marshal.load(data)
     rescue => e
       if @raise_errors
@@ -54,6 +56,8 @@ class SafeRuby
   end
 
   def self.check(code, expected)
+    # The whole point of this library is to run code in a safe way
+    # rubocop:disable Security/Eval
     eval(code) == eval(expected)
   end
 
