@@ -1,13 +1,4 @@
-# require 'spec_helper'
-
-require 'benchmark'
-
-RSpec.configure do |config|
-  config.run_all_when_everything_filtered = true
-  config.filter_run :focus
-
-  config.order = 'random'
-end
+# frozen_string_literal: true
 
 describe SafeRuby do
   describe '#eval' do
