@@ -57,7 +57,7 @@ module ::DiscourseChatbot
 
       ::DiscourseChatbot.progress_debug_message("humans found in this convo: #{human_participants_count}")
 
-      if bot_user && (user.id > 0) && (mentions_bot_name || explicit_reply_to_bot || (last_post_was_bot && human_participants_count == 1))
+      if bot_user && (user.id > 0) && (mentions_bot_name || explicit_reply_to_bot || human_participants_count == 1)
         opts = {
           type: POST,
           private: topic.archetype == Archetype.private_message,
@@ -69,6 +69,7 @@ module ::DiscourseChatbot
           category_id: category_id,
           over_quota: over_quota(user.id),
           trust_level: trust_level(user.id),
+          human_participants_count: human_participants_count,
           message_body: post_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
         }
       else

@@ -10,6 +10,8 @@ module ::DiscourseChatbot
       @topic_or_channel_id = options[:topic_or_channel_id]
       @message_body = options[:reply]
       @is_private_msg = options[:is_private_msg]
+      @private = options[:private]
+      @human_participants_count = options[:human_participants_count]
       @inner_thoughts = options[:inner_thoughts]
       @trust_level = options[:trust_level]
       @chatbot_bot_type = options[:chatbot_bot_type]
