@@ -27,7 +27,7 @@ module DiscourseChatbot
       begin
         super(args)
 
-        SafeRuby.eval(args[parameters[0][:name]], timeout: 5)
+        ::SafeRuby.eval(args[parameters[0][:name]], timeout: 5)
       rescue
         I18n.t("chatbot.prompt.function.calculator.error", parameter: args[parameters[0][:name]])
       end
