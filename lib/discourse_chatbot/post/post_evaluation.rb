@@ -38,7 +38,7 @@ module ::DiscourseChatbot
       prior_user_was_bot = false
 
       if post.post_number > 1
-        last_other_posting_user_id = ::Post.where(topic_id: topic.id).where.not(user_id: user.id).order(created_at: :desc)
+        last_other_posting_user_id = ::Post.where(topic_id: topic.id).order(created_at: :desc).limit(5).where.not(user_id: user.id).first.user_id
         prior_user_was_bot = last_other_posting_user_id == bot_user.id
 
         explicit_reply_to_bot = post.reply_to_user_id == bot_user.id
