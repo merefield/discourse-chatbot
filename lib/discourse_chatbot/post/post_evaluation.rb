@@ -35,11 +35,11 @@ module ::DiscourseChatbot
       mentions_bot_name = post_contents.downcase =~ /@#{bot_username.downcase}\b/
 
       explicit_reply_to_bot = false
-      last_post_was_bot = false
+      prior_user_was_bot = false
 
       if post.post_number > 1
-        prior_post = ::Post.where(topic_id: topic.id).second_to_last
-        last_post_was_bot = prior_post.user_id == bot_user.id
+        last_other_posting_user_id = ::Post.where(topic_id: topic.id).where.not(user_id: user.id).order(created_at: :desc)
+        prior_user_was_bot = last_other_posting_user_id == bot_user.id
 
         explicit_reply_to_bot = post.reply_to_user_id == bot_user.id
       else
@@ -57,7 +57,7 @@ module ::DiscourseChatbot
 
       ::DiscourseChatbot.progress_debug_message("humans found in this convo: #{human_participants_count}")
 
-      if bot_user && (user.id > 0) && (mentions_bot_name || explicit_reply_to_bot || human_participants_count == 1)
+      if bot_user && (user.id > 0) && (mentions_bot_name || explicit_reply_to_bot ||(prior_user_was_bot && human_participants_count == 1))
         opts = {
           type: POST,
           private: topic.archetype == Archetype.private_message,
