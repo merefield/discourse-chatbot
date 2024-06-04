@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 IO_S_METHODS = %w[
   new
   foreach

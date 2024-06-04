@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class SafeRuby
   MAJOR_VERSION = 1
   MINOR_VERSION = 0

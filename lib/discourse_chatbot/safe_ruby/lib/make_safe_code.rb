@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 MAKE_SAFE_CODE = <<-STRING
 def keep_singleton_methods(klass, singleton_methods)
   klass = Object.const_get(klass)

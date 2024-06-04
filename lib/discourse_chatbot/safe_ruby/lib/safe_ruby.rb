@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'childprocess'
 require_relative 'method_whitelist'
 require_relative 'constant_whitelist'

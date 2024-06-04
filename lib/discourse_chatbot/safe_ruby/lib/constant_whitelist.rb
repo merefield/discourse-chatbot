@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 ALLOWED_CONSTANTS= [
   :Object, :Module, :Class, :BasicObject, :Kernel, :NilClass, :NIL, :Data, :TrueClass, :TRUE, :FalseClass, :FALSE, :Encoding, 
   :Comparable, :Enumerable, :String, :Symbol, :Exception, :SystemExit, :SignalException, :Interrupt, :StandardError, :TypeError,
