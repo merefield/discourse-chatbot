@@ -16,6 +16,16 @@ module ::DiscourseChatbot
           skip_validations: true
         }
 
+        if @is_private_msg && @human_participants_count == 1
+          latest_post_id = ::Topic.find(@topic_or_channel_id).posts.order('created_at DESC').first.id
+
+          if @reply_to != latest_post_id
+            ::DiscourseChatbot.progress_debug_message("7. The Post was discarded as there is a newer human message")
+            # do not create a new response if the message is not the latest
+            return
+          end
+        end
+
         if @chatbot_bot_type == "RAG" && SiteSetting.chatbot_include_inner_thoughts_in_private_messages && @is_private_msg
           default_opts.merge!(raw: '[details="Inner Thoughts"]<br/>' + @inner_thoughts + '<br/>[/details]')
 
