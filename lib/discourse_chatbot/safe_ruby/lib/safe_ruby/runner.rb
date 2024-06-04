@@ -1,7 +1,9 @@
 require 'tempfile'
 
 class EvalError < StandardError
-  def initialize(msg); super; end
+  def initialize(msg) 
+    super 
+  end
 end
 
 class SafeRuby
@@ -44,7 +46,7 @@ class SafeRuby
       if @raise_errors
         raise data
       else
-        return data
+        data
       end
     end
   end
