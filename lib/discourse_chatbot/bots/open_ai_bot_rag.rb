@@ -5,6 +5,10 @@ module ::DiscourseChatbot
 
   class OpenAiBotRag < OpenAIBotBase
 
+    NOT_FORCED = "not_forced"
+    FORCE_A_FUNCTION = "force_a_function"
+    FORCE_LOCAL_SEARCH_FUNCTION = "force_local_forum_search"
+
     def initialize(opts)
       super
       merge_functions(opts)
@@ -100,7 +104,7 @@ module ::DiscourseChatbot
       functions.each_with_object({}) { |func, mapping| mapping[func.name] = func }
     end
 
-    def create_chat_completion(messages, use_functions = true, force_search = false)
+    def create_chat_completion(messages, use_functions = true, iteration)
       begin
         ::DiscourseChatbot.progress_debug_message <<~EOS
           I called the LLM to help me
@@ -118,9 +122,16 @@ module ::DiscourseChatbot
           presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
         }
 
-        parameters.merge!(tools: @tools) if use_functions && @tools
-
-        parameters.merge!(tool_choice: {"type": "function", "function": {"name": "local_forum_search"}}) if use_functions && @tools && force_search
+        if use_functions && @tools
+          parameters.merge!(tools: @tools)
+          if iteration == 1
+            if SiteSetting.chatbot_tool_choice_first_iteration == FORCE_A_FUNCTION
+              parameters.merge!(tool_choice: "required")
+            elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_FUNCTION
+              parameters.merge!(tool_choice: {"type": "function", "function": {"name": "local_forum_search"}})
+            end
+          end
+        end
 
         res = @client.chat(
           parameters: parameters
@@ -155,7 +166,7 @@ module ::DiscourseChatbot
           # Iteration: #{iteration}
           -------------------------------
         EOS
-        res = create_chat_completion(@chat_history + @inner_thoughts, true, iteration == 1 && SiteSetting.chatbot_forum_search_function_force)
+        res = create_chat_completion(@chat_history + @inner_thoughts, true, iteration)
 
         if res.dig("error")
           error_text = "ERROR when trying to perform chat completion: #{res.dig("error", "message")}"
@@ -164,10 +175,12 @@ module ::DiscourseChatbot
         end
 
         finish_reason = res["choices"][0]["finish_reason"]
+        tools_calls = res["choices"][0]["message"]["tool_calls"]
 
-        if (['stop','length'].include?(finish_reason) || @inner_thoughts.length > 7) &&
-          !(iteration == 1 && SiteSetting.chatbot_forum_search_function_force)
-          if SiteSetting.chatbot_url_integrity_check
+        # the tools calls check is a workaround and is required because sending a query with tools: required leads to an apparently incorrect finish reason.
+
+        if (['stop','length'].include?(finish_reason) && tools_calls.nil? || @inner_thoughts.length > 7)
+          if iteration > 1 && SiteSetting.chatbot_url_integrity_check
             if legal_urls?(res["choices"][0]["message"]["content"], @posts_ids_found, @topic_ids_found)
               return res
             else
@@ -176,7 +189,7 @@ module ::DiscourseChatbot
           else
             return res
           end
-        elsif finish_reason == 'tool_calls' || (iteration == 1 && SiteSetting.chatbot_forum_search_function_force)
+        elsif finish_reason == 'tool_calls' || !tools_calls.nil?
           handle_function_call(res, opts)
         else
           raise "Unexpected finish reason: #{finish_reason}"
