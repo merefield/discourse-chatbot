@@ -308,9 +308,14 @@ plugins:
     default: 3
     min: 1
     max: 20
-  chatbot_forum_search_function_force:
+  chatbot_tool_choice_first_iteration:
     client: false
-    default: false
+    type: enum
+    default: not_forced
+    choices:
+      - not_forced
+      - force_a_function
+      - force_local_forum_search
   chatbot_forum_search_function_hybrid_search:
     client: false
     default: false
