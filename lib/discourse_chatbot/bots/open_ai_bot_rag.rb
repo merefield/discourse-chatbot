@@ -267,6 +267,7 @@ module ::DiscourseChatbot
     end
 
     def legal_urls?(res, post_ids_found, topic_ids_found)
+      return true if res.blank?
 
       post_url_regex = %r{\/t/[^/]+/(\d+)/(\d+)}
       topic_url_regex = %r{\/t/[^/]+/(\d+)(?!\d|\/)}
