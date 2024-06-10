@@ -42,4 +42,16 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     result = rag.legal_urls?(res_2, post_ids_found_2, topic_ids_found)
     expect(result).to eq(true)
   end
+
+  it "correctly identifies a legal post id in a url in a response" do
+    expect(described_class.new({}).legal_urls?("hello /t/slug/112/2", [post_1.id], [topic_1.id])).to eq(true)
+  end
+
+  it "correctly skips a full url check if a response is blank" do
+    expect(described_class.new({}).legal_urls?("", [post_1.id], [topic_1.id])).to eq(true)
+  end
+
+  it "correctly identifies an illegal topic id in a url in a response" do
+    expect(described_class.new({}).legal_urls?("hello /t/slug/113/2", [post_1.id], [topic_1.id])).to eq(false)
+  end
 end
