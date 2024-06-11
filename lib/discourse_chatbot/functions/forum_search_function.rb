@@ -155,7 +155,7 @@ module DiscourseChatbot
         topic_ids_found << post.topic_id
       end
 
-      topic_ids_found, post_ids_found
+      [topic_ids_found, post_ids_found]
     end
   end
 end
