@@ -269,12 +269,11 @@ module ::DiscourseChatbot
     def legal_urls?(res, post_ids_found, topic_ids_found)
       return true if res.blank?
 
-      post_url_regex = %r{\/t/[^/]+/(\d+)/(\d+)}
-      topic_url_regex = %r{\/t/[^/]+/(\d+)(?!\d|\/)}
+      post_url_regex = ::DiscourseChatbot::POST_URL_REGEX
+      topic_url_regex = ::DiscourseChatbot::TOPIC_URL_REGEX
 
       topic_ids_in_text = res.scan(topic_url_regex).flatten
       post_combos_in_text = res.scan(post_url_regex)
-
 
       topic_ids_in_text.each do |topic_id_in_text|
         if !topic_ids_found.include?(topic_id_in_text.to_i)

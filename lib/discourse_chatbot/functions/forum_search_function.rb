@@ -101,6 +101,12 @@ module DiscourseChatbot
               break if post.nil?
               next if post.deleted_at || !accepted_post_types.include?(post.post_type)
               response += I18n.t("chatbot.prompt.function.forum_search.answer.topic.each.post", post_number: post_number, username: post.user.username, date: post.created_at, raw: post.raw)
+
+              topic_ids_in_raw_urls_found, post_ids_in_raw_urls_found = find_post_and_topic_ids_from_raw_urls(post.raw)
+
+              topic_ids_found = topic_ids_found | topic_ids_in_raw_urls_found
+              post_ids_found = post_ids_found | post_ids_in_raw_urls_found
+
               post_ids_found << post.id
               post_number += 1
             end
@@ -115,6 +121,12 @@ module DiscourseChatbot
             username = User.find(current_post.user_id).username
             date = current_post.created_at.to_date
             response += I18n.t("chatbot.prompt.function.forum_search.answer.post.each", url: url, username: username, date: date, raw: raw, score: score, rank: index + 1)
+
+            topic_ids_in_raw_urls_found, post_ids_in_raw_urls_found = find_post_and_topic_ids_from_raw_urls(raw)
+
+            topic_ids_found = topic_ids_found | topic_ids_in_raw_urls_found
+            post_ids_found = post_ids_found | post_ids_in_raw_urls_found
+
             post_ids_found << current_post.id
           end
         end
@@ -123,6 +135,27 @@ module DiscourseChatbot
         Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Forum Search results for query '#{query}': #{e.message}")
         { result: I18n.t("chatbot.prompt.function.forum_search.error", query: args[parameters[0][:name]]), topic_ids_found: [], post_ids_found: [] }
       end
+    end
+
+    def find_post_and_topic_ids_from_raw_urls(raw)
+      post_ids_found = []
+
+      topic_ids_in_raw_topic_links = raw.scan(::DiscourseChatbot::TOPIC_URL_REGEX).flatten
+      topic_ids_found = topic_ids_in_raw_topic_links.map(&:to_i)
+
+      post_combos_in_raw_post_links = raw.scan(::DiscourseChatbot::POST_URL_REGEX)
+
+      post_combos_in_raw_post_links.each do |post_combo|
+        topic_id_in_text = post_combo[0]
+        post_number_in_text = post_combo[1]
+
+        post = ::Post.find_by(topic_id: topic_id_in_text.to_i, post_number: post_number_in_text.to_i)
+
+        post_ids_found << post.id
+        topic_ids_found << post.topic_id
+      end
+
+      [topic_ids_found, post_ids_found]
     end
   end
 end

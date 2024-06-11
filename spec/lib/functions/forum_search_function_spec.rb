@@ -8,7 +8,7 @@ describe ::DiscourseChatbot::ForumSearchFunction do
   let(:post_3) { Fabricate(:post, topic: topic_1,  raw: "on the plain", post_number: 3) }
   let(:post_4) { Fabricate(:post, topic: topic_1,  raw: "or so they say!", post_number: 4) }
   let(:topic_2) { Fabricate(:topic, title: "weather in northern Europe") }
-  let(:post_5) { Fabricate(:post, topic: topic_2, raw: "rains everywhere", post_number: 1) }
+  let(:post_5) { Fabricate(:post, topic: topic_2, raw: "rains everywhere https://example.com/t/slug/#{post_2.topic_id}/#{post_2.post_number} ", post_number: 1) }
   let(:topic_3) { Fabricate(:topic, title: "nothing to do with the weather")}
   let(:post_6) { Fabricate(:post, topic: topic_3, raw: "cars go fast", post_number: 1) }
 
@@ -42,10 +42,11 @@ describe ::DiscourseChatbot::ForumSearchFunction do
     expect(topic_1).not_to be_nil
     expect(topic_2).not_to be_nil
     expect(topic_3).not_to be_nil
-    expect(subject.process(args)[:topic_ids_found]).to eq([])
+    expect(subject.process(args)[:topic_ids_found]).to eq([post_2.topic_id])
     expect(subject.process(args)[:post_ids_found]).to include(post_5.id)
     expect(subject.process(args)[:post_ids_found]).to include(post_3.id)
-    expect(subject.process(args)[:post_ids_found]).not_to include(post_2.id)
+    expect(subject.process(args)[:post_ids_found]).to include(post_2.id)
+    expect(subject.process(args)[:post_ids_found]).not_to include(post_4.id)
     expect(subject.process(args)[:result]).to include(post_3.raw)
   end
 
@@ -70,5 +71,9 @@ describe ::DiscourseChatbot::ForumSearchFunction do
     expect(subject.process(args)[:result]).to include(topic_1.title)
     expect(subject.process(args)[:result]).not_to include(topic_3.title)
     expect(subject.process(args)[:result]).not_to include(post_4.raw)
+  end
+
+  it "finds urls with a post id" do
+    expect(subject.find_post_and_topic_ids_from_raw_urls(post_5.raw)).to eq([[post_2.topic_id], [post_2.id]])
   end
 end
