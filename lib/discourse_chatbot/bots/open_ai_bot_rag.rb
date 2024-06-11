@@ -184,7 +184,7 @@ module ::DiscourseChatbot
             if legal_urls?(res["choices"][0]["message"]["content"], @posts_ids_found, @topic_ids_found)
               return res
             else
-              @inner_thoughts << { role: 'user', content: I18n.t("chatbot.prompt.rag.illegal_urls") }
+              @inner_thoughts << { role: 'user', content: I18n.t("chatbot.prompt.system.rag.illegal_urls") }
             end
           else
             return res
