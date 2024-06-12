@@ -151,8 +151,10 @@ module DiscourseChatbot
 
         post = ::Post.find_by(topic_id: topic_id_in_text.to_i, post_number: post_number_in_text.to_i)
 
-        post_ids_found << post.id
-        topic_ids_found << post.topic_id
+        if !post.nil?
+          post_ids_found << post.id
+          topic_ids_found << post.topic_id
+        end
       end
 
       [topic_ids_found, post_ids_found]
