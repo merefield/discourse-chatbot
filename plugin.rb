@@ -40,7 +40,7 @@ module ::DiscourseChatbot
   def progress_debug_message(message)
     puts "Chatbot: #{message}" if SiteSetting.chatbot_enable_verbose_console_logging
     if SiteSetting.chatbot_enable_verbose_rails_logging == "all"
-      case SiteSetting.chatbot_verbose_rails_logging_destination
+      case SiteSetting.chatbot_verbose_rails_logging_destination_level
         when "warn"
           Rails.logger.warn("Chatbot: #{message}")
         else
