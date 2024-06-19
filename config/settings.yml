@@ -5,6 +5,9 @@ plugins:
   chatbot_permitted_in_private_messages:
     default: true
     client: true
+  chatbot_private_message_auto_title:
+    client: false
+    default: true
   chatbot_permitted_in_chat:
     default: true
     client: true

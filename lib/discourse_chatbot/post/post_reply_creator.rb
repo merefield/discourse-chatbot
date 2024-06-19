@@ -37,6 +37,35 @@ module ::DiscourseChatbot
 
         new_post = PostCreator.create!(@author, default_opts)
 
+        if @is_private_msg && SiteSetting.chatbot_private_message_auto_title && new_post.topic.posts_count < 10
+          prior_messages = PostPromptUtils.create_prompt(@options)
+
+          client = OpenAI::Client.new
+
+          model_name =
+            case @options[:trust_level]
+            when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
+              SiteSetting.send("chatbot_open_ai_model_custom_" + @options[:trust_level] + "_trust") ? 
+                SiteSetting.send("chatbot_open_ai_model_custom_name_" + @options[:trust_level] + "_trust") :
+                SiteSetting.send("chatbot_open_ai_model_" + @options[:trust_level] + "_trust")
+            else
+              SiteSetting.chatbot_open_ai_model_custom_low_trust ? SiteSetting.chatbot_open_ai_model_custom_name_low_trust : SiteSetting.chatbot_open_ai_model_low_trust
+            end
+
+          res = client.chat(
+            parameters: {
+              model: model_name,
+              messages: prior_messages << { role: "user", content: I18n.t("chatbot.prompt.private_message.title_creation") }
+            }
+          )
+
+          if !res["error"].present?
+            topic = ::Topic.find(@topic_or_channel_id)
+            topic.title = res["choices"][0]["message"]["content"]
+            topic.save!
+          end
+        end
+
         is_private_msg = new_post.topic.private_message?
 
         begin
