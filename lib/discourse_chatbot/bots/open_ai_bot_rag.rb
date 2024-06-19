@@ -47,6 +47,7 @@ module ::DiscourseChatbot
       google_search_function = ::DiscourseChatbot::GoogleSearchFunction.new
       stock_data_function = ::DiscourseChatbot::StockDataFunction.new
       escalate_to_staff_function = ::DiscourseChatbot::EscalateToStaffFunction.new
+      paint_function = ::DiscourseChatbot::PaintFunction.new
       forum_search_function = nil
       user_search_from_user_location_function = nil
       user_search_from_location_function = nil
@@ -77,6 +78,7 @@ module ::DiscourseChatbot
 
       functions << forum_search_function if forum_search_function
       functions << vision_function if vision_function
+      functions << paint_function if SiteSetting.chatbot_support_picture_creation
 
       functions << user_search_from_location_function if user_search_from_location_function
       functions << user_search_from_user_location_function if user_search_from_user_location_function
@@ -196,6 +198,18 @@ module ::DiscourseChatbot
         else
           raise "Unexpected finish reason: #{finish_reason}"
         end
+
+        # If the response is an image, we don't want to continue the loop of thought
+        return {
+          "choices" => [
+              {
+                "message" => {
+                  "content" => "#{@inner_thoughts.last[:content]}"
+                }
+              }
+            ]
+        } if image_url?(@inner_thoughts.last[:content])
+
         iteration += 1
       end
     end
@@ -295,6 +309,19 @@ module ::DiscourseChatbot
       end
 
       true
+    end
+
+    private
+
+    def image_url?(url)
+      image_extensions = %w[.jpg .jpeg .png .gif .bmp .tiff .webp]
+
+      uri = URI.parse(url)
+      path = uri.path
+
+      # Check the file extension
+      return true if image_extensions.any? { |ext| path.downcase.end_with?(ext) }
+      false
     end
   end
 end
