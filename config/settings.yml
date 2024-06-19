@@ -216,6 +216,9 @@ plugins:
   chatbot_open_ai_vision_model:
     client: false
     default: gpt-4o
+  chatbot_support_picture_creation:
+    client: false
+    default: false
   chatbot_reply_job_time_delay:
     client: false
     default: 1
