@@ -29,7 +29,14 @@ module ::DiscourseChatbot
 
       @client = OpenAI::Client.new do |f|
         f.response :logger, Logger.new($stdout), bodies: true if SiteSetting.chatbot_enable_verbose_console_logging
-        f.response :logger, Rails.logger, bodies: true if SiteSetting.chatbot_enable_verbose_rails_logging
+        if SiteSetting.chatbot_enable_verbose_rails_logging != "off"
+          case SiteSetting.chatbot_verbose_rails_logging_destination_level
+            when "warn"
+              f.response :logger, Rails.logger, bodies: true, log_level: :warn
+            else
+              f.response :logger, Rails.logger, bodies: true, log_level: :info
+          end
+        end
       end
 
       @model_name =
