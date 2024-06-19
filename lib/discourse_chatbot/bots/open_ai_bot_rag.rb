@@ -111,7 +111,7 @@ module ::DiscourseChatbot
         ::DiscourseChatbot.progress_debug_message <<~EOS
           I called the LLM to help me
           ------------------------------
-          value of messages is: #{messages}
+          value of messages is: #{JSON.pretty_generate(messages)}
           +++++++++++++++++++++++++++++++
         EOS
         parameters = {
@@ -142,7 +142,7 @@ module ::DiscourseChatbot
         ::DiscourseChatbot.progress_debug_message <<~EOS
           +++++++++++++++++++++++++++++++++++++++
           The llm responded with
-          #{res}
+          #{JSON.pretty_generate(res)}
           +++++++++++++++++++++++++++++++++++++++
         EOS
         res
@@ -248,8 +248,8 @@ module ::DiscourseChatbot
       ::DiscourseChatbot.progress_debug_message <<~EOS
         +++++++++++++++++++++++++++++++++++++++
         I used '#{func_name}' to help me
-        args_str was '#{args_str}'
-        opts was '#{opts}'
+        args_str was '#{JSON.pretty_generate(JSON.parse(args_str))}'
+        opts was '#{JSON.pretty_generate(opts)}'
         +++++++++++++++++++++++++++++++++++++++
       EOS
       begin
