@@ -313,7 +313,16 @@ module ::DiscourseChatbot
 
     private
 
-    def image_url?(url)
+    def image_url?(string)
+      # Regular expression to find URLs
+      url_regex = /\bhttps?:\/\/[^\s]+/
+
+      # Check if the string contains more than one URL or other text
+      urls = string.scan(url_regex)
+      return false unless urls.length == 1 && string.strip == urls[0]
+
+      # Proceed with the existing logic if only one URL is found
+      url = urls[0]
       image_extensions = %w[.jpg .jpeg .png .gif .bmp .tiff .webp]
 
       uri = URI.parse(url)
