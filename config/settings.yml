@@ -352,4 +352,16 @@ plugins:
     default: false
   chatbot_enable_verbose_rails_logging:
     client: false
-    default: false
+    type: enum
+    default: 'off'
+    choices:
+      - 'off'
+      - 'api_calls_only'
+      - 'all'
+  chatbot_verbose_rails_logging_destination_level:
+    client: false
+    type: enum
+    default: 'info'
+    choices:
+      - 'info'
+      - 'warn'

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.9.31
+# version: 0.9.32
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -39,7 +39,14 @@ module ::DiscourseChatbot
 
   def progress_debug_message(message)
     puts "Chatbot: #{message}" if SiteSetting.chatbot_enable_verbose_console_logging
-    Rails.logger.info("Chatbot: #{message}") if SiteSetting.chatbot_enable_verbose_rails_logging
+    if SiteSetting.chatbot_enable_verbose_rails_logging == "all"
+      case SiteSetting.chatbot_verbose_rails_logging_destination
+        when "warn"
+          Rails.logger.warn("Chatbot: #{message}")
+        else
+          Rails.logger.info("Chatbot: #{message}")
+      end
+    end
   end
 
   module_function :progress_debug_message
