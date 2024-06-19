@@ -248,7 +248,7 @@ module ::DiscourseChatbot
       ::DiscourseChatbot.progress_debug_message <<~EOS
         +++++++++++++++++++++++++++++++++++++++
         I used '#{func_name}' to help me
-        args_str was '#{JSON.pretty_generate(args_str)}'
+        args_str was '#{JSON.pretty_generate(JSON.parse(args_str))}'
         opts was '#{JSON.pretty_generate(opts)}'
         +++++++++++++++++++++++++++++++++++++++
       EOS
