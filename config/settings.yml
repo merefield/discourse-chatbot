@@ -341,6 +341,9 @@ plugins:
   chatbot_news_api_token:
     client: false
     default: ''
+  chatbot_firecrawl_api_token:
+    client: false
+    default: ''
   chatbot_serp_api_key:
     client: false
     default: ''

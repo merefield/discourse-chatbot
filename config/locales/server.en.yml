@@ -74,6 +74,7 @@ en:
     chatbot_escalate_to_staff_groups: "(EXPERIMENTAL, Chat only) groups added to escalation PM, e.g. support team"
     chatbot_escalate_to_staff_max_history: "(EXPERIMENTAL, Chat only) number of chat messages included in transcript added to escalation PM"
     chatbot_news_api_token: "News API token for news (if left blank, news will never be searched)<a target='_blank' rel='noopener' href='https://newsapi.org/'>Get one at NewsAPI.org</a>"
+    chatbot_firecrawl_api_token: "Firecrawl API token for crawling remote websites.  If left blank, crawling will not be available. <a target='_blank' rel='noopener' href='https://www.firecrawl.dev/'>Get one at https://www.firecrawl.dev/</a>"
     chatbot_serp_api_key: "Serp API token for google search (if left blank, google will never be searched). <a target='_blank' rel='noopener' href='https://serpapi.com/'>Get one at SerpAPI.com</a>"
     chatbot_marketstack_key: "Marketstack API key for stock price information (if left blank, Marketstack will never be queried).<a target='_blank' rel='noopener' href='https://marketstack.com/'>Get one at MarketStack.com</a>"
     chatbot_enable_verbose_console_logging: "Enable response retrieval progress logging to console to help debug issues"
@@ -304,6 +305,16 @@ en:
             start_date: "start date from which to search for news in format YYYY-MM-DD"
           answer: "The latest news about this is: "
           error: "ERROR: Had trouble retrieving the news!"
+        web_crawler:
+          description: |
+            A wrapper around the Firecrawl web crawler API.
+
+            Useful for when you need to get the content of a remote webpage for e.g. summarisation or fact retreival.
+
+            Input should be the url of the target website.
+          parameters:
+            url: "the url of the target website."
+          error: "ERROR: Had trouble crawling the target website!"
         stock_data:
           description: |
             An API for MarketStack stock data.  You need to call it using the stock ticker.  You can optionally also provide a specific date.
