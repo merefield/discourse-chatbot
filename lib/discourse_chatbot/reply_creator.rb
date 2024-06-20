@@ -17,7 +17,7 @@ module ::DiscourseChatbot
       @trust_level = options[:trust_level]
       @chatbot_bot_type = options[:chatbot_bot_type]
       if @message_body.blank?
-        @message_body = '...'
+        @message_body = I18n.t('chatbot.errors.retries')
       end
     end
 
