@@ -3,6 +3,7 @@ module ::DiscourseChatbot
   class ReplyCreator
 
     def initialize(options = {})
+      @options = options
       @author = ::User.find_by(id: options[:bot_user_id])
       @guardian = Guardian.new(@author)
       @reply_to = options[:reply_to_message_or_post_id]

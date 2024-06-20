@@ -28,6 +28,7 @@ en:
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
     chatbot_strip_quotes: "Determine if quotes are stripped and not sent within prompts (doesn't affect OP)"
     chatbot_permitted_in_private_messages: "Allow Chatbot to interact in Private Messages"
+    chatbot_private_message_auto_title: "Automatically create a Topic title from the prior messages in a Private Message"
     chatbot_include_inner_thoughts_in_private_messages: "(FUNCTION DEBUG) Get Chatbot to post its background thinking on Private Messages (RAG only)"
     chatbot_permitted_in_chat: "Allow Chatbot to interact in Chat"
     chatbot_can_trigger_from_whisper: "Allow Chatbot to be triggered from a whisper (get creative!)"
@@ -102,6 +103,8 @@ en:
       title: "The subject of this conversation is %{topic_title}"
       first_post: "The first thing someone said was %{username} who said %{raw}"
       post: "%{username} said %{raw}"
+      private_message:
+        title_creation: "Create a short Topic title from summarising the prior messages"
       function:
         calculator:
           description: |
