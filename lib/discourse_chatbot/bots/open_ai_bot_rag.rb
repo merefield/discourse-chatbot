@@ -28,6 +28,7 @@ module ::DiscourseChatbot
       @inner_thoughts = []
       @posts_ids_found = []
       @topic_ids_found = []
+      @non_post_urls_found = []
 
       @chat_history += prompt
 
@@ -314,10 +315,11 @@ module ::DiscourseChatbot
 
     def legal_non_post_urls?(res, non_post_urls_found)
       return true if res.blank?
-
       non_post_url_regex = ::DiscourseChatbot::NON_POST_URL_REGEX
 
       urls_in_text = res.scan(non_post_url_regex)
+
+      urls_in_text.reject { |url| url.include?('/t/') }
 
       urls_in_text.each do |url|
         if !non_post_urls_found.include?(url)
