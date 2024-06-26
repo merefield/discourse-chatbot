@@ -56,10 +56,10 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   end
 
   it "correctly identifies an illegal non-post url in a response" do
-    expect(described_class.new({}).legal_non_post_urls?("hello /t/slug/113/2 try looking at https://notanexample.com it's great", ["https://example.com", "https://otherexample.com"])).to eq(false)
+    expect(described_class.new({}).legal_non_post_urls?("hello https://someplace.com/t/slug/113/2 try looking at https://notanexample.com it's great", ["https://example.com", "https://otherexample.com"])).to eq(false)
   end
 
   it "correctly identifies a legal non-post url in a response" do
-    expect(described_class.new({}).legal_non_post_urls?("hello /t/slug/113/2 try looking at https://example.com it's great", ["https://example.com", "https://otherexample.com"])).to eq(true)
+    expect(described_class.new({}).legal_non_post_urls?("hello https://someplace.com/t/slug/113/2 try looking at https://example.com it's great", ["https://example.com", "https://otherexample.com"])).to eq(true)
   end
 end

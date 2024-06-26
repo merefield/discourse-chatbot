@@ -319,7 +319,7 @@ module ::DiscourseChatbot
 
       urls_in_text = res.scan(non_post_url_regex)
 
-      urls_in_text.reject { |url| url.include?('/t/') }
+      urls_in_text = urls_in_text.reject { |url| url.include?('/t/') }
 
       urls_in_text.each do |url|
         if !non_post_urls_found.include?(url)
