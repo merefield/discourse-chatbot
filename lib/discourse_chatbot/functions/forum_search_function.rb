@@ -34,6 +34,7 @@ module DiscourseChatbot
         top_topic_title_results = []
         post_ids_found = []
         topic_ids_found = []
+        non_post_urls_found = []
         query = args[parameters[0][:name]]
         number_of_posts = args[parameters[1][:name]].blank? ? 3 : args[parameters[1][:name]]
         number_of_posts = number_of_posts > SiteSetting.chatbot_forum_search_function_max_results ? SiteSetting.chatbot_forum_search_function_max_results : number_of_posts
@@ -103,11 +104,13 @@ module DiscourseChatbot
               response += I18n.t("chatbot.prompt.function.forum_search.answer.topic.each.post", post_number: post_number, username: post.user.username, date: post.created_at, raw: post.raw)
 
               topic_ids_in_raw_urls_found, post_ids_in_raw_urls_found = find_post_and_topic_ids_from_raw_urls(post.raw)
+              non_post_urls_found = non_post_urls_found | find_other_urls(post.raw)
 
               topic_ids_found = topic_ids_found | topic_ids_in_raw_urls_found
               post_ids_found = post_ids_found | post_ids_in_raw_urls_found
 
               post_ids_found << post.id
+              topic_ids_found << post.topic_id
               post_number += 1
             end
           end
@@ -115,6 +118,7 @@ module DiscourseChatbot
           response = I18n.t("chatbot.prompt.function.forum_search.answer.post.summary", number_of_posts: number_of_posts)
           top_results.each_with_index do |result, index|
             current_post = ::Post.find(result[:post_id].to_i)
+
             score = result[:score]
             url = "https://#{Discourse.current_hostname}/t/slug/#{current_post.topic_id}/#{current_post.post_number}"
             raw = current_post.raw
@@ -127,10 +131,13 @@ module DiscourseChatbot
             topic_ids_found = topic_ids_found | topic_ids_in_raw_urls_found
             post_ids_found = post_ids_found | post_ids_in_raw_urls_found
 
-            post_ids_found << current_post.id
+            non_post_urls_found = non_post_urls_found | find_other_urls(raw)
+
+            post_ids_found = post_ids_found | [current_post.id]
+            topic_ids_found = topic_ids_found | [current_post.topic_id]
           end
         end
-        { result: response, topic_ids_found: topic_ids_found, post_ids_found: post_ids_found }
+        { result: response, topic_ids_found: topic_ids_found, post_ids_found: post_ids_found, non_post_urls_found: non_post_urls_found}
       rescue StandardError => e
         Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Forum Search results for query '#{query}': #{e.message}")
         { result: I18n.t("chatbot.prompt.function.forum_search.error", query: args[parameters[0][:name]]), topic_ids_found: [], post_ids_found: [] }
@@ -158,6 +165,12 @@ module DiscourseChatbot
       end
 
       [topic_ids_found, post_ids_found]
+    end
+
+    def find_other_urls(raw)
+      urls = raw.scan(::DiscourseChatbot::NON_POST_URL_REGEX)
+
+      urls.reject { |url| url.include?('/t/') }
     end
   end
 end
