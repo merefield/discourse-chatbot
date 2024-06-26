@@ -28,6 +28,7 @@ module ::DiscourseChatbot
       @inner_thoughts = []
       @posts_ids_found = []
       @topic_ids_found = []
+      @non_post_urls_found = []
 
       @chat_history += prompt
 
@@ -185,7 +186,7 @@ module ::DiscourseChatbot
 
         if (['stop','length'].include?(finish_reason) && tools_calls.nil? || @inner_thoughts.length > 7)
           if iteration > 1 && SiteSetting.chatbot_url_integrity_check
-            if legal_urls?(res["choices"][0]["message"]["content"], @posts_ids_found, @topic_ids_found)
+            if legal_post_urls?(res["choices"][0]["message"]["content"], @posts_ids_found, @topic_ids_found) && legal_non_post_urls?(res["choices"][0]["message"]["content"], @non_post_urls_found)
               return res
             else
               @inner_thoughts << { role: 'user', content: I18n.t("chatbot.prompt.system.rag.illegal_urls") }
@@ -248,9 +249,10 @@ module ::DiscourseChatbot
         tool_call_id = function_called["id"]
         if func_name == "local_forum_search"
           result_hash = call_function(func_name, args_str, opts)
-          result, post_ids_found, topic_ids_found = result_hash.values_at(:result, :post_ids_found, :topic_ids_found)
+          result, post_ids_found, topic_ids_found, non_post_urls_found = result_hash.values_at(:result, :post_ids_found, :topic_ids_found, :non_post_urls_found)
           @posts_ids_found = (@posts_ids_found.to_set | post_ids_found.to_set).to_a
           @topic_ids_found = (@topic_ids_found.to_set | topic_ids_found.to_set).to_a
+          @non_post_urls_found = (@non_post_urls_found.to_set | non_post_urls_found.to_set).to_a
         else
           result = call_function(func_name, args_str, opts)
         end
@@ -282,7 +284,7 @@ module ::DiscourseChatbot
       end
     end
 
-    def legal_urls?(res, post_ids_found, topic_ids_found)
+    def legal_post_urls?(res, post_ids_found, topic_ids_found)
       return true if res.blank?
 
       post_url_regex = ::DiscourseChatbot::POST_URL_REGEX
@@ -308,6 +310,22 @@ module ::DiscourseChatbot
         end
       end
 
+      true
+    end
+
+    def legal_non_post_urls?(res, non_post_urls_found)
+      return true if res.blank?
+      non_post_url_regex = ::DiscourseChatbot::NON_POST_URL_REGEX
+
+      urls_in_text = res.scan(non_post_url_regex)
+
+      urls_in_text = urls_in_text.reject { |url| url.include?('/t/') }
+
+      urls_in_text.each do |url|
+        if !non_post_urls_found.include?(url)
+          return false
+        end
+      end
       true
     end
 

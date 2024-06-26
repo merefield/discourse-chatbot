@@ -42,7 +42,7 @@ describe ::DiscourseChatbot::ForumSearchFunction do
     expect(topic_1).not_to be_nil
     expect(topic_2).not_to be_nil
     expect(topic_3).not_to be_nil
-    expect(subject.process(args)[:topic_ids_found]).to eq([post_2.topic_id])
+    expect(subject.process(args)[:topic_ids_found]).to eq([post_3.topic_id, post_5.topic_id])
     expect(subject.process(args)[:post_ids_found]).to include(post_5.id)
     expect(subject.process(args)[:post_ids_found]).to include(post_3.id)
     expect(subject.process(args)[:post_ids_found]).to include(post_2.id)
@@ -75,5 +75,20 @@ describe ::DiscourseChatbot::ForumSearchFunction do
 
   it "finds urls with a post id" do
     expect(subject.find_post_and_topic_ids_from_raw_urls(post_5.raw)).to eq([[post_2.topic_id], [post_2.id]])
+  end
+
+  it "method finds urls that are not posts" do
+    text = <<~TEXT
+      Check out these links:
+      this one is good https://meta.discourse.org/t/user-specific-slow-mode/310081/1
+        wow https://example.com yeah
+      https://meta.discourse.org/t/another-topic/310082
+      http://another-example.org/path?query=string  this is a good one
+      my my https://meta.discourse.org/t/yet-another-topic/310083/2
+      (https://www.sample.org/sample-path)
+    TEXT
+    result = subject.find_other_urls(text)
+    expect(result.length).to eq(3)
+    expect(result).to eq(["https://example.com", "http://another-example.org/path?query=string", "https://www.sample.org/sample-path"])
   end
 end

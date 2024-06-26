@@ -32,26 +32,34 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   end
 
   it "returns correct status for a response that includes and illegal topic id" do
-    result = rag.legal_urls?(res, post_ids_found, topic_ids_found)
+    result = rag.legal_post_urls?(res, post_ids_found, topic_ids_found)
 
     expect(result).to eq(false)
   end
 
   it "returns correct status for a response that includes a legal post id" do
     expect(post_1).to be_present
-    result = rag.legal_urls?(res_2, post_ids_found_2, topic_ids_found)
+    result = rag.legal_post_urls?(res_2, post_ids_found_2, topic_ids_found)
     expect(result).to eq(true)
   end
 
   it "correctly identifies a legal post id in a url in a response" do
-    expect(described_class.new({}).legal_urls?("hello /t/slug/112/2", [post_1.id], [topic_1.id])).to eq(true)
+    expect(described_class.new({}).legal_post_urls?("hello /t/slug/112/2", [post_1.id], [topic_1.id])).to eq(true)
   end
 
   it "correctly skips a full url check if a response is blank" do
-    expect(described_class.new({}).legal_urls?("", [post_1.id], [topic_1.id])).to eq(true)
+    expect(described_class.new({}).legal_post_urls?("", [post_1.id], [topic_1.id])).to eq(true)
   end
 
   it "correctly identifies an illegal topic id in a url in a response" do
-    expect(described_class.new({}).legal_urls?("hello /t/slug/113/2", [post_1.id], [topic_1.id])).to eq(false)
+    expect(described_class.new({}).legal_post_urls?("hello /t/slug/113/2", [post_1.id], [topic_1.id])).to eq(false)
+  end
+
+  it "correctly identifies an illegal non-post url in a response" do
+    expect(described_class.new({}).legal_non_post_urls?("hello https://someplace.com/t/slug/113/2 try looking at https://notanexample.com it's great", ["https://example.com", "https://otherexample.com"])).to eq(false)
+  end
+
+  it "correctly identifies a legal non-post url in a response" do
+    expect(described_class.new({}).legal_non_post_urls?("hello https://someplace.com/t/slug/113/2 try looking at https://example.com it's great", ["https://example.com", "https://otherexample.com"])).to eq(true)
   end
 end
