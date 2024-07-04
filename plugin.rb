@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 0.9.38
+# version: 0.9.39
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -166,7 +166,7 @@ after_initialize do
     if SiteSetting.chatbot_enabled
       if post.post_type == 1
         job_class = ::Jobs::ChatbotPostEmbedding
-        job_class.perform_async(post.as_json)
+        job_class.perform_async({id: post.id}.stringify_keys)
       end
 
       if (post.post_type == 1 || post.post_type == 4 && SiteSetting.chatbot_can_trigger_from_whisper)
@@ -188,7 +188,7 @@ after_initialize do
 
     if SiteSetting.chatbot_enabled
       job_class = ::Jobs::ChatbotTopicTitleEmbeddingDelete
-      job_class.perform_async(topic.as_json)
+      job_class.perform_async({id: topic.id}.stringify_keys)
     end
   end
 
@@ -197,7 +197,7 @@ after_initialize do
 
     if SiteSetting.chatbot_enabled
       job_class = ::Jobs::ChatbotTopicTitleEmbedding
-      job_class.perform_async(topic.as_json)
+      job_class.perform_async({id: topic.id}.stringify_keys)
     end
   end
 
@@ -206,7 +206,7 @@ after_initialize do
 
     if SiteSetting.chatbot_enabled
       job_class = ::Jobs::ChatbotTopicTitleEmbedding
-      job_class.perform_async(topic.as_json)
+      job_class.perform_async({id: topic.id}.stringify_keys)
     end
   end
 
@@ -215,11 +215,11 @@ after_initialize do
 
     if SiteSetting.chatbot_enabled && post.post_type == 1
       job_class = ::Jobs::ChatbotPostEmbedding
-      job_class.perform_async(post.as_json)
+      job_class.perform_async({id: post.id}.stringify_keys)
 
       if post.is_first_post? && topic_changed
         job_class = ::Jobs::ChatbotTopicTitleEmbedding
-        job_class.perform_async(post.topic.as_json)
+        job_class.perform_async({id: post.topic.id}.stringify_keys)
       end
     end
   end
@@ -229,7 +229,7 @@ after_initialize do
 
     if SiteSetting.chatbot_enabled && post.post_type == 1
       job_class = ::Jobs::ChatbotPostEmbedding
-      job_class.perform_async(post.as_json)
+      job_class.perform_async({id: post.id}.stringify_keys)
     end
   end
 
@@ -238,7 +238,7 @@ after_initialize do
 
     if SiteSetting.chatbot_enabled && post.post_type == 1
       job_class = ::Jobs::ChatbotPostEmbeddingDelete
-      job_class.perform_async(post.as_json)
+      job_class.perform_async({id: post.id}.stringify_keys)
     end
   end
 
