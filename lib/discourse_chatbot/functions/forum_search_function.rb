@@ -100,7 +100,10 @@ module DiscourseChatbot
             while post_number <= max_post_number do
               post = ::Post.find_by(topic_id: topic_id, post_number: post_number )
               break if post.nil?
-              next if post.deleted_at || !accepted_post_types.include?(post.post_type)
+              if post.deleted_at || !accepted_post_types.include?(post.post_type)
+                post_number += 1
+                next
+              end
               response += I18n.t("chatbot.prompt.function.forum_search.answer.topic.each.post", post_number: post_number, username: post.user.username, date: post.created_at, raw: post.raw)
 
               topic_ids_in_raw_urls_found, post_ids_in_raw_urls_found = find_post_and_topic_ids_from_raw_urls(post.raw)
