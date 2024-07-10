@@ -160,6 +160,12 @@ plugins:
   chatbot_include_inner_thoughts_in_private_messages:
     default: false
     client: false
+  chatbot_include_inner_thoughts_in_topics:
+    default: false
+    client: false
+  chatbot_include_inner_thoughts_in_topics_as_whisper:
+    default: true
+    client: false
   chatbot_can_trigger_from_whisper:
     default: false
     client: false

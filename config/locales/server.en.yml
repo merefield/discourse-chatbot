@@ -30,6 +30,8 @@ en:
     chatbot_permitted_in_private_messages: "Allow Chatbot to interact in Private Messages"
     chatbot_private_message_auto_title: "Automatically create a Topic title from the prior messages in a Private Message"
     chatbot_include_inner_thoughts_in_private_messages: "(FUNCTION DEBUG) Get Chatbot to post its background thinking on Private Messages (RAG only)"
+    chatbot_include_inner_thoughts_in_topics: "(FUNCTION DEBUG) Get Chatbot to post its background thinking on Public Topics (RAG only)"
+    chatbot_include_inner_thoughts_in_topics_as_whisper: "(FUNCTION DEBUG) Get Chatbot to post its background thinking on Public Topics as a whisper (RAG only)"
     chatbot_permitted_in_chat: "Allow Chatbot to interact in Chat"
     chatbot_can_trigger_from_whisper: "Allow Chatbot to be triggered from a whisper (get creative!)"
     chatbot_permitted_all_categories: "Allow Chatbot to interact in any Category"
