@@ -27,8 +27,7 @@ module ::DiscourseChatbot
         end
 
         if @chatbot_bot_type == "RAG" && SiteSetting.chatbot_include_inner_thoughts_in_private_messages && @is_private_msg
-          default_opts.merge!(raw: '[details="Inner Thoughts"]<br/>' + @inner_thoughts + '<br/>[/details]')
-
+          default_opts.merge!(raw: "[details='Inner Thoughts']\n```json\n" + JSON.pretty_generate(@inner_thoughts) + "\n```\n[/details]")
           new_post = PostCreator.create!(@author, default_opts)
         end
 

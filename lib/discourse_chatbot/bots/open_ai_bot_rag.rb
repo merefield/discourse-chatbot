@@ -36,7 +36,7 @@ module ::DiscourseChatbot
 
       {
         reply: res["choices"][0]["message"]["content"],
-        inner_thoughts: @inner_thoughts.to_s
+        inner_thoughts: @inner_thoughts
       }
     end
 
