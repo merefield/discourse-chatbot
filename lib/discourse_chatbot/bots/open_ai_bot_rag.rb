@@ -250,9 +250,9 @@ module ::DiscourseChatbot
         if func_name == "local_forum_search"
           result_hash = call_function(func_name, args_str, opts)
           result, post_ids_found, topic_ids_found, non_post_urls_found = result_hash.values_at(:result, :post_ids_found, :topic_ids_found, :non_post_urls_found)
-          @posts_ids_found = (@posts_ids_found.to_set | post_ids_found.to_set).to_a
-          @topic_ids_found = (@topic_ids_found.to_set | topic_ids_found.to_set).to_a
-          @non_post_urls_found = (@non_post_urls_found.to_set | non_post_urls_found.to_set).to_a
+          @posts_ids_found = (@posts_ids_found.to_set | (post_ids_found&.to_set || Set.new)).to_a
+          @topic_ids_found = (@topic_ids_found.to_set | (topic_ids_found&.to_set || Set.new)).to_a
+          @non_post_urls_found = (@non_post_urls_found.to_set | (non_post_urls_found&.to_set || Set.new)).to_a
         else
           result = call_function(func_name, args_str, opts)
         end

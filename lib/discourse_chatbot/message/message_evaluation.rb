@@ -33,14 +33,12 @@ module ::DiscourseChatbot
 
       channel = ::Chat::Channel.find(channel_id)
       direct_message_channel = channel.chatable_type == DIRECT_MESSAGE
-      direct_message_channel_user_count = nil
-      if direct_message_channel
-        # we don't need to calculate this unless it's direct message so keep within if statement to improve performance
-        direct_message_channel_user_count = ::Chat::UserChatChannelMembership.where(chat_channel_id: channel_id).count
-      end
+
+      message_channel_user_count = ::Chat::UserChatChannelMembership.where(chat_channel_id: channel_id).count
+
       bot_chat_channel = (bot_user.user_chat_channel_memberships.where(chat_channel_id: channel_id).count > 0)
 
-      talking_to_bot = (direct_message_channel && bot_chat_channel && direct_message_channel_user_count && direct_message_channel_user_count < 3) || (replied_to_user && replied_to_user.id == bot_user_id)
+      talking_to_bot = (bot_chat_channel && message_channel_user_count < 3) || (replied_to_user && replied_to_user.id == bot_user_id)
 
       if bot_user && (user_id != bot_user_id) && (mentions_bot_name || talking_to_bot)
 
@@ -61,7 +59,7 @@ module ::DiscourseChatbot
             topic_or_channel_id: channel_id,
             over_quota: over_quota,
             trust_level: trust_level(user.id),
-            human_participants_count: bot_chat_channel ? direct_message_channel_user_count - 1 : direct_message_channel_user_count,
+            human_participants_count: bot_chat_channel ? message_channel_user_count - 1 : message_channel_user_count,
             message_body: message_contents.gsub(bot_username.downcase, '').gsub(bot_username, '')
           }
 
