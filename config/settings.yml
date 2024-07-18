@@ -36,10 +36,11 @@ plugins:
   chatbot_open_ai_model_high_trust:
     client: false
     type: enum
-    default: gpt-3.5-turbo
+    default: gpt-4o-mini
     choices:
       - gpt-3.5-turbo
       - gpt-4o
+      - gpt-4o-mini
       - gpt-4-turbo
       - gpt-4
       - gpt-4-32k
@@ -62,10 +63,11 @@ plugins:
   chatbot_open_ai_model_medium_trust:
     client: false
     type: enum
-    default: gpt-3.5-turbo
+    default: gpt-4o-mini
     choices:
       - gpt-3.5-turbo
       - gpt-4o
+      - gpt-4o-mini
       - gpt-4-turbo
       - gpt-4
       - gpt-4-32k
@@ -88,10 +90,11 @@ plugins:
   chatbot_open_ai_model_low_trust:
     client: false
     type: enum
-    default: gpt-3.5-turbo
+    default: gpt-4o-mini
     choices:
       - gpt-3.5-turbo
       - gpt-4o
+      - gpt-4o-mini
       - gpt-4-turbo
       - gpt-4
       - gpt-4-32k
@@ -224,7 +227,12 @@ plugins:
       - via_function
   chatbot_open_ai_vision_model:
     client: false
-    default: gpt-4o
+    type: enum
+    default: gpt-4o-mini
+    choices:
+      - gpt-4o
+      - gpt-4o-mini
+      - gpt-4-turbo
   chatbot_support_picture_creation:
     client: false
     default: false
