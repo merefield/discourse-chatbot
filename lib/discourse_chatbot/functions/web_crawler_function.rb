@@ -27,7 +27,7 @@ module DiscourseChatbot
       begin
         ::DiscourseChatbot.progress_debug_message <<~EOS
         -------------------------------------
-        arguments for news: #{args[parameters[0][:name]]}
+        arguments for web crawler: #{args[parameters[0][:name]]}
         --------------------------------------
         EOS
         super(args)
@@ -61,7 +61,7 @@ module DiscourseChatbot
           break if response_body["status"] == "completed"
         end
 
-        response_body["data"][0]["markdown"]
+        response_body["data"][0]["markdown"][0..SiteSetting.chatbot_firecrawl_response_char_limit]
       rescue
         I18n.t("chatbot.prompt.function.web_crawler.error")
       end
