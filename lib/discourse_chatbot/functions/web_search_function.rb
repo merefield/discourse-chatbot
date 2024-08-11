@@ -46,8 +46,7 @@ module DiscourseChatbot
           result = hash_results.dig(:organic_results, 0, :snippet)
         end
         result[0..SiteSetting.chatbot_function_response_char_limit]
-      rescue => e
-        byebug
+      rescue
         I18n.t("chatbot.prompt.function.web_search.error", query: args[parameters[0][:name]])
       end
     end
