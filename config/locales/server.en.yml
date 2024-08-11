@@ -79,7 +79,8 @@ en:
     chatbot_escalate_to_staff_max_history: "(EXPERIMENTAL, Chat only) number of chat messages included in transcript added to escalation PM"
     chatbot_news_api_token: "News API token for news (if left blank, news will never be searched)<a target='_blank' rel='noopener' href='https://newsapi.org/'>Get one at NewsAPI.org</a>"
     chatbot_firecrawl_api_token: "Firecrawl API token for crawling remote websites.  If left blank, crawling will not be available. <a target='_blank' rel='noopener' href='https://www.firecrawl.dev/'>Get one at https://www.firecrawl.dev/</a>"
-    chatbot_firecrawl_response_char_limit: "The maximum number of characters taken from the response from Firecrawl in order to mitigate the risk of a token breach when later including result in LLM call"
+    chatbot_jina_api_token: "Jina API token for web crawl and search.  <a target='_blank' rel='noopener' href='https://jina.ai'>Get one at https://jina.ai</a>. Alternative to Firecrawl and Serp.  If Firecrawl API token is populated, it will be used in preference to Jina for crawling. Ditto Serp API for Searching."
+    chatbot_function_response_char_limit: "The maximum number of characters taken from the response from web crawl in order to mitigate the risk of a token breach when later including result in LLM call"
     chatbot_serp_api_key: "Serp API token for google search (if left blank, google will never be searched). <a target='_blank' rel='noopener' href='https://serpapi.com/'>Get one at SerpAPI.com</a>"
     chatbot_marketstack_key: "Marketstack API key for stock price information (if left blank, Marketstack will never be queried).<a target='_blank' rel='noopener' href='https://marketstack.com/'>Get one at MarketStack.com</a>"
     chatbot_enable_verbose_console_logging: "Enable response retrieval progress logging to console to help debug issues"
@@ -295,9 +296,9 @@ en:
             coords: "location one in form [latitude, longitude]"
           answer_summary: "The distance between %{coords1} and %{coords2} is %{distance} kilometres (km)."
           error:  "'%{query}': my calculation for the distance between those two locations went wrong."
-        google_search:
+        web_search:
           description: |
-            A wrapper around Google Search.
+            A wrapper around Web Search.
 
             Useful for when you need to answer questions about current events.
             Always one of the first options when you need to find information on internet.
@@ -320,7 +321,7 @@ en:
           error: "ERROR: Had trouble retrieving the news!"
         web_crawler:
           description: |
-            A wrapper around the Firecrawl web crawler API.
+            A wrapper around a web crawler API.
 
             Useful for when you need to get the content of a remote webpage for e.g. summarisation or fact retreival.
 

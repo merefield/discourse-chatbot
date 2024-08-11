@@ -364,7 +364,10 @@ plugins:
   chatbot_firecrawl_api_token:
     client: false
     default: ''
-  chatbot_firecrawl_response_char_limit:
+  chatbot_jina_api_token:
+    client: false
+    default: ''
+  chatbot_function_response_char_limit:
     client: false
     default: 350000
   chatbot_serp_api_key:

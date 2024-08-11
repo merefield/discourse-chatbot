@@ -44,8 +44,8 @@ module ::DiscourseChatbot
       calculator_function = ::DiscourseChatbot::CalculatorFunction.new
       wikipedia_function = ::DiscourseChatbot::WikipediaFunction.new
       news_function = ::DiscourseChatbot::NewsFunction.new
-      crawl_function = ::DiscourseChatbot::WebCrawlerFunction.new
-      google_search_function = ::DiscourseChatbot::GoogleSearchFunction.new
+      web_crawler_function = ::DiscourseChatbot::WebCrawlerFunction.new
+      web_search_function = ::DiscourseChatbot::WebSearchFunction.new
       stock_data_function = ::DiscourseChatbot::StockDataFunction.new
       escalate_to_staff_function = ::DiscourseChatbot::EscalateToStaffFunction.new
       paint_function = ::DiscourseChatbot::PaintFunction.new
@@ -89,8 +89,8 @@ module ::DiscourseChatbot
       functions << get_user_address if get_user_address
       functions << escalate_to_staff_function if SiteSetting.chatbot_escalate_to_staff_function && opts[:private] && opts[:type] == ::DiscourseChatbot::MESSAGE
       functions << news_function if !SiteSetting.chatbot_news_api_token.blank?
-      functions << crawl_function if !SiteSetting.chatbot_firecrawl_api_token.blank?
-      functions << google_search_function if !SiteSetting.chatbot_serp_api_key.blank?
+      functions << web_crawler_function if !(SiteSetting.chatbot_firecrawl_api_token.blank? && SiteSetting.chatbot_jina_api_token.blank?)
+      functions << web_search_function if !(SiteSetting.chatbot_serp_api_key.blank? && SiteSetting.chatbot_jina_api_token.blank?)
       functions << stock_data_function if !SiteSetting.chatbot_marketstack_key.blank?
 
       @functions = parse_functions(functions)
