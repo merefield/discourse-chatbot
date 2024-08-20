@@ -10,20 +10,21 @@ module ::DiscourseChatbot
       category_id = opts[:category_id]
       first_post_role = post_collection.first.topic.first_post.user.id == bot_user_id ? "assistant" : "user"
 
-      messages = [{ "role": first_post_role, "content":  I18n.t("chatbot.prompt.title", topic_title: post_collection.first.topic.title) }]
+      messages = [{ "role": first_post_role, "name": post_collection.first.topic.first_post.user.username, "content":  I18n.t("chatbot.prompt.title", topic_title: post_collection.first.topic.title) }]
 
-      messages << { "role": first_post_role, "content": I18n.t("chatbot.prompt.first_post", username: post_collection.first.topic.first_post.user.username, raw: post_collection.first.topic.first_post.raw) }
+      messages << { "role": first_post_role, "name": post_collection.first.topic.first_post.user.username, "content": post_collection.first.topic.first_post.raw }
 
       if original_post_number == 1 && (Array(SiteSetting.chatbot_auto_respond_categories.split("|")).include? category_id.to_s) &&
         !CategoryCustomField.find_by(category_id: category_id, name: "chatbot_auto_response_additional_prompt").blank?
-        messages << { "role": first_post_role, "content": CategoryCustomField.find_by(category_id: category_id, name: "chatbot_auto_response_additional_prompt").value }
+        messages << { "role": first_post_role, "name": post_collection.first.topic.first_post.user.username, "content": CategoryCustomField.find_by(category_id: category_id, name: "chatbot_auto_response_additional_prompt").value }
       end
 
       messages += post_collection.reverse.map do |p|
         post_content = p.raw
         post_content.gsub!(/\[quote.*?\](.*?)\[\/quote\]/m, '') if SiteSetting.chatbot_strip_quotes
         role = (p.user_id == bot_user_id ? "assistant" : "user")
-        text = (p.user_id == bot_user_id ? "#{p.raw}" : I18n.t("chatbot.prompt.post", username: p.user.username, raw: post_content))
+        name = p.user.username
+        text = post_content
         content = []
 
         if SiteSetting.chatbot_support_vision == "directly"
@@ -35,7 +36,7 @@ module ::DiscourseChatbot
         else
           content = text
         end
-        { "role": role, "content": content }
+        { "role": role, "name": name, "content": content }
       end
 
       messages
