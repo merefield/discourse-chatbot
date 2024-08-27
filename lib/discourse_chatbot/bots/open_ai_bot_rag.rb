@@ -1,6 +1,27 @@
 # frozen_string_literal: true
 require "openai"
 
+BUILT_IN_FUNCTIONS = ["DiscourseChatbot::StockDataFunction",
+"DiscourseChatbot::GetCoordsOfLocationDescriptionFunction",
+"DiscourseChatbot::GetDistanceBetweenLocationsFunction",
+"DiscourseChatbot::ForumTopicSearchFromTopicLocationFunction",
+"DiscourseChatbot::ForumTopicSearchFromUserLocationFunction",
+"DiscourseChatbot::ForumTopicSearchFromLocationFunction",
+"DiscourseChatbot::ForumGetUserAddressFunction",
+"DiscourseChatbot::ForumUserSearchFromTopicLocationFunction",
+"DiscourseChatbot::ForumUserSearchFromUserLocationFunction",
+"DiscourseChatbot::ForumUserSearchFromLocationFunction",
+"DiscourseChatbot::ForumUserDistanceFromLocationFunction",
+"DiscourseChatbot::ForumSearchFunction",
+"DiscourseChatbot::PaintFunction",
+"DiscourseChatbot::VisionFunction",
+"DiscourseChatbot::WikipediaFunction",
+"DiscourseChatbot::WebSearchFunction",
+"DiscourseChatbot::WebCrawlerFunction",
+"DiscourseChatbot::NewsFunction",
+"DiscourseChatbot::EscalateToStaffFunction",
+"DiscourseChatbot::CalculatorFunction"]
+
 module ::DiscourseChatbot
 
   class OpenAiBotRag < OpenAIBotBase
@@ -92,6 +113,12 @@ module ::DiscourseChatbot
       functions << web_crawler_function if !(SiteSetting.chatbot_firecrawl_api_token.blank? && SiteSetting.chatbot_jina_api_token.blank?)
       functions << web_search_function if !(SiteSetting.chatbot_serp_api_key.blank? && SiteSetting.chatbot_jina_api_token.blank?)
       functions << stock_data_function if !SiteSetting.chatbot_marketstack_key.blank?
+
+      if ::DiscourseChatbot::Function.descendants.count > BUILT_IN_FUNCTIONS.count
+        ::DiscourseChatbot::Function.descendants.each do |func|
+          functions << func.new if !BUILT_IN_FUNCTIONS.include?(func.to_s)
+        end
+      end
 
       @functions = parse_functions(functions)
       @tools = @functions.map { |func| { "type": "function", "function": func } }
