@@ -85,7 +85,7 @@ module ::DiscourseChatbot
         messages << special_prompt_message
       end
 
-      if post_collection.length > 1
+      if post_collection.length > 0
         messages +=
           post_collection.reverse.map do |p|
             post_content = p.raw
