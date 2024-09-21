@@ -113,6 +113,9 @@ plugins:
   chatbot_open_ai_model_custom_api_version:
     client: false
     default: '2023-09-01-preview'
+  chatbot_api_supports_name_attribute:
+    client: false
+    default: false
   chatbot_embeddings_enabled:
     default: false
     client: false

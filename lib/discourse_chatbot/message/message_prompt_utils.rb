@@ -12,7 +12,10 @@ module ::DiscourseChatbot
       messages += message_collection.reverse.map do |cm|
         username = ::User.find(cm.user_id).username
         role = (cm.user_id == bot_user_id ? "assistant" : "user")
-        text = cm.message
+        text = SiteSetting.chatbot_api_supports_name_attribute || cm.user_id == bot_user_id ?
+          cm.message :
+          I18n.t("chatbot.prompt.post", username: username, raw: cm.message)
+
         content = []
 
         if SiteSetting.chatbot_support_vision == "directly"
@@ -26,7 +29,9 @@ module ::DiscourseChatbot
         else
           content = text
         end
-        { "role": role, "name": username, "content": content }
+        SiteSetting.chatbot_api_supports_name_attribute ?
+          { "role": role, "name": username, "content": content } :
+          { "role": role, "content": content }
       end
 
       messages
