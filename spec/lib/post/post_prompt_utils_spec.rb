@@ -28,31 +28,31 @@ describe ::DiscourseChatbot::PostPromptUtils do
   it "captures the right history" do
     SiteSetting.chatbot_include_whispers_in_post_history = false
 
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_1.id)
-    expect(past_posts.count).to equal(1)
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_6.id)
-    expect(past_posts.count).to equal(4)
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11.id)
-    expect(past_posts.count).to equal(6)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_1)
+    expect(past_posts.count).to equal(0)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_6)
+    expect(past_posts.count).to equal(3)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11)
+    expect(past_posts.count).to equal(5)
 
     post_9.destroy
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11.id)
-    expect(past_posts.count).to equal(6)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11)
+    expect(past_posts.count).to equal(5)
   end
 
   it "captures the right history when whispers are included" do
     SiteSetting.chatbot_include_whispers_in_post_history = true
 
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_1.id)
-    expect(past_posts.count).to equal(1)
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_6.id)
-    expect(past_posts.count).to equal(4)
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11.id)
-    expect(past_posts.count).to equal(7)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_1)
+    expect(past_posts.count).to equal(0)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_6)
+    expect(past_posts.count).to equal(3)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11)
+    expect(past_posts.count).to equal(6)
 
     post_9.destroy
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11.id)
-    expect(past_posts.count).to equal(7)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11)
+    expect(past_posts.count).to equal(6)
   end
 
   it "adds the category specific prompt when in an auto-response category" do
@@ -66,10 +66,13 @@ describe ::DiscourseChatbot::PostPromptUtils do
       category_id: auto_category.id,
       original_post_number: 1
     }
-
     prompt = ::DiscourseChatbot::PostPromptUtils.create_prompt(opts)
 
-    expect(prompt[2][:content].to_s).to eq(text.to_s)
+    expect(prompt.count).to eq(3)
+    expect(prompt[2][:content].to_s).to eq(
+      I18n.t("chatbot.prompt.post",
+      username: post_1_auto.user.username,
+      raw: text))
   end
 
   it "does not add the category specific prompt when in an auto-response category for subsequent posts" do
@@ -86,6 +89,6 @@ describe ::DiscourseChatbot::PostPromptUtils do
 
     prompt = ::DiscourseChatbot::PostPromptUtils.create_prompt(opts)
 
-    expect(prompt[2][:content].to_s).not_to eq(text.to_s)
+    expect(prompt.count).to eq(2)
   end
 end
