@@ -34,21 +34,7 @@ module ::DiscourseChatbot
           end
         )
 
-      first_post_message = 
-        (
-          if (SiteSetting.chatbot_api_supports_name_attribute ||
-           first_post.user.id == bot_user_id)
-            {
-              role: first_post_role,
-              name: first_post.user.username,
-              content: first_post.raw,
-            }
-          else
-            { role: first_post_role, content: I18n.t("chatbot.prompt.post", username: first_post.user.username, raw: first_post.raw) }
-          end
-        )
-
-      messages << first_post_message
+      messages << create_message(first_post, opts)
 
       if original_post_number == 1 &&
            (
@@ -86,43 +72,46 @@ module ::DiscourseChatbot
       end
 
       if post_collection.length > 0
-        messages +=
-          post_collection.reverse.map do |p|
-            post_content = p.raw
-            if SiteSetting.chatbot_strip_quotes
-              post_content.gsub!(%r{\[quote.*?\](.*?)\[/quote\]}m, "")
-            end
-            role = (p.user_id == bot_user_id ? "assistant" : "user")
-            name = p.user.username
-
-            text =
-              (
-                if SiteSetting.chatbot_api_supports_name_attribute || p.user_id == bot_user_id
-                  post_content
-                else
-                  I18n.t("chatbot.prompt.post", username: p.user.username, raw: post_content)
-                end
-              )
-            username = p.user.username
-            content = []
-
-            if SiteSetting.chatbot_support_vision == "directly"
-              content << { type: "text", text: text }
-              if p.image_upload_id
-                url = resolve_full_url(Upload.find(p.image_upload_id).url)
-                content << { type: "image_url", image_url: { url: url } }
-              end
-            else
-              content = text
-            end
-            if SiteSetting.chatbot_api_supports_name_attribute
-              { role: role, name: username, content: content }
-            else
-              { role: role, content: content }
-            end
-          end
+        messages += post_collection.reverse.map { |p| create_message(p, opts) }
       end
+
       messages
+    end
+
+    def self.create_message(p, opts)
+      post_content = p.raw
+      bot_user_id = opts[:bot_user_id]
+      if SiteSetting.chatbot_strip_quotes
+        post_content.gsub!(%r{\[quote.*?\](.*?)\[/quote\]}m, "")
+      end
+      role = (p.user_id == bot_user_id ? "assistant" : "user")
+      name = p.user.username
+
+      text =
+        (
+          if SiteSetting.chatbot_api_supports_name_attribute || p.user_id == bot_user_id
+            post_content
+          else
+            I18n.t("chatbot.prompt.post", username: p.user.username, raw: post_content)
+          end
+        )
+      username = p.user.username
+      content = []
+
+      if SiteSetting.chatbot_support_vision == "directly"
+        content << { type: "text", text: text }
+        if p.image_upload_id
+          url = resolve_full_url(Upload.find(p.image_upload_id).url)
+          content << { type: "image_url", image_url: { url: url } }
+        end
+      else
+        content = text
+      end
+      if SiteSetting.chatbot_api_supports_name_attribute
+        { role: role, name: username, content: content }
+      else
+        { role: role, content: content }
+      end
     end
 
     def self.collect_past_interactions(current_post)
