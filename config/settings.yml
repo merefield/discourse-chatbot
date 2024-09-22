@@ -241,9 +241,9 @@ plugins:
     default: false
   chatbot_reply_job_time_delay:
     client: false
-    default: 1
+    default: 2
     min: 0
-    max: 3
+    max: 5
   chatbot_open_ai_token:
     client: false
     default: ''
