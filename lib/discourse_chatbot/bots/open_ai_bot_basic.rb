@@ -7,6 +7,7 @@ module ::DiscourseChatbot
 
     def get_response(prompt, opts)
       begin
+        reasoning_model = false
         private_discussion = opts[:private] || false
 
         if private_discussion
@@ -15,18 +16,32 @@ module ::DiscourseChatbot
           system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.basic.open", current_date_time: DateTime.current) }
         end
 
-        prompt.unshift(system_message)
+        reasoning_model = true if REASONING_MODELS.include?(@model_name)
 
-        response = @client.chat(
-          parameters: {
+        if !reasoning_model
+          prompt.unshift(system_message)
+        end
+
+        parameters = {
             model: @model_name,
             messages: prompt,
-            max_tokens: SiteSetting.chatbot_max_response_tokens,
-            temperature: SiteSetting.chatbot_request_temperature / 100.0,
-            top_p: SiteSetting.chatbot_request_top_p / 100.0,
-            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
-          })
+            max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
+          }
+
+        additional_parameters = {
+          temperature: SiteSetting.chatbot_request_temperature / 100.0,
+          top_p: SiteSetting.chatbot_request_top_p / 100.0,
+          frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+          presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
+        }
+
+        if !reasoning_model
+          parameters.merge!(additional_parameters)
+        end
+
+        response = @client.chat(
+          parameters: parameters
+        )
 
         {
           reply: response.dig("choices", 0, "message", "content"),
