@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 1.0.6
+# version: 1.1.0
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -37,6 +37,8 @@ module ::DiscourseChatbot
   TOPIC_URL_REGEX = %r{\/t/[^/]+/(\d+)(?!\d|\/)}
   POST_URL_REGEX = %r{\/t/[^/]+/(\d+)/(\d+)(?!\d|\/)}
   NON_POST_URL_REGEX = %r{\bhttps?:\/\/[^\s\/$.?#].[^\s)]*}
+
+  REASONING_MODELS = ["o1-preview", "o1-mini"]
 
   def progress_debug_message(message)
     puts "Chatbot: #{message}" if SiteSetting.chatbot_enable_verbose_console_logging

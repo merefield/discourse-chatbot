@@ -2,6 +2,9 @@ plugins:
   chatbot_enabled:
     default: true
     client: true
+  chatbot_open_ai_token:
+    client: false
+    default: ''
   chatbot_permitted_in_private_messages:
     default: true
     client: true
@@ -44,6 +47,8 @@ plugins:
       - gpt-4-turbo
       - gpt-4
       - gpt-4-32k
+      - o1-preview
+      - o1-mini
   chatbot_open_ai_model_custom_high_trust:
     default: false
     client: false
@@ -71,6 +76,8 @@ plugins:
       - gpt-4-turbo
       - gpt-4
       - gpt-4-32k
+      - o1-preview
+      - o1-mini
   chatbot_open_ai_model_custom_medium_trust:
     default: false
     client: false
@@ -98,6 +105,8 @@ plugins:
       - gpt-4-turbo
       - gpt-4
       - gpt-4-32k
+      - o1-preview
+      - o1-mini
   chatbot_open_ai_model_custom_low_trust:
     default: false
     client: false
@@ -244,9 +253,6 @@ plugins:
     default: 2
     min: 0
     max: 5
-  chatbot_open_ai_token:
-    client: false
-    default: ''
   chatbot_request_temperature:
     client: false
     default: 100
