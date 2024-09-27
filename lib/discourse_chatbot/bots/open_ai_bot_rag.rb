@@ -147,7 +147,7 @@ module ::DiscourseChatbot
         parameters = {
           model: @model_name,
           messages: messages,
-          max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
+          max_tokens: SiteSetting.chatbot_max_response_tokens,
           temperature: SiteSetting.chatbot_request_temperature / 100.0,
           top_p: SiteSetting.chatbot_request_top_p / 100.0,
           frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
