@@ -15,16 +15,19 @@ export default class ContentLanguageDiscovery extends Component {
   @service chat;
   @service router;
   @service composer;
+  @service site;
 
   @tracked botUser = null;
 
   get showChatbotButton() {
-    const { currentRouteName } = this.router;
+    const baseRoute = this.router.currentRouteName.split(".")[0];
     return (
       this.currentUser &&
       this.siteSettings.chatbot_enabled &&
       this.currentUser.chatbot_access &&
-      currentRouteName === `discovery.${defaultHomepage()}` &&
+      (baseRoute === "discovery" ||
+      (!this.site.mobileView &&
+      baseRoute === "topic")) &&
       this.siteSettings.chatbot_quick_access_talk_button !== "off" &&
       ((this.siteSettings.chat_enabled &&
         this.siteSettings.chatbot_permitted_in_chat) ||
