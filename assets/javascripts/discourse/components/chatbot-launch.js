@@ -4,7 +4,6 @@ import { action } from "@ember/object";
 import { inject as service } from "@ember/service";
 import { ajax } from "discourse/lib/ajax";
 import DiscourseURL from "discourse/lib/url";
-import { defaultHomepage } from "discourse/lib/utilities";
 import Composer from "discourse/models/composer";
 import User from "discourse/models/user";
 import I18n from "I18n";
@@ -26,8 +25,7 @@ export default class ContentLanguageDiscovery extends Component {
       this.siteSettings.chatbot_enabled &&
       this.currentUser.chatbot_access &&
       (baseRoute === "discovery" ||
-      (!this.site.mobileView &&
-      baseRoute === "topic")) &&
+        (!this.site.mobileView && baseRoute === "topic")) &&
       this.siteSettings.chatbot_quick_access_talk_button !== "off" &&
       ((this.siteSettings.chat_enabled &&
         this.siteSettings.chatbot_permitted_in_chat) ||
