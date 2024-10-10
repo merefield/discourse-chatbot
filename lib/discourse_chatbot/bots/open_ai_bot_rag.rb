@@ -19,6 +19,7 @@ BUILT_IN_FUNCTIONS = ["DiscourseChatbot::StockDataFunction",
 "DiscourseChatbot::WebSearchFunction",
 "DiscourseChatbot::WebCrawlerFunction",
 "DiscourseChatbot::NewsFunction",
+"DiscourseChatbot::UserFieldFunction",
 "DiscourseChatbot::EscalateToStaffFunction",
 "DiscourseChatbot::CalculatorFunction"]
 
@@ -40,6 +41,14 @@ module ::DiscourseChatbot
 
       if private_discussion
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
+
+        UserField.all.each do |user_field|
+          if !::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).exists? ||
+              ::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).first.value.blank?
+            system_message[:content] += "  " + I18n.t("chatbot.prompt.function.user_information.system_message", name: user_field.name, description: user_field.description)
+            break
+          end
+        end
       else
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.open", current_date_time: DateTime.current) }
       end
@@ -97,6 +106,12 @@ module ::DiscourseChatbot
       end
 
       functions = [calculator_function, wikipedia_function]
+
+      if opts[:private]
+        UserField.all.each do |user_field|
+          functions << ::DiscourseChatbot::UserFieldFunction.new(user_field.name, opts[:user_id])
+        end
+      end
 
       functions << forum_search_function if forum_search_function
       functions << vision_function if vision_function

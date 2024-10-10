@@ -110,6 +110,15 @@ en:
       private_message:
         title_creation: "Create a short Topic title from summarising the prior messages"
       function:
+        user_information:
+          name: "user_information_for_%{user_field}"
+          system_message: "You must be proactive and ask the user to tell you what their %{description} is.  Do not wait to be prompted!"
+          description: |
+            get information about %{user_field} for the user
+          parameters:
+            answer: the answer to the question about what user's %{user_field} is
+          answer: "Confirm with the user the infomration they gave about %{user_field} has been saved."
+          error: "I couldn't save any information about %{user_field} for answer '%{answer}'"
         calculator:
           description: |
             Useful for getting the result of a math expression.  It is a general purpose calculator.  It works with Ruby expressions.
