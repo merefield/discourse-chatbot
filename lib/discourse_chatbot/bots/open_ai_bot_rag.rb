@@ -42,18 +42,25 @@ module ::DiscourseChatbot
       if private_discussion
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
 
-        UserField.all.each do |user_field|
-          if !::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).exists? ||
-              ::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).first.value.blank?
-            system_message[:content] += "  " + I18n.t("chatbot.prompt.function.user_information.system_message", name: user_field.name, description: user_field.description)
-            break
+        if SiteSetting.chatbot_user_fields_collection
+          UserField.all.each do |user_field|
+            if !::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).exists? ||
+                ::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).first.value.blank?
+              system_message[:content] += "  " + I18n.t("chatbot.prompt.function.user_information.system_message", name: user_field.name, description: user_field.description)
+              break
+            end
           end
         end
       else
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.open", current_date_time: DateTime.current) }
       end
 
-      prompt.unshift(system_message)
+      if SiteSetting.chatbot_user_fields_collection
+        # prioritize the system message
+        prompt << system_message
+      else
+        prompt.unshift(system_message)
+      end
 
       @inner_thoughts = []
       @posts_ids_found = []
@@ -107,7 +114,7 @@ module ::DiscourseChatbot
 
       functions = [calculator_function, wikipedia_function]
 
-      if opts[:private]
+      if opts[:private] && SiteSetting.chatbot_user_fields_collection
         UserField.all.each do |user_field|
           functions << ::DiscourseChatbot::UserFieldFunction.new(user_field.name, opts[:user_id])
         end
