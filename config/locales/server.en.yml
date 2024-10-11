@@ -114,10 +114,14 @@ en:
         user_information:
           name: "user_information_for_%{user_field}"
           system_message: "You must be proactive and ask the user to tell you what their %{description} is.  Do not wait to be prompted!"
-          description: |
-            get information about %{user_field} for the user
+          description:
+            general: get information about %{user_field} for the user
+            confirmation: confirm if the user accepts the following %{user_field}
           parameters:
-            answer: the answer to the question about what user's %{user_field} is
+            answer:
+              text: the answer to the question about what user's %{user_field} is
+              confirmation: "user's confirmation or otherwise (true or false) of: %{user_field}.  If user does not confirm it is false.  If user does confirm, it is true."
+              dropdown: "the user's selection of: %{user_field} which can be one of: %{options}"
           answer: "Confirm with the user the infomration they gave about %{user_field} has been saved."
           error: "I couldn't save any information about %{user_field} for answer '%{answer}'"
         calculator:

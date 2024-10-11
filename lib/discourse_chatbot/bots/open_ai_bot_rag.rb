@@ -43,7 +43,7 @@ module ::DiscourseChatbot
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
 
         if SiteSetting.chatbot_user_fields_collection
-          UserField.all.each do |user_field|
+          UserField.where(editable: true).each do |user_field|
             if !::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).exists? ||
                 ::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).first.value.blank?
               system_message[:content] += "  " + I18n.t("chatbot.prompt.function.user_information.system_message", name: user_field.name, description: user_field.description)
@@ -115,8 +115,11 @@ module ::DiscourseChatbot
       functions = [calculator_function, wikipedia_function]
 
       if opts[:private] && SiteSetting.chatbot_user_fields_collection
-        UserField.all.each do |user_field|
-          functions << ::DiscourseChatbot::UserFieldFunction.new(user_field.name, opts[:user_id])
+        UserField.where(editable: true).each do |user_field|
+          if !::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).exists? ||
+            ::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).first.value.blank?
+            functions << ::DiscourseChatbot::UserFieldFunction.new(user_field.name, opts[:user_id])
+          end
         end
       end
 
