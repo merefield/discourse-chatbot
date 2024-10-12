@@ -110,10 +110,16 @@ en:
       post: "%{username} said %{raw}"
       private_message:
         title_creation: "Create a short Topic title from summarising the prior messages"
+      quick_access_kick_off:
+        announcement: "I must greet the user warmly and kick off any questions I want answered"
       function:
         user_information:
           name: "user_information_for_%{user_field}"
-          system_message: "You must be proactive and ask the user to tell you what their %{description} is.  Do not wait to be prompted!"
+          system_message:
+            general: "You must be proactive and ask the user to tell you what their %{name} is.  Do not wait to be prompted!"
+            confirmation: "You must be proactive and ask the user to tell you what response is to the declaration: %{name}.  Do not wait to be prompted!"
+            dropdown: "You must be proactive and ask the user to tell you what their selection of: %{name} is.  The choices are %{options}.  Do not wait to be prompted!"
+            closing_statement: "However, ONLY ask ONE question at a time.  Do not ask multiple questions in one go.  Ask last question first."
           description:
             general: get information about %{user_field} for the user
             confirmation: confirm if the user accepts the following %{user_field}

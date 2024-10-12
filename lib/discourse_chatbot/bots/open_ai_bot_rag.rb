@@ -31,9 +31,9 @@ module ::DiscourseChatbot
     FORCE_A_FUNCTION = "force_a_function"
     FORCE_LOCAL_SEARCH_FUNCTION = "force_local_forum_search"
 
-    def initialize(opts)
-      super
-      merge_functions(opts)
+    def initialize(opts, tools = true)
+      super(opts)
+      merge_functions(opts) if tools
     end
 
     def get_response(prompt, opts)
@@ -43,20 +43,13 @@ module ::DiscourseChatbot
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
 
         if SiteSetting.chatbot_user_fields_collection
-          UserField.where(editable: true).each do |user_field|
-            if !::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).exists? ||
-                ::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).first.value.blank?
-              system_message[:content] += "  " + I18n.t("chatbot.prompt.function.user_information.system_message", name: user_field.name, description: user_field.description)
-              break
-            end
-          end
+          system_message[:content] += "  " + get_system_message_suffix(opts)
         end
       else
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.open", current_date_time: DateTime.current) }
       end
 
       if SiteSetting.chatbot_user_fields_collection
-        # prioritize the system message
         prompt << system_message
       else
         prompt.unshift(system_message)
@@ -75,6 +68,35 @@ module ::DiscourseChatbot
         reply: res["choices"][0]["message"]["content"],
         inner_thoughts: @inner_thoughts
       }
+    end
+
+    def get_system_message_suffix(opts)
+      system_message_suffix = ""
+      system_message_suffix_array = []
+      UserField.where(editable: true).order(:id).each do |user_field|
+        user_field_options = []
+        user_field_id = user_field.id
+        user_field_type = user_field.field_type_enum
+        if user_field_type == "dropdown"
+          UserFieldOption.where(user_field_id: user_field_id).each do |option|
+            user_field_options << option.value
+          end
+        end
+        if !::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).exists? ||
+          ::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).first.value.blank?
+          system_message_suffix_array << case user_field_type
+          when "confirm"
+            I18n.t("chatbot.prompt.function.user_information.system_message.confirmation", name: user_field.name, description: user_field.description)
+          when "dropdown"
+            I18n.t("chatbot.prompt.function.user_information.system_message.dropdown", name: user_field.name, options: user_field_options.to_sentence)
+          else
+            I18n.t("chatbot.prompt.function.user_information.system_message.general", name: user_field.name, description: user_field.description)
+          end
+        end
+        break if system_message_suffix_array.length > 1
+      end
+      system_message_suffix = system_message_suffix_array.reverse.join("  ")
+      system_message_suffix += "  " + I18n.t("chatbot.prompt.function.user_information.system_message.closing_statement")
     end
 
     def merge_functions(opts)
@@ -115,11 +137,13 @@ module ::DiscourseChatbot
       functions = [calculator_function, wikipedia_function]
 
       if opts[:private] && SiteSetting.chatbot_user_fields_collection
-        UserField.where(editable: true).each do |user_field|
+        start_length = functions.length
+        UserField.where(editable: true).order(:id).each do |user_field|
           if !::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).exists? ||
             ::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).first.value.blank?
             functions << ::DiscourseChatbot::UserFieldFunction.new(user_field.name, opts[:user_id])
           end
+          break if functions.length > start_length + 1
         end
       end
 

@@ -4,6 +4,7 @@ require "openai"
 module ::DiscourseChatbot
 
   class OpenAIBotBase < Bot
+    attr_reader :client, :model_name
 
     def initialize(opts)
       ::OpenAI.configure do |config|
@@ -39,20 +40,23 @@ module ::DiscourseChatbot
         end
       end
 
-      @model_name =
-        SiteSetting.chatbot_support_vision == "directly" ? SiteSetting.chatbot_open_ai_vision_model :
-          case opts[:trust_level]
-          when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
-            SiteSetting.send("chatbot_open_ai_model_custom_" + opts[:trust_level] + "_trust") ? 
-              SiteSetting.send("chatbot_open_ai_model_custom_name_" + opts[:trust_level] + "_trust") :
-              SiteSetting.send("chatbot_open_ai_model_" + opts[:trust_level] + "_trust")
-          else
-            SiteSetting.chatbot_open_ai_model_custom_low_trust ? SiteSetting.chatbot_open_ai_model_custom_name_low_trust : SiteSetting.chatbot_open_ai_model_low_trust
-          end
+      @model_name = get_model(opts)
     end
 
     def get_response(prompt, opts)
       raise "Overwrite me!"
+    end
+
+    def get_model(opts)
+      SiteSetting.chatbot_support_vision == "directly" ? SiteSetting.chatbot_open_ai_vision_model :
+      case opts[:trust_level]
+      when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
+        SiteSetting.send("chatbot_open_ai_model_custom_" + opts[:trust_level] + "_trust") ? 
+          SiteSetting.send("chatbot_open_ai_model_custom_name_" + opts[:trust_level] + "_trust") :
+          SiteSetting.send("chatbot_open_ai_model_" + opts[:trust_level] + "_trust")
+      else
+        SiteSetting.chatbot_open_ai_model_custom_low_trust ? SiteSetting.chatbot_open_ai_model_custom_name_low_trust : SiteSetting.chatbot_open_ai_model_low_trust
+      end
     end
 
   end
