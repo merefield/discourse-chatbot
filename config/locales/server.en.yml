@@ -72,11 +72,12 @@ en:
     chatbot_forum_search_function_results_topic_max_posts_count: "The maximum number of Posts to be returned in the search results if content_type is 'topics'"
     chatbot_tool_choice_first_iteration: "Choose if a tool must be used for the first iteration of the bots response thinking cycle.  If you choose 'force_local_forum_search' the bot will search the forum for information, if you choose 'force_a_function' the bot will use a function of its choice, if you choose 'not_forced' (default) the bot will not be forced to use a tool for its first cycle."
     chatbot_forum_search_function_hybrid_search: "(EXPERIMENTAL): Enable hybrid search mode.  This will cause the bot to search using native keyword search in addition to embedding based semantic search and it will attempt to blend the results"
-    chatbot_url_integrity_check: "(EXPERIMENTAL): Enable URL integrity check.  If the LLM has returned an invalid forum URL, this will be highlighted back to the LLM"
-    chatbot_locations_plugin_support: "(EXPERIMENTAL currently user locations only) Natural language querying capability for <a target='_blank' rel='noopener' href='https://github.com/paviliondev/discourse-locations'>Locations Plugin</a> (when using RAG mode, requires Locations Plugin to be installed)"
-    chatbot_escalate_to_staff_function: "(EXPERIMENTAL, Chat only) if user requests human assistance or gets irritated, escalate to staff via PM (requires staff group to be populated)"
-    chatbot_escalate_to_staff_groups: "(EXPERIMENTAL, Chat only) groups added to escalation PM, e.g. support team"
-    chatbot_escalate_to_staff_max_history: "(EXPERIMENTAL, Chat only) number of chat messages included in transcript added to escalation PM"
+    chatbot_url_integrity_check: "Enable URL integrity check.  If the LLM has returned an invalid forum URL, this will be highlighted back to the LLM"
+    chatbot_locations_plugin_support: "(currently user locations only) Natural language querying capability for <a target='_blank' rel='noopener' href='https://github.com/paviliondev/discourse-locations'>Locations Plugin</a> (when using RAG mode, requires Locations Plugin to be installed)"
+    chatbot_escalate_to_staff_function: "(Chat only) if user requests human assistance or gets irritated, escalate to staff via PM (requires staff group to be populated)"
+    chatbot_escalate_to_staff_groups: "(Chat only) groups added to escalation PM, e.g. support team"
+    chatbot_escalate_to_staff_max_history: "(Chat only) number of chat messages included in transcript added to escalation PM"
+    chatbot_user_fields_collection: "(EXPERIMENTAL) Collect empty user fields from the user as part of the conversation"
     chatbot_news_api_token: "News API token for news (if left blank, news will never be searched)<a target='_blank' rel='noopener' href='https://newsapi.org/'>Get one at NewsAPI.org</a>"
     chatbot_firecrawl_api_token: "Firecrawl API token for crawling remote websites.  If left blank, crawling will not be available. <a target='_blank' rel='noopener' href='https://www.firecrawl.dev/'>Get one at https://www.firecrawl.dev/</a>"
     chatbot_jina_api_token: "Jina API token for web crawl and search.  <a target='_blank' rel='noopener' href='https://jina.ai'>Get one at https://jina.ai</a>. Alternative to Firecrawl and Serp.  If Firecrawl API token is populated, it will be used in preference to Jina for crawling. Ditto Serp API for Searching."
@@ -109,7 +110,26 @@ en:
       post: "%{username} said %{raw}"
       private_message:
         title_creation: "Create a short Topic title from summarising the prior messages"
+      quick_access_kick_off:
+        announcement: "I must greet the user warmly and kick off any questions I want answered"
       function:
+        user_information:
+          name: "user_information_for_%{user_field}"
+          system_message:
+            general: "You must be proactive and ask the user to tell you what their %{name} is.  Do not wait to be prompted!"
+            confirmation: "You must be proactive and ask the user to tell you what response is to the declaration: %{name}.  Do not wait to be prompted!"
+            dropdown: "You must be proactive and ask the user to tell you what their selection of: %{name} is.  The choices are %{options}.  Do not wait to be prompted!"
+            closing_statement: "However, ONLY ask ONE question at a time.  Do not ask multiple questions in one go.  Ask last question first."
+          description:
+            general: get information about %{user_field} for the user
+            confirmation: confirm if the user accepts the following %{user_field}
+          parameters:
+            answer:
+              text: the answer to the question about what user's %{user_field} is
+              confirmation: "user's confirmation or otherwise (true or false) of: %{user_field}.  If user does not confirm it is false.  If user does confirm, it is true."
+              dropdown: "the user's selection of: %{user_field} which can be one of: %{options}"
+          answer: "Confirm with the user the infomration they gave about %{user_field} has been saved."
+          error: "I couldn't save any information about %{user_field} for answer '%{answer}'"
         calculator:
           description: |
             Useful for getting the result of a math expression.  It is a general purpose calculator.  It works with Ruby expressions.

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 1.1.2
+# version: 1.2.0
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -95,6 +95,7 @@ after_initialize do
     ../lib/discourse_chatbot/bots/open_ai_bot_rag.rb
     ../lib/discourse_chatbot/safe_ruby/lib/safe_ruby.rb
     ../lib/discourse_chatbot/function.rb
+    ../lib/discourse_chatbot/functions/user_field_function.rb
     ../lib/discourse_chatbot/functions/calculator_function.rb
     ../lib/discourse_chatbot/functions/escalate_to_staff_function.rb
     ../lib/discourse_chatbot/functions/news_function.rb

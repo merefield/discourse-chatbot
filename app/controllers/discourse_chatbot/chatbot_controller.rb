@@ -18,6 +18,42 @@ module ::DiscourseChatbot
       evaluation = ::DiscourseChatbot::EventEvaluation.new
       over_quota = evaluation.over_quota(current_user.id)
 
+      kick_off_statement = I18n.t("chatbot.quick_access_kick_off.announcement")
+
+      if SiteSetting.chatbot_user_fields_collection
+
+        trust_level = ::DiscourseChatbot::EventEvaluation.new.trust_level(current_user.id)
+        opts = { trust_level: trust_level, user_id: current_user.id }
+
+        start_bot = ::DiscourseChatbot::OpenAiBotRag.new(opts, false)
+
+        system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
+        assistant_message = { "role": "assistant", "content": I18n.t("chatbot.prmopt.quick_access_kick_off.announcement") }
+
+        system_message_suffix =  start_bot.get_system_message_suffix(opts)
+        system_message[:content] += "  " + system_message_suffix
+
+        messages = [system_message, assistant_message]
+
+        model = start_bot.model_name
+
+        parameters = {
+          model: model,
+          messages: messages,
+          max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
+          temperature: SiteSetting.chatbot_request_temperature / 100.0,
+          top_p: SiteSetting.chatbot_request_top_p / 100.0,
+          frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+          presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
+        }
+
+        res = start_bot.client.chat(
+          parameters: parameters
+        )
+
+        kick_off_statement = res.dig("choices", 0, "message", "content")
+      end
+
       if channel_type == "chat"
 
         bot_author = ::User.find_by(username: SiteSetting.chatbot_bot_user)
@@ -44,7 +80,7 @@ module ::DiscourseChatbot
             Chat::CreateMessage.call(
               chat_channel_id: chat_channel_id,
               guardian: guardian,
-              message: over_quota ? I18n.t('chatbot.errors.overquota') : I18n.t("chatbot.quick_access_kick_off.announcement"),
+              message: over_quota ? I18n.t('chatbot.errors.overquota') : kick_off_statement,
             )
           end
 
@@ -53,7 +89,7 @@ module ::DiscourseChatbot
       elsif channel_type == "personal message"
         default_opts = {
           post_alert_options: { skip_send_email: true },
-          raw: over_quota ? I18n.t('chatbot.errors.overquota') : I18n.t("chatbot.quick_access_kick_off.announcement"),
+          raw: over_quota ? I18n.t('chatbot.errors.overquota') : kick_off_statement,
           skip_validations: true,
           title: I18n.t("chatbot.pm_prefix"),
           archetype: Archetype.private_message,
