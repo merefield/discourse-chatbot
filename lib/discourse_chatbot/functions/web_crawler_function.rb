@@ -72,10 +72,15 @@ module DiscourseChatbot
 
           result = response_body["data"][0]["markdown"]
         end
-
-        result[0..SiteSetting.chatbot_function_response_char_limit]
+        {
+          answer: result[0..SiteSetting.chatbot_function_response_char_limit],
+          token_usage: token_usage
+        }
       rescue
-        I18n.t("chatbot.prompt.function.web_crawler.error")
+        {
+          answer: I18n.t("chatbot.prompt.function.web_crawler.error"),
+          token_usage: token_usage
+        }
       end
     end
   end

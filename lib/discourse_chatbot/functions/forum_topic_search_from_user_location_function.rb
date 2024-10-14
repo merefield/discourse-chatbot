@@ -52,9 +52,15 @@ module DiscourseChatbot
           response += I18n.t("chatbot.prompt.function.f0orum_topic_search_from_user_location.answer", title: topic.title, address: topic_location.address, url: url, distance: distance, rank: index + 1)
           break if index == number_of_topics
         end
-        response
+        {
+          answer: response,
+          token_usage: 0
+        }
       rescue
-        I18n.t("chatbot.prompt.function.forum_topic_search_from_user_location.error", query: args[parameters[0][:name]])
+        {
+          answer: I18n.t("chatbot.prompt.function.forum_topic_search_from_user_location.error", query: args[parameters[0][:name]]),
+          token_usage: 0
+        }
       end
     end
   end

@@ -9,6 +9,8 @@ require 'json'
 module DiscourseChatbot
 
   class StockDataFunction < Function
+    TOKEN_COST = 1000
+
     def name
       'stock_data'
     end
@@ -56,9 +58,15 @@ module DiscourseChatbot
 
         stock_data = api_response['data'][0]
 
-        I18n.t("chatbot.prompt.function.stock_data.answer", ticker: stock_data['symbol'], close: stock_data['close'].to_s, date: stock_data['date'].to_s, high: stock_data['high'].to_s, low: stock_data['low'].to_s)
+        {
+          answer: I18n.t("chatbot.prompt.function.stock_data.answer", ticker: stock_data['symbol'], close: stock_data['close'].to_s, date: stock_data['date'].to_s, high: stock_data['high'].to_s, low: stock_data['low'].to_s),
+          token_usage: TOKEN_COST
+        }
       rescue
-        I18n.t("chatbot.prompt.function.stock_data.error")
+        {
+          answer: I18n.t("chatbot.prompt.function.stock_data.error"),
+          token_usage: TOKEN_COST
+        }
       end
     end
   end

@@ -37,9 +37,15 @@ module DiscourseChatbot
 
         response = I18n.t("chatbot.prompt.function.forum_user_distance_from_location.answer_summary", distance: result, username: username, coords: location)
 
-        response
+        {
+          answer: response,
+          token_usage: 0
+        }
       rescue
-        I18n.t("chatbot.prompt.function.forum_user_distance_from_location.error")
+        {
+          answer: I18n.t("chatbot.prompt.function.forum_user_distance_from_location.error"),
+          token_usage: 0
+        }
       end
     end
   end

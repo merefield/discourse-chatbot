@@ -113,6 +113,11 @@ en:
       quick_access_kick_off:
         announcement: "I must greet the user warmly and kick off any questions I want answered"
       function:
+        remaining_bot_token_quota:
+          description: |
+            Get the current number of tokens you have left for use of the bot this week
+          answer: "You have the following number of bot tokens left for use: %{quota}.\n\n"
+          error:  "There was an error when trying to retrieve your bot token quota: '%{error}'"
         user_information:
           name: "user_information_for_%{user_field}"
           system_message:

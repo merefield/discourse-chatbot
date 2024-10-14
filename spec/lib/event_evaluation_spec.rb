@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require_relative '../plugin_helper'
 
-CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
+CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD = "chatbot_queries"
 CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD = "chatbot_queries_quota_reach_escalation_date"
 
 describe ::DiscourseChatbot::EventEvaluation do
@@ -44,7 +44,7 @@ describe ::DiscourseChatbot::EventEvaluation do
   end
 
   it "returns the correct quota decision if user is in high trust group and is within quota" do
-    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: 1)
+    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 1)
     SiteSetting.chatbot_high_trust_groups = "13|14"
     SiteSetting.chatbot_medium_trust_groups = "11|12"
     SiteSetting.chatbot_low_trust_groups = "10"
@@ -57,7 +57,7 @@ describe ::DiscourseChatbot::EventEvaluation do
   end
 
   it "returns the correct quota decision if user is in high trust group and user is outside of quota and escalates" do
-    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: 3)
+    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 3)
     SiteSetting.chatbot_high_trust_groups = "13|14"
     SiteSetting.chatbot_medium_trust_groups = "11|12"
     SiteSetting.chatbot_low_trust_groups = "10"
@@ -71,7 +71,7 @@ describe ::DiscourseChatbot::EventEvaluation do
   end
 
   it "returns the correct quota decision if user is in high trust group and user is outside of quota but doesn't escalate" do
-    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: 3)
+    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 3)
     UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD, value: 30.minutes.ago)
     SiteSetting.chatbot_high_trust_groups = "13|14"
     SiteSetting.chatbot_medium_trust_groups = "11|12"
@@ -86,7 +86,7 @@ describe ::DiscourseChatbot::EventEvaluation do
   end
 
   it "returns the correct quota decision if 'everyone' group exists in a chatbot trust level and user has not reached their quota" do
-    UserCustomField.create!(user_id: normal_user.id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: 1)
+    UserCustomField.create!(user_id: normal_user.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 1)
     SiteSetting.chatbot_high_trust_groups = "13|14"
     SiteSetting.chatbot_medium_trust_groups = "11|12"
     SiteSetting.chatbot_low_trust_groups = "0"
@@ -98,7 +98,7 @@ describe ::DiscourseChatbot::EventEvaluation do
   end
 
   it "returns the correct quota decision if 'everyone' group exists in a chatbot trust level and user has reached their quota" do
-    UserCustomField.create!(user_id: low_trust_user.id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: 2)
+    UserCustomField.create!(user_id: low_trust_user.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 2)
     SiteSetting.chatbot_high_trust_groups = "13|14"
     SiteSetting.chatbot_medium_trust_groups = "11|12"
     SiteSetting.chatbot_low_trust_groups = "0"
@@ -110,7 +110,7 @@ describe ::DiscourseChatbot::EventEvaluation do
   end
 
   it "returns the correct quota decision if staff group exists in a chatbot trust level and user has not reached their quota" do
-    UserCustomField.create!(user_id: moderator.id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: 1)
+    UserCustomField.create!(user_id: moderator.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 1)
     SiteSetting.chatbot_high_trust_groups = "3"
     SiteSetting.chatbot_medium_trust_groups = ""
     SiteSetting.chatbot_low_trust_groups = ""
@@ -123,7 +123,7 @@ describe ::DiscourseChatbot::EventEvaluation do
   end
 
   it "returns the correct quota decision if staff group exists in a chatbot trust level and user has reached their quota" do
-    UserCustomField.create!(user_id: moderator.id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: 4)
+    UserCustomField.create!(user_id: moderator.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 4)
     SiteSetting.chatbot_high_trust_groups = "3"
     SiteSetting.chatbot_medium_trust_groups = ""
     SiteSetting.chatbot_low_trust_groups = ""

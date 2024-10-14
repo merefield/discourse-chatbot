@@ -26,6 +26,7 @@ module DiscourseChatbot
     def process(args)
       begin
         super(args)
+        token_usage = 0
 
         description = args[parameters[0][:name]]
 
@@ -42,10 +43,17 @@ module DiscourseChatbot
         end
 
         response = client.images.generate(parameters: { prompt: description, model: "dall-e-3", size: "1792x1024", quality: "standard" })
+        token_usage = res.dig("usage", "total_tokens")
 
-        response.dig("data", 0, "url")
+        {
+          answer: response.dig("data", 0, "url"),
+          token_usage: token_usage
+        }
       rescue
-        I18n.t("chatbot.prompt.function.paint.error")
+        {
+          answer: I18n.t("chatbot.prompt.function.paint.error"),
+          token_usage: token_usage
+        }
       end
     end
   end

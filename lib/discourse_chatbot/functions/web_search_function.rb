@@ -45,10 +45,16 @@ module DiscourseChatbot
           hash_results.dig(:answer_box, :snippet).presence ||
           hash_results.dig(:organic_results)
         end
-        result[0..SiteSetting.chatbot_function_response_char_limit]
+        {
+          answer: result[0..SiteSetting.chatbot_function_response_char_limit],
+          token_usage: token_usage
+        }
       rescue => e
         Rails.logger.error("Chatbot: Error in web_search function: #{e}")
-        I18n.t("chatbot.prompt.function.web_search.error", query: args[parameters[0][:name]])
+        {
+          answer: I18n.t("chatbot.prompt.function.web_search.error", query: args[parameters[0][:name]]),
+          token_usage: 0
+        }
       end
     end
   end

@@ -67,10 +67,16 @@ module DiscourseChatbot
           ::UserCustomField.create!(user_id: @user_id, name: @user_custom_field_name, value: args[parameters[0][:name]])
         end
 
-        I18n.t("chatbot.prompt.function.user_information.answer", user_field: @user_field)
+        {
+          answer: I18n.t("chatbot.prompt.function.user_information.answer", user_field: @user_field),
+          token_usage: 0
+        }
       rescue StandardError => e
         Rails.logger.error("Chatbot: Error occurred while attempting to store answer in a User Custom Field: #{e.message}")
-        I18n.t("chatbot.prompt.function.user_information.error", user_field: @user_field, answer: args[parameters[0][:name]])
+        {
+          answer: I18n.t("chatbot.prompt.function.user_information.error", user_field: @user_field, answer: args[parameters[0][:name]]),
+          token_usage: 0
+        }
       end
     end
   end

@@ -35,9 +35,15 @@ module DiscourseChatbot
 
         response = I18n.t("chatbot.prompt.function.return_coords_from_location_description.answer_summary", query: query, coords: coords)
 
-        response
+        {
+          answer: response,
+          token_usage: 0
+        }
       rescue
-        I18n.t("chatbot.prompt.function.return_coords_from_location_description.error", query: args[parameters[0][:name]])
+        {
+          answer: I18n.t("chatbot.prompt.function.return_coords_from_location_description.error", query: args[parameters[0][:name]]),
+          token_usage: 0
+        }
       end
     end
   end

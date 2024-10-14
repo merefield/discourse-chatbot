@@ -4,6 +4,7 @@ require_relative '../function'
 
 module DiscourseChatbot
   class NewsFunction < Function
+    TOKEN_COST = 1000
 
     def name
       'news'
@@ -55,9 +56,15 @@ module DiscourseChatbot
         all_articles.each do |a|
           news += "#{a["title"]}.  "
         end
-        news
+        {
+          answer: news,
+          token_usage: TOKEN_COST
+        }
       rescue
-        I18n.t("chatbot.prompt.function.news.error")
+        {
+          answer: I18n.t("chatbot.prompt.function.news.error"),
+          token_usage: TOKEN_COST
+        }
       end
     end
   end

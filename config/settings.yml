@@ -198,13 +198,13 @@ plugins:
     type: category_list
     list_type: "compact"
   chatbot_quota_high_trust:
-    default: 100
+    default: 100000
     client: false
   chatbot_quota_medium_trust:
-    default: 50
+    default: 50000
     client: false
   chatbot_quota_low_trust:
-    default: 10
+    default: 10000
     client: false
   chatbot_quota_reach_escalation_groups:
     client: false
