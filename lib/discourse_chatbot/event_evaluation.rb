@@ -27,12 +27,11 @@ module ::DiscourseChatbot
 
     def over_quota(user_id)
       max_quota = get_max_quota(user_id)
-      #byebug
-
       if current_record = UserCustomField.find_by(user_id: user_id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD)
         remaining_quota = current_record.value.to_i
       else
         UserCustomField.create!(user_id: user_id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: max_quota.to_s)
+        remaining_quota = max_quota
       end
 
       breach = remaining_quota < 0
