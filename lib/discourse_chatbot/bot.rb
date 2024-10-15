@@ -27,6 +27,8 @@ module ::DiscourseChatbot
       else
         max_quota = ::DiscourseChatbot::EventEvaluation.new.get_max_quota(user_id)
         current_record = UserCustomField.create!(user_id: user_id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: max_quota.to_s)
+        remaining_quota = current_record.value.to_i - token_usage
+        current_record.value = remaining_quota.to_s
       end
       current_record.save!
     end
