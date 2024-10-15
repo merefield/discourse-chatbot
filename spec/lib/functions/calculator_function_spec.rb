@@ -8,7 +8,7 @@ describe ::DiscourseChatbot::CalculatorFunction do
     args = { 'input' => '3 + 4' }
 
     expect(calc.process(args)).to eq(
-      {:answer => 7, :token_usage => 0}
+      {answer: 7, token_usage: 0}
     )
   end
 end
