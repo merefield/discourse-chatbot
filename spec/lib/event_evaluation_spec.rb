@@ -43,21 +43,35 @@ describe ::DiscourseChatbot::EventEvaluation do
     expect(event.trust_level(normal_user.id)).to equal(::DiscourseChatbot::TRUST_LEVELS[1])
   end
 
-  it "returns the correct quota decision if user is in high trust group and is within quota" do
-    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 1)
+  it "returns the correct max quota for user in high trust group" do
     SiteSetting.chatbot_high_trust_groups = "13|14"
     SiteSetting.chatbot_medium_trust_groups = "11|12"
     SiteSetting.chatbot_low_trust_groups = "10"
-    SiteSetting.chatbot_quota_high_trust = 3
-    SiteSetting.chatbot_quota_medium_trust = 2
-    SiteSetting.chatbot_quota_low_trust = 1
+
+    SiteSetting.chatbot_quota_high_trust = 3000
+    SiteSetting.chatbot_quota_medium_trust = 2000
+    SiteSetting.chatbot_quota_low_trust = 1000
+
+    event = ::DiscourseChatbot::EventEvaluation.new
+    expect(event.get_max_quota(high_trust_user.id)).to equal(3000)
+    expect(event.get_max_quota(low_trust_user.id)).to equal(1000)
+  end
+
+  it "returns the correct quota decision if user is in high trust group and is within quota" do
+    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 1000)
+    SiteSetting.chatbot_high_trust_groups = "13|14"
+    SiteSetting.chatbot_medium_trust_groups = "11|12"
+    SiteSetting.chatbot_low_trust_groups = "10"
+    SiteSetting.chatbot_quota_high_trust = 3000
+    SiteSetting.chatbot_quota_medium_trust = 2000
+    SiteSetting.chatbot_quota_low_trust = 1000
 
     event = ::DiscourseChatbot::EventEvaluation.new
     expect(event.over_quota(high_trust_user.id)).to equal(false)
   end
 
   it "returns the correct quota decision if user is in high trust group and user is outside of quota and escalates" do
-    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 3)
+    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 3000)
     SiteSetting.chatbot_high_trust_groups = "13|14"
     SiteSetting.chatbot_medium_trust_groups = "11|12"
     SiteSetting.chatbot_low_trust_groups = "10"
@@ -71,7 +85,7 @@ describe ::DiscourseChatbot::EventEvaluation do
   end
 
   it "returns the correct quota decision if user is in high trust group and user is outside of quota but doesn't escalate" do
-    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 3)
+    UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: 3000)
     UserCustomField.create!(user_id: high_trust_user.id, name: CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD, value: 30.minutes.ago)
     SiteSetting.chatbot_high_trust_groups = "13|14"
     SiteSetting.chatbot_medium_trust_groups = "11|12"

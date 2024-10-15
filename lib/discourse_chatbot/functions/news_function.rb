@@ -4,7 +4,7 @@ require_relative '../function'
 
 module DiscourseChatbot
   class NewsFunction < Function
-    TOKEN_COST = 1000
+    TOKEN_COST = 10000
 
     def name
       'news'
