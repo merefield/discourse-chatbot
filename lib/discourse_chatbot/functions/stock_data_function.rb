@@ -9,7 +9,6 @@ require 'json'
 module DiscourseChatbot
 
   class StockDataFunction < Function
-    TOKEN_COST = 1000
 
     def name
       'stock_data'
@@ -33,6 +32,7 @@ module DiscourseChatbot
     def process(args)
       begin
         super(args)
+        token_usage = 0
 
         params = {
           access_key: "#{SiteSetting.chatbot_marketstack_key}",
@@ -57,15 +57,16 @@ module DiscourseChatbot
         api_response = JSON.parse(json)
 
         stock_data = api_response['data'][0]
+        token_usage = SiteSetting.chatbot_marketstack_api_call_token_cost
 
         {
           answer: I18n.t("chatbot.prompt.function.stock_data.answer", ticker: stock_data['symbol'], close: stock_data['close'].to_s, date: stock_data['date'].to_s, high: stock_data['high'].to_s, low: stock_data['low'].to_s),
-          token_usage: TOKEN_COST
+          token_usage: token_usage
         }
       rescue
         {
           answer: I18n.t("chatbot.prompt.function.stock_data.error"),
-          token_usage: TOKEN_COST
+          token_usage: token_usage
         }
       end
     end

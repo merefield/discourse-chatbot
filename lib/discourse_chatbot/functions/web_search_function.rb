@@ -27,6 +27,7 @@ module DiscourseChatbot
     def process(args)
       begin
         super(args)
+        token_usage = 0
         if SiteSetting.chatbot_serp_api_key.blank?
           query = URI.encode_www_form_component(args[parameters[0][:name]])
           conn = Faraday.new(
@@ -37,6 +38,7 @@ module DiscourseChatbot
           )
           response = conn.get
           result = response.body
+          token_usage =  response.body.length * SiteSetting.chatbot_jina_api_token_cost_multiplier
         else
           hash_results = ::GoogleSearch.new(q: args[parameters[0][:name]], serp_api_key: SiteSetting.chatbot_serp_api_key)
             .get_hash
@@ -44,6 +46,7 @@ module DiscourseChatbot
           result = hash_results.dig(:answer_box, :answer).presence ||
           hash_results.dig(:answer_box, :snippet).presence ||
           hash_results.dig(:organic_results)
+          token_usage = SiteSetting.chatbot_serp_api_token_cost
         end
         {
           answer: result[0..SiteSetting.chatbot_function_response_char_limit],

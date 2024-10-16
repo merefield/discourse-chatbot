@@ -4,7 +4,6 @@ require_relative '../function'
 
 module DiscourseChatbot
   class NewsFunction < Function
-    TOKEN_COST = 10000
 
     def name
       'news'
@@ -33,6 +32,7 @@ module DiscourseChatbot
         --------------------------------------
         EOS
         super(args)
+        token_usage = 0
 
         conn_params = {}
 
@@ -56,14 +56,15 @@ module DiscourseChatbot
         all_articles.each do |a|
           news += "#{a["title"]}.  "
         end
+        token_usage = SiteSetting.chatbot_news_api_call_token_cost
         {
           answer: news,
-          token_usage: TOKEN_COST
+          token_usage: token_usage
         }
       rescue
         {
           answer: I18n.t("chatbot.prompt.function.news.error"),
-          token_usage: TOKEN_COST
+          token_usage: token_usage
         }
       end
     end
