@@ -140,10 +140,22 @@ module DiscourseChatbot
             topic_ids_found = topic_ids_found | [current_post.topic_id]
           end
         end
-        { result: response, topic_ids_found: topic_ids_found, post_ids_found: post_ids_found, non_post_urls_found: non_post_urls_found}
+        {
+          result: response,
+          topic_ids_found: topic_ids_found,
+          post_ids_found: post_ids_found,
+          non_post_urls_found: non_post_urls_found,
+          token_usage: 0
+        }
       rescue StandardError => e
         Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Forum Search results for query '#{query}': #{e.message}")
-        { result: I18n.t("chatbot.prompt.function.forum_search.error", query: args[parameters[0][:name]]), topic_ids_found: [], post_ids_found: [] }
+        {
+          result: I18n.t("chatbot.prompt.function.forum_search.error", query: args[parameters[0][:name]]),
+          topic_ids_found: [],
+          post_ids_found: [],
+          non_post_urls_found: [],
+          token_usage: 0
+        }
       end
     end
 

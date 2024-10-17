@@ -26,26 +26,12 @@ module ::DiscourseChatbot
     end
 
     def over_quota(user_id)
-      max_quota = 0
+      max_quota = get_max_quota(user_id)
+      remaining_quota = get_remaining_quota(user_id)
 
-      GroupUser.where(user_id: user_id).each do |gu|
-        if SiteSetting.chatbot_high_trust_groups.split('|').include? gu.group_id.to_s
-          max_quota = SiteSetting.chatbot_quota_high_trust if max_quota < SiteSetting.chatbot_quota_high_trust
-        end
-        if SiteSetting.chatbot_medium_trust_groups.split('|').include? gu.group_id.to_s
-          max_quota = SiteSetting.chatbot_quota_medium_trust if max_quota < SiteSetting.chatbot_quota_medium_trust
-        end
-        if SiteSetting.chatbot_low_trust_groups.split('|').include? gu.group_id.to_s
-          max_quota = SiteSetting.chatbot_quota_low_trust if max_quota < SiteSetting.chatbot_quota_low_trust
-        end
-      end
+      current_record = UserCustomField.find_by(user_id: user_id, name: CHATBOT_QUERIES_CUSTOM_FIELD)
 
-      # deal with 'everyone' group
-      max_quota = SiteSetting.chatbot_quota_high_trust if SiteSetting.chatbot_high_trust_groups.split('|').include?("0") && max_quota < SiteSetting.chatbot_quota_high_trust
-      max_quota = SiteSetting.chatbot_quota_medium_trust if SiteSetting.chatbot_medium_trust_groups.split('|').include?("0") && max_quota < SiteSetting.chatbot_quota_medium_trust
-      max_quota = SiteSetting.chatbot_quota_low_trust if SiteSetting.chatbot_low_trust_groups.split('|').include?("0") && max_quota < SiteSetting.chatbot_quota_low_trust
-
-      if current_record = UserCustomField.find_by(user_id: user_id, name: CHATBOT_QUERIES_CUSTOM_FIELD)
+      if current_record.present?
         current_queries = current_record.value.to_i + 1
         current_record.value = current_queries.to_s
         current_record.save!
@@ -54,9 +40,51 @@ module ::DiscourseChatbot
         UserCustomField.create!(user_id: user_id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: current_queries)
       end
 
-      breach = current_queries > max_quota
+      current_record = UserCustomField.find_by(user_id: user_id, name: CHATBOT_QUERIES_CURRENT_PERIOD_CUSTOM_FIELD)
+
+      if current_record.present?
+        current_queries = current_record.value.to_i + 1
+        current_record.value = current_queries.to_s
+        current_record.save!
+      else
+        current_queries = 1
+        UserCustomField.create!(user_id: user_id, name: CHATBOT_QUERIES_CURRENT_PERIOD_CUSTOM_FIELD, value: current_queries)
+      end
+
+      if remaining_quota.nil?
+        UserCustomField.create!(user_id: user_id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: max_quota.to_s)
+        remaining_quota = max_quota
+      end
+
+      breach = remaining_quota < 0
       escalate_as_required(user_id) if breach
       breach
+    end
+
+    def get_remaining_quota(user_id)
+      UserCustomField.find_by(user_id: user_id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD)&.value.to_i
+    end
+
+    def get_max_quota(user_id)
+      max_quota = 0
+      GroupUser.where(user_id: user_id).each do |gu|
+        if SiteSetting.chatbot_low_trust_groups.split('|').include? gu.group_id.to_s
+          max_quota = SiteSetting.chatbot_quota_low_trust if max_quota < SiteSetting.chatbot_quota_low_trust
+        end
+        if SiteSetting.chatbot_medium_trust_groups.split('|').include? gu.group_id.to_s
+          max_quota = SiteSetting.chatbot_quota_medium_trust if max_quota < SiteSetting.chatbot_quota_medium_trust
+        end
+        if SiteSetting.chatbot_high_trust_groups.split('|').include? gu.group_id.to_s
+          max_quota = SiteSetting.chatbot_quota_high_trust if max_quota < SiteSetting.chatbot_quota_high_trust
+        end
+      end
+
+      # deal with 'everyone' group
+      max_quota = SiteSetting.chatbot_quota_low_trust if SiteSetting.chatbot_low_trust_groups.split('|').include?("0") && max_quota < SiteSetting.chatbot_quota_low_trust
+      max_quota = SiteSetting.chatbot_quota_medium_trust if SiteSetting.chatbot_medium_trust_groups.split('|').include?("0") && max_quota < SiteSetting.chatbot_quota_medium_trust
+      max_quota = SiteSetting.chatbot_quota_high_trust if SiteSetting.chatbot_high_trust_groups.split('|').include?("0") && max_quota < SiteSetting.chatbot_quota_high_trust
+
+      max_quota
     end
 
     def escalate_as_required(user_id)

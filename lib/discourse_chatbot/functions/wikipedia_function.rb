@@ -31,9 +31,15 @@ module DiscourseChatbot
 
         page = ::Wikipedia.find(args[parameters[0][:name]])
 
-        I18n.t("chatbot.prompt.function.wikipedia.answer", summary: page.summary, url: page.fullurl)
+        {
+          answer: I18n.t("chatbot.prompt.function.wikipedia.answer", summary: page.summary, url: page.fullurl),
+          token_usage: 0
+        }
       rescue
-        I18n.t("chatbot.prompt.function.wikipedia.error")
+        {
+          answer: I18n.t("chatbot.prompt.function.wikipedia.error"),
+          token_usage: 0
+        }
       end
     end
   end

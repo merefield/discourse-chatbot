@@ -45,9 +45,15 @@ module DiscourseChatbot
           response += I18n.t("chatbot.prompt.function.forum_user_search_from_location.answer", username: user.username, distance: distance, rank: index + 1)
           break if index == number_of_users
         end
-        response
+        {
+          answer: response,
+          token_usage: 0
+        }
       rescue
-        I18n.t("chatbot.prompt.function.forum_user_search_from_location.error", query: args[parameters[0][:name]])
+        {
+          answer: I18n.t("chatbot.prompt.function.forum_user_search_from_location.error", query: args[parameters[0][:name]]),
+          token_usage: 0
+        }
       end
     end
   end
