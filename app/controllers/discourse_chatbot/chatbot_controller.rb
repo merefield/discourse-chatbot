@@ -28,7 +28,7 @@ module ::DiscourseChatbot
         start_bot = ::DiscourseChatbot::OpenAiBotRag.new(opts, false)
 
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
-        assistant_message = { "role": "assistant", "content": I18n.t("chatbot.prompt.quick_access_kick_off.announcement") }
+        assistant_message = { "role": "assistant", "content": I18n.t("chatbot.prompt.quick_access_kick_off.announcement", username: current_user.username) }
 
         system_message_suffix =  start_bot.get_system_message_suffix(opts)
         system_message[:content] += "  " + system_message_suffix

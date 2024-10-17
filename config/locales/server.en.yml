@@ -111,7 +111,7 @@ en:
       private_message:
         title_creation: "Create a short Topic title from summarising the prior messages"
       quick_access_kick_off:
-        announcement: "I must greet the user warmly and kick off any questions I want answered"
+        announcement: "I must greet @%{username} warmly and kick off any questions I want answered."
       function:
         user_information:
           name: "user_information_for_%{user_field}"
