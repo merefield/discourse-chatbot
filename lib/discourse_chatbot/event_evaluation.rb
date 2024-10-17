@@ -29,6 +29,28 @@ module ::DiscourseChatbot
       max_quota = get_max_quota(user_id)
       remaining_quota = get_remaining_quota(user_id)
 
+      current_record = UserCustomField.find_by(user_id: user_id, name: CHATBOT_QUERIES_CUSTOM_FIELD)
+
+      if current_record.present?
+        current_queries = current_record.value.to_i + 1
+        current_record.value = current_queries.to_s
+        current_record.save!
+      else
+        current_queries = 1
+        UserCustomField.create!(user_id: user_id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: current_queries)
+      end
+
+      current_record = UserCustomField.find_by(user_id: user_id, name: CHATBOT_QUERIES_CURRENT_PERIOD_CUSTOM_FIELD)
+
+      if current_record.present?
+        current_queries = current_record.value.to_i + 1
+        current_record.value = current_queries.to_s
+        current_record.save!
+      else
+        current_queries = 1
+        UserCustomField.create!(user_id: user_id, name: CHATBOT_QUERIES_CURRENT_PERIOD_CUSTOM_FIELD, value: current_queries)
+      end
+
       if remaining_quota.nil?
         UserCustomField.create!(user_id: user_id, name: CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, value: max_quota.to_s)
         remaining_quota = max_quota

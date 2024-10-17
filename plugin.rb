@@ -22,6 +22,9 @@ module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
   POST = "post"
   MESSAGE = "message"
+  
+  CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
+  CHATBOT_QUERIES_CURRENT_PERIOD_CUSTOM_FIELD = "chatbot_queries_current_period"
   CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD = "chatbot_remaining_token_quota"
   CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD = "chatbot_queries_quota_reach_escalation_date"
   POST_TYPES_REGULAR_ONLY = [1]
@@ -136,10 +139,10 @@ after_initialize do
     load File.expand_path(path, __FILE__)
   end
 
+  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD, :integer) 
+  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_CURRENT_PERIOD_CUSTOM_FIELD, :integer)
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, :integer)
-
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD, :date)
-
 
   add_to_serializer(:current_user, :chatbot_access) do
     !::DiscourseChatbot::EventEvaluation.new.trust_level(object.id).blank?
