@@ -197,14 +197,21 @@ plugins:
     default: ''
     type: category_list
     list_type: "compact"
+  chatbot_quota_basis:
+    client: false
+    default: 'queries'
+    type: enum
+    choices:
+      - 'queries'
+      - 'tokens'
   chatbot_quota_high_trust:
-    default: 20000000
+    default: 100
     client: false
   chatbot_quota_medium_trust:
-    default: 10000000
+    default: 50
     client: false
   chatbot_quota_low_trust:
-    default: 2000000
+    default: 10
     client: false
   chatbot_quota_reach_escalation_groups:
     client: false

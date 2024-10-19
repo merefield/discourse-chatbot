@@ -24,8 +24,8 @@ module ::DiscourseChatbot
   MESSAGE = "message"
   
   CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
-  CHATBOT_QUERIES_CURRENT_PERIOD_CUSTOM_FIELD = "chatbot_queries_current_period"
-  CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD = "chatbot_remaining_token_quota"
+  CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD = "chatbot_remanining_quota_queries"
+  CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD = "chatbot_remaining_quota_tokens"
   CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD = "chatbot_queries_quota_reach_escalation_date"
   POST_TYPES_REGULAR_ONLY = [1]
   POST_TYPES_INC_WHISPERS = [1, 4]
@@ -140,8 +140,8 @@ after_initialize do
   end
 
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD, :integer) 
-  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_CURRENT_PERIOD_CUSTOM_FIELD, :integer)
-  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD, :integer)
+  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD, :integer)
+  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD, :integer)
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD, :date)
 
   add_to_serializer(:current_user, :chatbot_access) do

@@ -26,7 +26,7 @@ module DiscourseChatbot
         super(args)
         user_id = opts[:user_id]
 
-        remaining_quota = UserCustomField.find_by(user_id: user_id, name: ::DiscourseChatbot::CHATBOT_REMAINING_TOKEN_QUOTA_CUSTOM_FIELD)
+        remaining_quota = UserCustomField.find_by(user_id: user_id, name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD)
 
         {
           answer: I18n.t("chatbot.prompt.function.remaining_bot_token_quota.answer", quota: remaining_quota.value),
