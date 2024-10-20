@@ -355,7 +355,7 @@ module ::DiscourseChatbot
         token_usage = 0
         args = JSON.parse(args_str)
         func = @func_mapping[func_name]
-        if ["escalate_to_staff", "remaining_bot_token_quota"].include?(func_name)
+        if ["escalate_to_staff", "remaining_bot_quota"].include?(func_name)
           res, token_usage = func.process(args, opts).values_at(:answer, :token_usage)
         elsif ["vision"].include?(func_name)
           res, token_usage = func.process(args, opts, @client).values_at(:answer, :token_usage)
