@@ -30,19 +30,6 @@ module ::DiscourseChatbot
       remaining_quota_field_name =  SiteSetting.chatbot_quota_basis == "queries" ? CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD : CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD
       remaining_quota = get_remaining_quota(user_id, remaining_quota_field_name)
 
-      current_record = UserCustomField.find_by(user_id: user_id, name: CHATBOT_QUERIES_CUSTOM_FIELD)
-
-      if current_record.present?
-        current_queries = current_record.value.to_i + 1
-        current_record.value = current_queries.to_s
-        current_record.save!
-      else
-        current_queries = 1
-        UserCustomField.create!(user_id: user_id, name: CHATBOT_QUERIES_CUSTOM_FIELD, value: current_queries)
-      end
-
-
-
       if remaining_quota.nil?
         UserCustomField.create!(user_id: user_id, name: remaining_quota_field_name, value: max_quota.to_s)
         remaining_quota = max_quota
