@@ -26,6 +26,7 @@ module DiscourseChatbot
 
     def process(args, opts, client)
       begin
+        token_usage = 0
         super(args)
 
         if args[parameters[0][:name]].blank?
@@ -79,6 +80,8 @@ module DiscourseChatbot
             }
           )
 
+          token_usage = res.dig("usage", "total_tokens")
+
           if res.dig("error")
             error_text = "ERROR when trying to perform chat completion for vision: #{res.dig("error", "message")}"
 
@@ -94,9 +97,15 @@ module DiscourseChatbot
           raise error_text
         end
 
-        I18n.t("chatbot.prompt.function.vision.answer", description: res["choices"][0]["message"]["content"])
+        {
+          answer: I18n.t("chatbot.prompt.function.vision.answer", description: res["choices"][0]["message"]["content"]),
+          token_usage: token_usage
+        }
       rescue => e
-        I18n.t("chatbot.prompt.function.vision.error", error: e.message)
+        {
+          answer: I18n.t("chatbot.prompt.function.vision.error", error: e.message),
+          token_usage: token_usage
+        }
       end
     end
   end

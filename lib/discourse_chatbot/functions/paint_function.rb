@@ -4,6 +4,7 @@ require_relative '../function'
 
 module DiscourseChatbot
   class PaintFunction < Function
+    TOKEN_COST = 1000000 # 1M tokens per request based on cost of dall-e-3 model vs gpt-4o-mini
 
     def name
       'paint_picture'
@@ -26,6 +27,7 @@ module DiscourseChatbot
     def process(args)
       begin
         super(args)
+        token_usage = 0
 
         description = args[parameters[0][:name]]
 
@@ -43,9 +45,21 @@ module DiscourseChatbot
 
         response = client.images.generate(parameters: { prompt: description, model: "dall-e-3", size: "1792x1024", quality: "standard" })
 
-        response.dig("data", 0, "url")
-      rescue
-        I18n.t("chatbot.prompt.function.paint.error")
+        if response.dig("error")
+          error_text = "ERROR when trying to call paint API: #{response.dig("error", "message")}"
+          raise StandardError, error_text
+        end
+
+        {
+          answer: response.dig("data", 0, "url"),
+          token_usage: TOKEN_COST
+        }
+      rescue => e
+        Rails.logger.error("Chatbot: Error in paint function: #{e}")
+        {
+          answer: I18n.t("chatbot.prompt.function.paint.error"),
+          token_usage: TOKEN_COST
+        }
       end
     end
   end
