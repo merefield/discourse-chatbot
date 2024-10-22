@@ -122,7 +122,7 @@ en:
         remaining_bot_quota:
           description: |
             Get the current number of tokens or queries you have left for use of the bot this week
-          answer: "The user has %{quota} bot %{units} left for use this week.\n\n"
+          answer: "The user has %{quota} bot %{units} left for use this week.  There are %{days_remaining} before it resets!\n\n"
           error:  "There was an error when trying to retrieve your remaining bot quota: '%{error}'"
         user_information:
           name: "user_information_for_%{user_field}"
