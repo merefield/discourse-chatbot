@@ -3,7 +3,7 @@
 require_relative '../function'
 
 module DiscourseChatbot
-  class RemainingBotTokenQuotaFunction < Function
+  class RemainingQuotaFunction < Function
     QUOTA_RESET_JOB = "Jobs::ChatbotQuotaReset"
 
     def name

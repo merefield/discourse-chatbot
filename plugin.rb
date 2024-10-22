@@ -98,7 +98,7 @@ after_initialize do
     ../lib/discourse_chatbot/bots/open_ai_bot_rag.rb
     ../lib/discourse_chatbot/safe_ruby/lib/safe_ruby.rb
     ../lib/discourse_chatbot/function.rb
-    ../lib/discourse_chatbot/functions/remaining_bot_quota_function.rb
+    ../lib/discourse_chatbot/functions/remaining_quota_function.rb
     ../lib/discourse_chatbot/functions/user_field_function.rb
     ../lib/discourse_chatbot/functions/calculator_function.rb
     ../lib/discourse_chatbot/functions/escalate_to_staff_function.rb

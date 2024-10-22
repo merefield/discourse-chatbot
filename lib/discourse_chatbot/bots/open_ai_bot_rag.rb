@@ -22,7 +22,7 @@ BUILT_IN_FUNCTIONS = ["DiscourseChatbot::StockDataFunction",
 "DiscourseChatbot::UserFieldFunction",
 "DiscourseChatbot::EscalateToStaffFunction",
 "DiscourseChatbot::CalculatorFunction",
-"DiscourseChatbot::RemainingBotTokenQuotaFunction"]
+"DiscourseChatbot::RemainingQuotaFunction"]
 
 module ::DiscourseChatbot
 
@@ -102,7 +102,7 @@ module ::DiscourseChatbot
     end
 
     def merge_functions(opts)
-      quota_function = ::DiscourseChatbot::RemainingBotTokenQuotaFunction.new
+      quota_function = ::DiscourseChatbot::RemainingQuotaFunction.new
       calculator_function = ::DiscourseChatbot::CalculatorFunction.new
       wikipedia_function = ::DiscourseChatbot::WikipediaFunction.new
       news_function = ::DiscourseChatbot::NewsFunction.new
