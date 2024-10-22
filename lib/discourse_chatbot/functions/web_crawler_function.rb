@@ -31,6 +31,7 @@ module DiscourseChatbot
         --------------------------------------
         EOS
         super(args)
+        token_usage = 0
         if SiteSetting.chatbot_firecrawl_api_token.blank?
           conn = Faraday.new(
             url: "https://r.jina.ai/#{args[parameters[0][:name]]}",
@@ -40,6 +41,7 @@ module DiscourseChatbot
           )
           response = conn.get
           result = response.body
+          token_usage =  result.length * SiteSetting.chatbot_jina_api_token_cost_multiplier
         else
           conn = Faraday.new(
             url: 'https://api.firecrawl.dev',
@@ -71,11 +73,18 @@ module DiscourseChatbot
           end
 
           result = response_body["data"][0]["markdown"]
+          token_usage = SiteSetting.chatbot_firecrawl_api_token_cost
         end
-
-        result[0..SiteSetting.chatbot_function_response_char_limit]
-      rescue
-        I18n.t("chatbot.prompt.function.web_crawler.error")
+        {
+          answer: result[0..SiteSetting.chatbot_function_response_char_limit],
+          token_usage: token_usage
+        }
+      rescue=> e
+        Rails.logger.error("Chatbot: Error in web crawler function: #{e}")
+        {
+          answer: I18n.t("chatbot.prompt.function.web_crawler.error"),
+          token_usage: token_usage
+        }
       end
     end
   end

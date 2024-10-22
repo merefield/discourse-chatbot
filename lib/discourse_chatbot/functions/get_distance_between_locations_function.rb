@@ -35,9 +35,15 @@ module DiscourseChatbot
 
         distance = ::Locations::Geocode.return_distance(coords1[0], coords1[1], coords2[0], coords2[1])
 
-        I18n.t("chatbot.prompt.function.get_distance_between_locations.answer_summary", distance: distance, coords1: coords1, coords2: coords2)
+        {
+          answer: I18n.t("chatbot.prompt.function.get_distance_between_locations.answer_summary", distance: distance, coords1: coords1, coords2: coords2),
+          token_usage: 0
+        }
       rescue
-        I18n.t("chatbot.prompt.function.get_distance_between_locations.error", query: args[parameters[0][:name]])
+        {
+          answer: I18n.t("chatbot.prompt.function.get_distance_between_locations.error", query: args[parameters[0][:name]]),
+          token_usage: 0
+        }
       end
     end
   end

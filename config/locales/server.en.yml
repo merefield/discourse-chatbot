@@ -41,6 +41,7 @@ en:
     chatbot_quick_access_talk_button: "Display floating button which links to direct discussion one-to-one with the bot on specified channel type"
     chatbot_quick_access_talk_button_bot_icon: "Name of icon used for floating quick bot access button.  If blank it will use bot user's avatar instead. (if icon make sure it's permitted and added to svg_icon_subset if necessary)"
     chatbot_quick_access_bot_kicks_off: "Quick access launches a convesation in which the bot speaks first based on provided text at <a target='_blank' rel='noopener' href='/admin/customize/site_texts?q=chatbot.quick_access_kick_off.announcement'>Customize Text</a>"
+    chatbot_quota_basis: "Choose number of interactions ('queries') or tokens.  Tokens allows a more fine grained system that takes into account tool call cost, e.g. generating images."
     chatbot_quota_high_trust: "The allowed number of bot responses allowed by prompting user per week - high trust groups"
     chatbot_quota_medium_trust: "The allowed number of bot responses allowed by prompting user per week - medium trust groups"
     chatbot_quota_low_trust: "The allowed number of bot responses allowed by prompting user per week - low trust groups"
@@ -79,11 +80,16 @@ en:
     chatbot_escalate_to_staff_max_history: "(Chat only) number of chat messages included in transcript added to escalation PM"
     chatbot_user_fields_collection: "(EXPERIMENTAL) Collect empty user fields from the user as part of the conversation"
     chatbot_news_api_token: "News API token for news (if left blank, news will never be searched)<a target='_blank' rel='noopener' href='https://newsapi.org/'>Get one at NewsAPI.org</a>"
+    chatbot_news_api_call_token_cost: "The notional token cost used for each call to the News API against users' overall quota."
     chatbot_firecrawl_api_token: "Firecrawl API token for crawling remote websites.  If left blank, crawling will not be available. <a target='_blank' rel='noopener' href='https://www.firecrawl.dev/'>Get one at https://www.firecrawl.dev/</a>"
+    chatbot_firecrawl_api_call_token_cost: "The notional token cost used for each call to the Firecrawl API against users' overall quota."
     chatbot_jina_api_token: "Jina API token for web crawl and search.  <a target='_blank' rel='noopener' href='https://jina.ai'>Get one at https://jina.ai</a>. Alternative to Firecrawl and Serp.  If Firecrawl API token is populated, it will be used in preference to Jina for crawling. Ditto Serp API for Searching."
+    chatbot_jina_api_token_cost_multiplier: "The notional token cost multiplier used for each call to the Jina API against users' overall quota.  A Users's cost is the amount of text returned multiplied by this number."
     chatbot_function_response_char_limit: "The maximum number of characters taken from the response from web crawl in order to mitigate the risk of a token breach when later including result in LLM call"
     chatbot_serp_api_key: "Serp API token for google search (if left blank, google will never be searched). <a target='_blank' rel='noopener' href='https://serpapi.com/'>Get one at SerpAPI.com</a>"
+    chatbot_serp_api_call_token_cost: "The notional token cost used for each call to the Serp API against users' overall quota."
     chatbot_marketstack_key: "Marketstack API key for stock price information (if left blank, Marketstack will never be queried).<a target='_blank' rel='noopener' href='https://marketstack.com/'>Get one at MarketStack.com</a>"
+    chatbot_marketstack_api_call_token_cost: "The notional token cost used for each call to the Marketstack API against users' overall quota."
     chatbot_enable_verbose_console_logging: "Enable response retrieval progress logging to console to help debug issues"
     chatbot_enable_verbose_rails_logging: "Enable response retrieval progress logging to rails logs to help debug issues. 'api_calls_only' restricts this to just API calls, 'all' logs all progress"
     chatbot_verbose_rails_logging_destination_level: "Choose which category of logs to send verbose logs to.  'warn' is useful in Production as 'info' logs are not exposed at /logs."
@@ -113,6 +119,11 @@ en:
       quick_access_kick_off:
         announcement: "I must greet @%{username} warmly and kick off any questions I want answered."
       function:
+        remaining_bot_quota:
+          description: |
+            Get the current number of tokens or queries you have left for use of the bot this week
+          answer: "The user has %{quota} bot %{units} left for use this week.  There are %{days_remaining} before it resets!\n\n"
+          error:  "There was an error when trying to retrieve your remaining bot quota: '%{error}'"
         user_information:
           name: "user_information_for_%{user_field}"
           system_message:

@@ -41,6 +41,7 @@ module ::DiscourseChatbot
       end
 
       @model_name = get_model(opts)
+      @total_tokens = 0
     end
 
     def get_response(prompt, opts)

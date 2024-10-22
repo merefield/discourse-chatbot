@@ -21,7 +21,8 @@ BUILT_IN_FUNCTIONS = ["DiscourseChatbot::StockDataFunction",
 "DiscourseChatbot::NewsFunction",
 "DiscourseChatbot::UserFieldFunction",
 "DiscourseChatbot::EscalateToStaffFunction",
-"DiscourseChatbot::CalculatorFunction"]
+"DiscourseChatbot::CalculatorFunction",
+"DiscourseChatbot::RemainingQuotaFunction"]
 
 module ::DiscourseChatbot
 
@@ -66,7 +67,8 @@ module ::DiscourseChatbot
 
       {
         reply: res["choices"][0]["message"]["content"],
-        inner_thoughts: @inner_thoughts
+        inner_thoughts: @inner_thoughts,
+        total_tokens: @total_tokens
       }
     end
 
@@ -100,6 +102,7 @@ module ::DiscourseChatbot
     end
 
     def merge_functions(opts)
+      quota_function = ::DiscourseChatbot::RemainingQuotaFunction.new
       calculator_function = ::DiscourseChatbot::CalculatorFunction.new
       wikipedia_function = ::DiscourseChatbot::WikipediaFunction.new
       news_function = ::DiscourseChatbot::NewsFunction.new
@@ -147,6 +150,7 @@ module ::DiscourseChatbot
         end
       end
 
+      functions << quota_function
       functions << forum_search_function if forum_search_function
       functions << vision_function if vision_function
       functions << paint_function if SiteSetting.chatbot_support_picture_creation
@@ -217,6 +221,9 @@ module ::DiscourseChatbot
         res = @client.chat(
           parameters: parameters
         )
+
+        token_usage = res.dig("usage", "total_tokens")
+        @total_tokens += token_usage
 
         ::DiscourseChatbot.progress_debug_message <<~EOS
           +++++++++++++++++++++++++++++++++++++++
@@ -345,15 +352,17 @@ module ::DiscourseChatbot
         +++++++++++++++++++++++++++++++++++++++
       EOS
       begin
+        token_usage = 0
         args = JSON.parse(args_str)
         func = @func_mapping[func_name]
-        if ["escalate_to_staff"].include?(func_name)
-          res = func.process(args, opts)
+        if ["escalate_to_staff", "remaining_bot_quota"].include?(func_name)
+          res, token_usage = func.process(args, opts).values_at(:answer, :token_usage)
         elsif ["vision"].include?(func_name)
-          res = func.process(args, opts, @client)
+          res, token_usage = func.process(args, opts, @client).values_at(:answer, :token_usage)
         else
-          res = func.process(args)
+          res, token_usage = func.process(args).values_at(:answer, :token_usage)
         end
+        @total_tokens += token_usage
         res
        rescue
          I18n.t("chatbot.prompt.rag.call_function.error")

@@ -32,6 +32,7 @@ module DiscourseChatbot
         --------------------------------------
         EOS
         super(args)
+        token_usage = 0
 
         conn_params = {}
 
@@ -55,9 +56,16 @@ module DiscourseChatbot
         all_articles.each do |a|
           news += "#{a["title"]}.  "
         end
-        news
+        token_usage = SiteSetting.chatbot_news_api_call_token_cost
+        {
+          answer: news,
+          token_usage: token_usage
+        }
       rescue
-        I18n.t("chatbot.prompt.function.news.error")
+        {
+          answer: I18n.t("chatbot.prompt.function.news.error"),
+          token_usage: token_usage
+        }
       end
     end
   end

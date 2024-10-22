@@ -43,6 +43,9 @@ module ::DiscourseChatbot
           parameters: parameters
         )
 
+        token_usage = res.dig("usage", "total_tokens")
+        @total_tokens += token_usage
+
         {
           reply: response.dig("choices", 0, "message", "content"),
           inner_thoughts: nil

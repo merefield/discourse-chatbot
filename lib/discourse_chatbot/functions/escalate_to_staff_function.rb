@@ -69,8 +69,15 @@ module DiscourseChatbot
         else
           response = I18n.t("chatbot.prompt.function.escalate_to_staff.no_escalation_groups")
         end
+        {
+          answer: response,
+          token_usage: 0
+        }
       rescue
-        I18n.t("chatbot.prompt.function.escalate_to_staff.error", parameter: args[parameters[0][:name]])
+        {
+          answer: I18n.t("chatbot.prompt.function.escalate_to_staff.error", parameter: args[parameters[0][:name]]),
+          token_usage: 0
+        }
       end
     end
 

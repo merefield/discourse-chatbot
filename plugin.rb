@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 1.2.2
+# version: 1.3.0
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -22,7 +22,10 @@ module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
   POST = "post"
   MESSAGE = "message"
+  
   CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
+  CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD = "chatbot_remanining_quota_queries"
+  CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD = "chatbot_remaining_quota_tokens"
   CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD = "chatbot_queries_quota_reach_escalation_date"
   POST_TYPES_REGULAR_ONLY = [1]
   POST_TYPES_INC_WHISPERS = [1, 4]
@@ -95,6 +98,7 @@ after_initialize do
     ../lib/discourse_chatbot/bots/open_ai_bot_rag.rb
     ../lib/discourse_chatbot/safe_ruby/lib/safe_ruby.rb
     ../lib/discourse_chatbot/function.rb
+    ../lib/discourse_chatbot/functions/remaining_quota_function.rb
     ../lib/discourse_chatbot/functions/user_field_function.rb
     ../lib/discourse_chatbot/functions/calculator_function.rb
     ../lib/discourse_chatbot/functions/escalate_to_staff_function.rb
@@ -135,10 +139,10 @@ after_initialize do
     load File.expand_path(path, __FILE__)
   end
 
-  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD, :integer)
-
+  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD, :integer) 
+  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD, :integer)
+  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD, :integer)
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD, :date)
-
 
   add_to_serializer(:current_user, :chatbot_access) do
     !::DiscourseChatbot::EventEvaluation.new.trust_level(object.id).blank?

@@ -197,6 +197,13 @@ plugins:
     default: ''
     type: category_list
     list_type: "compact"
+  chatbot_quota_basis:
+    client: false
+    default: 'queries'
+    type: enum
+    choices:
+      - 'queries'
+      - 'tokens'
   chatbot_quota_high_trust:
     default: 100
     client: false
@@ -373,21 +380,36 @@ plugins:
   chatbot_news_api_token:
     client: false
     default: ''
+  chatbot_news_api_call_token_cost:
+    client: false
+    default: 10000
   chatbot_firecrawl_api_token:
     client: false
     default: ''
+  chatbot_firecrawl_api_call_token_cost:
+    client: false
+    default: 10000
   chatbot_jina_api_token:
     client: false
     default: ''
+  chatbot_jina_api_token_cost_multiplier:
+    client: false
+    default: 10000
   chatbot_function_response_char_limit:
     client: false
     default: 350000
   chatbot_serp_api_key:
     client: false
     default: ''
+  chatbot_serp_api_call_token_cost:
+    client: false
+    default: 10000
   chatbot_marketstack_key:
     client: false
     default: ''
+  chatbot_marketstack_api_call_token_cost:
+    client: false
+    default: 10000
   chatbot_enable_verbose_console_logging:
     client: false
     default: false

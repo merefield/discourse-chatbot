@@ -34,9 +34,15 @@ module DiscourseChatbot
 
         response = I18n.t("chatbot.prompt.function.forum_get_user_address.answer_summary", username: username, address: result.address, latitude: result.latitude, longitude: result.longitude)
 
-        response
+        {
+          answer: response, 
+          token_usage: 0
+        }
       rescue
-        I18n.t("chatbot.prompt.function.forum_get_user_address.error")
+        {
+          answer: I18n.t("chatbot.prompt.function.forum_get_user_address.error"),
+          token_usage: 0
+        }
       end
     end
   end
