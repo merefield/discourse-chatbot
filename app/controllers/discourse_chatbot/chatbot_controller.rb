@@ -78,9 +78,11 @@ module ::DiscourseChatbot
 
           if (last_chat && (over_quota && last_chat.message != I18n.t('chatbot.errors.overquota') || !over_quota && last_chat.message != I18n.t("chatbot.quick_access_kick_off.announcement"))) || last_chat.nil?
             Chat::CreateMessage.call(
-              chat_channel_id: chat_channel_id,
-              guardian: guardian,
-              message: over_quota ? I18n.t('chatbot.errors.overquota') : kick_off_statement,
+              params: {
+                chat_channel_id: chat_channel_id,
+                message: over_quota ? I18n.t('chatbot.errors.overquota') : kick_off_statement
+              },
+              guardian: guardian
             )
           end
 

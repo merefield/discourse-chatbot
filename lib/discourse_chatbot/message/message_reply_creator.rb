@@ -21,9 +21,11 @@ module ::DiscourseChatbot
         end
 
         Chat::CreateMessage.call(
-          chat_channel_id: @topic_or_channel_id,
-          guardian: @guardian,
-          message: @message_body,
+          params: {
+            chat_channel_id: @topic_or_channel_id,
+            message: @message_body
+          },
+          guardian: @guardian
         )
         begin
           presence = PresenceChannel.new("/chat-reply/#{@topic_or_channel_id}")
