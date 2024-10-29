@@ -9,6 +9,7 @@ module ::DiscourseChatbot
       @reply_to = options[:reply_to_message_or_post_id]
       @reply_to_post_number = options[:original_post_number]
       @topic_or_channel_id = options[:topic_or_channel_id]
+      @thread_id = options[:thread_id]
       @message_body = options[:reply]
       @is_private_msg = options[:is_private_msg]
       @private = options[:private]

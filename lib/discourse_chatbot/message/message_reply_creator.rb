@@ -20,11 +20,15 @@ module ::DiscourseChatbot
           end
         end
 
+        params =  {
+          chat_channel_id: @topic_or_channel_id,
+          message: @message_body
+        }
+
+        params.merge!(thread_id: @thread_id) if @thread_id.present?
+
         Chat::CreateMessage.call(
-          params: {
-            chat_channel_id: @topic_or_channel_id,
-            message: @message_body
-          },
+          params: params,
           guardian: @guardian
         )
         begin

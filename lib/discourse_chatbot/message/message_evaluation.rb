@@ -57,6 +57,7 @@ module ::DiscourseChatbot
             bot_user_id: bot_user_id,
             reply_to_message_or_post_id: chat_message.id,
             topic_or_channel_id: channel_id,
+            thread_id: chat_message.thread_id,
             over_quota: over_quota,
             trust_level: trust_level(user.id),
             human_participants_count: bot_chat_channel ? message_channel_user_count - 1 : message_channel_user_count,

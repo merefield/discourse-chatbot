@@ -58,7 +58,7 @@ module ::DiscourseChatbot
         else
           prior_message =
             ::Chat::Message
-              .where(chat_channel_id: current_message.chat_channel_id, deleted_at: nil)
+              .where(chat_channel_id: current_message.chat_channel_id, thread_id: current_message.thread_id, deleted_at: nil)
               .where("chat_messages.id < ?", current_message.id)
               .last
           if prior_message.nil?
