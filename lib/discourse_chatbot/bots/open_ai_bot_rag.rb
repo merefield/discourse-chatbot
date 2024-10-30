@@ -43,7 +43,7 @@ module ::DiscourseChatbot
       if private_discussion
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
 
-        if SiteSetting.chatbot_user_fields_collection
+        if SiteSetting.chatbot_user_fields_collection && has_empty_user_fields?(opts)
           system_message[:content] += "  " + get_system_message_suffix(opts)
         end
       else
@@ -72,6 +72,18 @@ module ::DiscourseChatbot
       }
     end
 
+    def has_empty_user_fields?(opts)
+      UserField.where(editable: true).order(:id).each do |user_field|
+        user_field_type = user_field.field_type_enum
+        next unless ["dropdown", "confirm", "text"].include?(user_field_type)
+        if !::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).exists? ||
+          ::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).first.value.blank?
+          return true
+        end
+      end
+      false
+    end
+
     def get_system_message_suffix(opts)
       system_message_suffix = ""
       system_message_suffix_array = []
@@ -79,6 +91,8 @@ module ::DiscourseChatbot
         user_field_options = []
         user_field_id = user_field.id
         user_field_type = user_field.field_type_enum
+        next unless ["dropdown", "confirm", "text"].include?(user_field_type)
+
         if user_field_type == "dropdown"
           UserFieldOption.where(user_field_id: user_field_id).each do |option|
             user_field_options << option.value
@@ -142,6 +156,8 @@ module ::DiscourseChatbot
       if opts[:private] && SiteSetting.chatbot_user_fields_collection
         start_length = functions.length
         UserField.where(editable: true).order(:id).each do |user_field|
+          user_field_type = user_field.field_type_enum
+          next unless ["dropdown", "confirm", "text"].include?(user_field_type)
           if !::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).exists? ||
             ::UserCustomField.where(user_id: opts[:user_id], name: "user_field_#{UserField.find_by(name: user_field.name).id}" ).first.value.blank?
             functions << ::DiscourseChatbot::UserFieldFunction.new(user_field.name, opts[:user_id])

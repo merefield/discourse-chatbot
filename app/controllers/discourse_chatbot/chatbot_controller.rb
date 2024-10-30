@@ -20,12 +20,12 @@ module ::DiscourseChatbot
 
       kick_off_statement = I18n.t("chatbot.quick_access_kick_off.announcement")
 
-      if SiteSetting.chatbot_user_fields_collection
+      trust_level = ::DiscourseChatbot::EventEvaluation.new.trust_level(current_user.id)
+      opts = { trust_level: trust_level, user_id: current_user.id }
 
-        trust_level = ::DiscourseChatbot::EventEvaluation.new.trust_level(current_user.id)
-        opts = { trust_level: trust_level, user_id: current_user.id }
+      start_bot = ::DiscourseChatbot::OpenAiBotRag.new(opts, false)
 
-        start_bot = ::DiscourseChatbot::OpenAiBotRag.new(opts, false)
+      if SiteSetting.chatbot_user_fields_collection && start_bot.has_empty_user_fields?(opts)
 
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
         assistant_message = { "role": "assistant", "content": I18n.t("chatbot.prompt.quick_access_kick_off.announcement", username: current_user.username) }
@@ -76,7 +76,10 @@ module ::DiscourseChatbot
 
           last_chat = ::Chat::Message.find_by(id: chat_channel.latest_not_deleted_message_id)
 
-          if (last_chat && (over_quota && last_chat.message != I18n.t('chatbot.errors.overquota') || !over_quota && last_chat.message != I18n.t("chatbot.quick_access_kick_off.announcement"))) || last_chat.nil?
+          if (last_chat &&
+            (over_quota && last_chat.message != I18n.t('chatbot.errors.overquota') ||
+            !over_quota && last_chat.message != kick_off_statement)) ||
+            last_chat.nil?
             Chat::CreateMessage.call(
               params: {
                 chat_channel_id: chat_channel_id,
