@@ -43,7 +43,7 @@ module ::DiscourseChatbot
           parameters: parameters
         )
 
-        token_usage = res.dig("usage", "total_tokens")
+        token_usage = response.dig("usage", "total_tokens")
         @total_tokens += token_usage
 
         {
