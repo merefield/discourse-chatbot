@@ -5,7 +5,7 @@ module ::DiscourseChatbot
       current_post = ::Post.find(opts[:reply_to_message_or_post_id])
       current_topic = current_post.topic
       first_post = current_topic.first_post
-      post_collection = collect_past_interactions(current_post)
+      post_collection = collect_past_interactions(current_post.id)
       original_post_number = opts[:original_post_number]
       bot_user_id = opts[:bot_user_id]
       category_id = opts[:category_id]
@@ -114,7 +114,8 @@ module ::DiscourseChatbot
       end
     end
 
-    def self.collect_past_interactions(current_post)
+    def self.collect_past_interactions(current_post_id)
+      current_post = ::Post.find(current_post_id)
       current_topic_id = current_post.topic_id
       post_collection = []
 
