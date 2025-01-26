@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 1.4.5
+# version: 1.4.6
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -143,6 +143,16 @@ after_initialize do
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD, :integer)
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD, :integer)
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD, :date)
+
+  # Initialize Chatbot Quotas for all users as required
+  user_count = User.count
+  queries_field_count = UserCustomField.where(name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD).count
+  token_field_count = UserCustomField.where(name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD).count
+  pp "CHATBOT: Checking presence of Chatbot Custom Fields"
+  if user_count > queries_field_count * 2 || user_count > token_field_count * 2
+    pp "CHATBOT: Resetting Chatbot Quotas for all users as many users without required Chatbot Custom Fields"
+    ::DiscourseChatbot::Bot.new.reset_all_quotas
+  end
 
   add_to_serializer(:current_user, :chatbot_access) do
     !::DiscourseChatbot::EventEvaluation.new.trust_level(object.id).blank?
