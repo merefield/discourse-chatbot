@@ -28,30 +28,30 @@ describe ::DiscourseChatbot::PostPromptUtils do
   it "captures the right history" do
     SiteSetting.chatbot_include_whispers_in_post_history = false
 
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_1)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_1.id)
     expect(past_posts.count).to equal(0)
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_6)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_6.id)
     expect(past_posts.count).to equal(3)
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11.id)
     expect(past_posts.count).to equal(5)
 
     post_9.destroy
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11.id)
     expect(past_posts.count).to equal(5)
   end
 
   it "captures the right history when whispers are included" do
     SiteSetting.chatbot_include_whispers_in_post_history = true
 
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_1)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_1.id)
     expect(past_posts.count).to equal(0)
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_6)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_6.id)
     expect(past_posts.count).to equal(3)
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11.id)
     expect(past_posts.count).to equal(6)
 
     post_9.destroy
-    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11)
+    past_posts = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_11.id)
     expect(past_posts.count).to equal(6)
   end
 
