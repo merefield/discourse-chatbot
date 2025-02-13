@@ -84,18 +84,18 @@ module ::DiscourseChatbot
       if SiteSetting.chatbot_strip_quotes
         post_content.gsub!(%r{\[quote.*?\](.*?)\[/quote\]}m, "")
       end
-      role = (p.user_id == bot_user_id ? "assistant" : "user")
-      name = p.user.username
+      role = p.user_id == bot_user_id ? "assistant" : "user"
+      username = p.user.username
 
       text =
         (
           if SiteSetting.chatbot_api_supports_name_attribute || p.user_id == bot_user_id
             post_content
           else
-            I18n.t("chatbot.prompt.post", username: p.user.username, raw: post_content)
+            I18n.t("chatbot.prompt.post", username: username, raw: post_content)
           end
         )
-      username = p.user.username
+
       content = []
 
       if SiteSetting.chatbot_support_vision == "directly"
@@ -103,6 +103,7 @@ module ::DiscourseChatbot
         if p.image_upload_id
           url = resolve_full_url(Upload.find(p.image_upload_id).url)
           content << { type: "image_url", image_url: { url: url } }
+          role = "user"
         end
       else
         content = text

@@ -30,6 +30,7 @@ module ::DiscourseChatbot
                 content << { type: "image_url", image_url: { url: url } }
               end
             end
+            role = "user"
           else
             content = text
           end
