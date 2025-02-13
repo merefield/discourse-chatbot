@@ -50,10 +50,14 @@ module ::DiscourseChatbot
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.open", current_date_time: DateTime.current) }
       end
 
-      if SiteSetting.chatbot_user_fields_collection
-        prompt << system_message
-      else
-        prompt.unshift(system_message)
+      reasoning_model = true if REASONING_MODELS.include?(@model_name)
+
+      if !reasoning_model
+        if SiteSetting.chatbot_user_fields_collection
+          prompt << system_message
+        else
+          prompt.unshift(system_message)
+        end
       end
 
       @inner_thoughts = []

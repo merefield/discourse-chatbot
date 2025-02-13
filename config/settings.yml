@@ -47,8 +47,10 @@ plugins:
       - gpt-4-turbo
       - gpt-4
       - gpt-4-32k
-      - o1-preview
+      - o1
       - o1-mini
+      - o1-preview
+      - o3-mini
   chatbot_open_ai_model_custom_high_trust:
     default: false
     client: false
@@ -76,8 +78,10 @@ plugins:
       - gpt-4-turbo
       - gpt-4
       - gpt-4-32k
-      - o1-preview
+      - o1
       - o1-mini
+      - o1-preview
+      - o3-mini
   chatbot_open_ai_model_custom_medium_trust:
     default: false
     client: false
@@ -105,8 +109,10 @@ plugins:
       - gpt-4-turbo
       - gpt-4
       - gpt-4-32k
-      - o1-preview
+      - o1
       - o1-mini
+      - o1-preview
+      - o3-mini
   chatbot_open_ai_model_custom_low_trust:
     default: false
     client: false
