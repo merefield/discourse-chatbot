@@ -68,7 +68,8 @@ module ::DiscourseChatbot
       {
         reply: res["choices"][0]["message"]["content"],
         inner_thoughts: @inner_thoughts,
-        total_tokens: @total_tokens
+        total_tokens: @total_tokens,
+        post_as_user: res["post_as_user"]
       }
     end
 
@@ -286,12 +287,12 @@ module ::DiscourseChatbot
         if (['stop','length'].include?(finish_reason) && tools_calls.nil? || @inner_thoughts.length > 7)
           if iteration > 1 && SiteSetting.chatbot_url_integrity_check
             if legal_post_urls?(res["choices"][0]["message"]["content"], @posts_ids_found, @topic_ids_found) && legal_non_post_urls?(res["choices"][0]["message"]["content"], @non_post_urls_found)
-              return res
+              return res.merge!("post_as_user" => false)
             else
               @inner_thoughts << { role: 'user', content: I18n.t("chatbot.prompt.system.rag.illegal_urls") }
             end
           else
-            return res
+            return res.merge!("post_as_user" => false)
           end
         elsif finish_reason == 'tool_calls' || !tools_calls.nil?
           handle_function_call(res, opts)
@@ -300,7 +301,9 @@ module ::DiscourseChatbot
         end
 
         # If the response is an image, we don't want to continue the loop of thought
+        # and must flag it to be posted as user as assistant images are not supported by API
         return {
+          "post_as_user" => true,
           "choices" => [
               {
                 "message" => {

@@ -4,7 +4,7 @@ module ::DiscourseChatbot
 
     def initialize(options = {})
       @options = options
-      @author = ::User.find_by(id: options[:bot_user_id])
+      @author = options[:post_as_user] ? ::User.find_by(id: options[:user_id]) : ::User.find_by(id: options[:bot_user_id])
       @guardian = Guardian.new(@author)
       @reply_to = options[:reply_to_message_or_post_id]
       @reply_to_post_number = options[:original_post_number]
