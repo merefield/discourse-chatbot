@@ -98,13 +98,32 @@ module ::DiscourseChatbot
 
       content = []
 
-      if SiteSetting.chatbot_support_vision == "directly"
+      if SiteSetting.chatbot_support_vision == "directly" || SiteSetting.chatbot_support_pdf == true
         content << { type: "text", text: text }
         if p.image_upload_id
           url = resolve_full_url(Upload.find(p.image_upload_id).url)
           content << { type: "image_url", image_url: { url: url } }
-          role = "user"
         end
+        if SiteSetting.chatbot_support_pdf == true
+          upload_refs = UploadReference.where(target_id: p.id, target_type: "Post")
+          upload_refs.each do |uf|
+            upload = Upload.find(uf.upload_id)
+            if upload.extension == "pdf"
+              file_path = path = Discourse.store.path_for(upload)
+              base64_encoded_data = Base64.strict_encode64(File.read(file_path))
+              file_data = "data:application/pdf;base64," + base64_encoded_data
+
+              content << {
+                "type": "file",
+                "file": {
+                    "filename": upload.original_filename,
+                    "file_data": file_data
+                }
+              }
+            end
+          end
+        end
+        role = "user"
       else
         content = text
       end
