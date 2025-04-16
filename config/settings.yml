@@ -39,9 +39,11 @@ plugins:
   chatbot_open_ai_model_high_trust:
     client: false
     type: enum
-    default: gpt-4o-mini
+    default: gpt-4.1-nano
     choices:
-      - gpt-3.5-turbo
+      - gpt-4.1
+      - gpt-4.1-mini
+      - gpt-4.1-nano
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
@@ -70,9 +72,11 @@ plugins:
   chatbot_open_ai_model_medium_trust:
     client: false
     type: enum
-    default: gpt-4o-mini
+    default: gpt-4.1-nano
     choices:
-      - gpt-3.5-turbo
+      - gpt-4.1
+      - gpt-4.1-mini
+      - gpt-4.1-nano
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
@@ -101,9 +105,11 @@ plugins:
   chatbot_open_ai_model_low_trust:
     client: false
     type: enum
-    default: gpt-4o-mini
+    default: gpt-4.1-nano
     choices:
-      - gpt-3.5-turbo
+      - gpt-4.1
+      - gpt-4.1-mini
+      - gpt-4.1-nano
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
@@ -253,8 +259,11 @@ plugins:
   chatbot_open_ai_vision_model:
     client: false
     type: enum
-    default: gpt-4o-mini
+    default: gpt-4o
     choices:
+      - gpt-4.1
+      - gpt-4.1-mini
+      - gpt-4.1-nano
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
