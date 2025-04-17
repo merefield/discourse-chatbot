@@ -41,23 +41,19 @@ module ::DiscourseChatbot
       private_discussion = opts[:private] || false
 
       if private_discussion
-        system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
+        system_message = { "role": "developer", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
 
         if SiteSetting.chatbot_user_fields_collection && has_empty_user_fields?(opts)
           system_message[:content] += "  " + get_system_message_suffix(opts)
         end
       else
-        system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.open", current_date_time: DateTime.current) }
+        system_message = { "role": "developer", "content": I18n.t("chatbot.prompt.system.rag.open", current_date_time: DateTime.current) }
       end
 
-      reasoning_model = true if REASONING_MODELS.include?(@model_name)
-
-      if !reasoning_model
-        if SiteSetting.chatbot_user_fields_collection
-          prompt << system_message
-        else
-          prompt.unshift(system_message)
-        end
+      if SiteSetting.chatbot_user_fields_collection
+        prompt << system_message
+      else
+        prompt.unshift(system_message)
       end
 
       @inner_thoughts = []
@@ -217,15 +213,31 @@ module ::DiscourseChatbot
           value of messages is: #{JSON.pretty_generate(messages)}
           +++++++++++++++++++++++++++++++
         EOS
+
+        reasoning_model = true if REASONING_MODELS.include?(@model_name)
+
         parameters = {
           model: @model_name,
           messages: messages,
           max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
+        }
+
+        additional_non_reasoning_parameters = {
           temperature: SiteSetting.chatbot_request_temperature / 100.0,
           top_p: SiteSetting.chatbot_request_top_p / 100.0,
           frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
           presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
         }
+
+        additional_reasoning_parameters = {
+          reasoning_effort: @model_reasoning_level,
+        }
+
+        if reasoning_model
+          parameters.merge!(additional_reasoning_parameters)
+        else
+          parameters.merge!(additional_non_reasoning_parameters)
+        end
 
         if use_functions && @tools
           parameters.merge!(tools: @tools)

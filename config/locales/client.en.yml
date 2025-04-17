@@ -1,5 +1,7 @@
 en:
   js:
+    discourse_chatbot:
+      title: "Chatbot"
     chatbot:
       category:
         settings_label: "Chatbot"

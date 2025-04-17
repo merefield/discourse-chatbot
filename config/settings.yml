@@ -39,7 +39,7 @@ plugins:
   chatbot_open_ai_model_high_trust:
     client: false
     type: enum
-    default: gpt-4.1-nano
+    default: gpt-4o-mini
     choices:
       - gpt-4.1
       - gpt-4.1-mini
@@ -47,12 +47,11 @@ plugins:
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
-      - gpt-4
-      - gpt-4-32k
+      - o4-mini
+      - o3
+      - o3-mini
       - o1
       - o1-mini
-      - o1-preview
-      - o3-mini
   chatbot_open_ai_model_custom_high_trust:
     default: false
     client: false
@@ -72,7 +71,7 @@ plugins:
   chatbot_open_ai_model_medium_trust:
     client: false
     type: enum
-    default: gpt-4.1-nano
+    default: gpt-4o-mini
     choices:
       - gpt-4.1
       - gpt-4.1-mini
@@ -80,12 +79,11 @@ plugins:
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
-      - gpt-4
-      - gpt-4-32k
+      - o4-mini
+      - o3
+      - o3-mini
       - o1
       - o1-mini
-      - o1-preview
-      - o3-mini
   chatbot_open_ai_model_custom_medium_trust:
     default: false
     client: false
@@ -105,7 +103,7 @@ plugins:
   chatbot_open_ai_model_low_trust:
     client: false
     type: enum
-    default: gpt-4.1-nano
+    default: gpt-4o-mini
     choices:
       - gpt-4.1
       - gpt-4.1-mini
@@ -113,12 +111,11 @@ plugins:
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
-      - gpt-4
-      - gpt-4-32k
+      - o4-mini
+      - o3
+      - o3-mini
       - o1
       - o1-mini
-      - o1-preview
-      - o3-mini
   chatbot_open_ai_model_custom_low_trust:
     default: false
     client: false
@@ -128,6 +125,14 @@ plugins:
   chatbot_open_ai_model_custom_url_low_trust:
     client: false
     default: ''
+  chatbot_open_ai_model_reasoning_level:
+    client: false
+    type: enum
+    default: medium
+    choices:
+      - low
+      - medium
+      - high
   chatbot_open_ai_model_custom_api_type:
     client: false
     default: ''
@@ -267,6 +272,11 @@ plugins:
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
+      - o4-mini
+      - o3
+      - o3-mini
+      - o1
+      - o1-mini
   chatbot_support_pdf:
     client: false
     default: false
