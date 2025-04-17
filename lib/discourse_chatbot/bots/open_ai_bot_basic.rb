@@ -11,32 +11,34 @@ module ::DiscourseChatbot
         private_discussion = opts[:private] || false
 
         if private_discussion
-          system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.basic.private", current_date_time: DateTime.current) }
+          system_message = { "role": "developer", "content": I18n.t("chatbot.prompt.system.basic.private", current_date_time: DateTime.current) }
         else
-          system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.basic.open", current_date_time: DateTime.current) }
+          system_message = { "role": "developer", "content": I18n.t("chatbot.prompt.system.basic.open", current_date_time: DateTime.current) }
         end
 
         reasoning_model = true if REASONING_MODELS.include?(@model_name)
 
-        if !reasoning_model
-          prompt.unshift(system_message)
-        end
-
         parameters = {
-            model: @model_name,
-            messages: prompt,
-            max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
-          }
+          model: @model_name,
+          messages: prompt,
+          max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
+        }
 
-        additional_parameters = {
+        additional_non_reasoning_parameters = {
           temperature: SiteSetting.chatbot_request_temperature / 100.0,
           top_p: SiteSetting.chatbot_request_top_p / 100.0,
           frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
           presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
         }
 
-        if !reasoning_model
-          parameters.merge!(additional_parameters)
+        additional_reasoning_parameters = {
+          reasoning_effort: @model_reasoning_level,
+        }
+
+        if reasoning_model
+          parameters.merge!(additional_reasoning_parameters)
+        else
+          parameters.merge!(additional_non_reasoning_parameters)
         end
 
         response = @client.chat(

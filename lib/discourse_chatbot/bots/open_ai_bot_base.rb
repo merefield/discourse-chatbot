@@ -41,6 +41,7 @@ module ::DiscourseChatbot
       end
 
       @model_name = get_model(opts)
+      @model_reasoning_level = SiteSetting.chatbot_open_ai_model_reasoning_level
       @total_tokens = 0
     end
 
