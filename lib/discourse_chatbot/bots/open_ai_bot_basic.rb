@@ -18,6 +18,8 @@ module ::DiscourseChatbot
 
         reasoning_model = true if REASONING_MODELS.include?(@model_name)
 
+        prompt.unshift(system_message)
+
         parameters = {
           model: @model_name,
           messages: prompt,
