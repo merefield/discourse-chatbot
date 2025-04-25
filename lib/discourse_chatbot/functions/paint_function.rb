@@ -54,6 +54,7 @@ module DiscourseChatbot
        }
 
         options.merge!(response_format: "b64_json") if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
+        options.merge!(style: "natural") if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
 
         response = client.images.generate(parameters: options)
 
@@ -61,6 +62,8 @@ module DiscourseChatbot
           error_text = "ERROR when trying to call paint API: #{response.dig("error", "message")}"
           raise StandardError, error_text
         end
+
+        tokens_used = SiteSetting.chatbot_support_picture_creation_model == "gpt-image-1" ? response.dig("usage", "total_tokens") : TOKEN_COST
 
         artifacts = response.dig("data")
           .to_a
@@ -75,7 +78,7 @@ module DiscourseChatbot
 
         {
           answer: markdown,
-          token_usage: TOKEN_COST
+          token_usage: tokens_used
         }
       rescue => e
         Rails.logger.error("Chatbot: Error in paint function: #{e}")

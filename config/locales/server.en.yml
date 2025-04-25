@@ -24,7 +24,7 @@ en:
     chatbot_open_ai_vision_model: "Open AI Vision model used when 'via_function' or 'directly' options are selected.  Used for all interaction if 'directly' is set, overriding all other model settings - caution: monitor costs, this might be expensive!"
     chatbot_support_pdf: "EXPERIMENTAL: Support bot being able to read uploaded PDF documents in current conversation"
     chatbot_support_picture_creation: "Bot 'Paint': support creation of images based on text descriptions.  Currently powered by DALL-E using the same token Open AI token"
-    chatbot_support_picture_creation_model: "Model used for image generation"
+    chatbot_support_picture_creation_model: "Model used for image generation.  `gpt-image-1` requires a verified account on OpenAI."
     chatbot_reply_job_time_delay: 'Number of seconds before reply job is run. This helps prevent rate limits being hit and discourages spamming.  If you use bot vision, consider making this a higher number >=2 to help ensure Discourse has enough time to process images before the Post data gets sent to the bot, otherwise the bot may not see the image.'
     chatbot_include_whispers_in_post_history: "Include content of whispers in Post history bot sees (careful!)"
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
