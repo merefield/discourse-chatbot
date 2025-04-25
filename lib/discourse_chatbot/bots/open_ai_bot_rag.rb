@@ -316,15 +316,17 @@ module ::DiscourseChatbot
         end
 
         # If the response is an image, we don't want to continue the loop of thought
+        content = @inner_thoughts.last[:content]
+
         return {
           "choices" => [
               {
                 "message" => {
-                  "content" => "#{@inner_thoughts.last[:content]}"
+                  "content" => "#{content}"
                 }
               }
             ]
-        } if image_url?(@inner_thoughts.last[:content])
+        } if content[0] == "!" && content[content.length - 1] == ")" && (content =~ %r{(upload://)?([a-zA-Z0-9]+)(\..*)?}) > 0
 
         iteration += 1
       end

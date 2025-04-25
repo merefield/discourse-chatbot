@@ -43,15 +43,37 @@ module DiscourseChatbot
           end
         end
 
-        response = client.images.generate(parameters: { prompt: description, model: "dall-e-3", size: "1792x1024", quality: "standard" })
+        size = SiteSetting.chatbot_support_picture_creation_model == "dall-e-3" ? "1792x1024" : "1536x1024"
+
+        options = {
+          model: SiteSetting.chatbot_support_picture_creation_model,
+          prompt: description,
+          size: size,
+          quality: "auto",
+       }
+
+        options.merge!(response_format: "b64_json") if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
+
+        response = client.images.generate(parameters: options)
 
         if response.dig("error")
           error_text = "ERROR when trying to call paint API: #{response.dig("error", "message")}"
           raise StandardError, error_text
         end
 
+        artifacts = response.dig("data")
+          .to_a
+          .map { |art| art["b64_json"] }
+
+        bot_username = SiteSetting.chatbot_bot_user
+        bot_user = ::User.find_by(username: bot_username)
+
+        thumbnails = base64_to_image(artifacts, description, bot_user.id)
+        short_url = thumbnails.first.short_url
+        markdown = "![#{description}|690x460](#{short_url})"
+
         {
-          answer: response.dig("data", 0, "url"),
+          answer: markdown,
           token_usage: TOKEN_COST
         }
       rescue => e
@@ -60,6 +82,23 @@ module DiscourseChatbot
           answer: I18n.t("chatbot.prompt.function.paint.error"),
           token_usage: TOKEN_COST
         }
+      end
+    end
+
+    private
+
+    def base64_to_image(artifacts, description, user_id)
+      attribution = description
+
+      artifacts.each_with_index.map do |art, i|
+        f = Tempfile.new("v1_txt2img_#{i}.png")
+        f.binmode
+        f.write(Base64.decode64(art))
+        f.rewind
+        upload = UploadCreator.new(f, attribution).create_for(user_id)
+        f.unlink
+
+        UploadSerializer.new(upload, root: false)
       end
     end
   end
