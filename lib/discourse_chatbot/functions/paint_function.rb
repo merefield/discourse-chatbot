@@ -83,6 +83,11 @@ module DiscourseChatbot
         }
       rescue => e
         Rails.logger.error("Chatbot: Error in paint function: #{e}")
+        if e.respond_to?(:response)
+          status = e.response[:status]
+          message = e.response[:body]["error"]["message"]
+          Rails.logger.error("Chatbot: There was a problem with Image call: status: #{status}, message: #{message}")
+        end
         {
           answer: I18n.t("chatbot.prompt.function.paint.error"),
           token_usage: TOKEN_COST
