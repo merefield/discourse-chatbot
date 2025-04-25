@@ -91,7 +91,7 @@ module DiscourseChatbot
           raise StandardError, error_text
         end
 
-        tokens_used = SiteSetting.chatbot_support_picture_creation_model == "gpt-image-1" ? response.dig("usage", "total_tokens") : TOKEN_COST
+        tokens_used = response.dig("usage", "total_tokens")
 
         artifacts = response.dig("data")
           .to_a
