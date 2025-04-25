@@ -44,12 +44,13 @@ module DiscourseChatbot
         end
 
         size = SiteSetting.chatbot_support_picture_creation_model == "dall-e-3" ? "1792x1024" : "1536x1024"
+        quality = SiteSetting.chatbot_support_picture_creation_model == "dall-e-3" ? "standard" : "auto"
 
         options = {
           model: SiteSetting.chatbot_support_picture_creation_model,
           prompt: description,
           size: size,
-          quality: "auto",
+          quality: quality,
        }
 
         options.merge!(response_format: "b64_json") if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
