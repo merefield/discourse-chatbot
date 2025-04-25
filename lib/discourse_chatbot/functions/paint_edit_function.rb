@@ -163,8 +163,9 @@ module DiscourseChatbot
       end
 
       return nil if uploads.empty?
+
       latest_upload = uploads.max_by(&:created_at)
-      return Upload.find_by(id: last_upload.id)
+      Upload.find_by(id: last_upload.id)
     end
   end
 end
