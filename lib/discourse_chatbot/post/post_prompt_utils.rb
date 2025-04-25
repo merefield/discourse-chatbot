@@ -105,7 +105,7 @@ module ::DiscourseChatbot
         if %w[png webp jpg jpeg gif ico avif].include?(upload.extension) && SiteSetting.chatbot_support_vision == "directly" ||
             upload.extension == "pdf" && SiteSetting.chatbot_support_pdf == true
           role = "user"
-          file_path = path = Discourse.store.path_for(upload)
+          file_path = Discourse.store.path_for(upload)
           base64_encoded_data = Base64.strict_encode64(File.read(file_path))
 
           if upload.extension == "pdf"

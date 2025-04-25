@@ -27,7 +27,7 @@ module ::DiscourseChatbot
             if %w[png webp jpg jpeg gif ico avif].include?(ul.extension) && SiteSetting.chatbot_support_vision == "directly" ||
               ul.extension == "pdf" && SiteSetting.chatbot_support_pdf == true
               role = "user"
-              file_path = path = Discourse.store.path_for(ul)
+              file_path = Discourse.store.path_for(ul)
               base64_encoded_data = Base64.strict_encode64(File.read(file_path))
               if ul.extension == "pdf"
                 content << {
