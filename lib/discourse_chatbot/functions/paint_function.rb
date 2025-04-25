@@ -55,6 +55,7 @@ module DiscourseChatbot
 
         options.merge!(response_format: "b64_json") if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
         options.merge!(style: "natural") if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
+        options.merge!(moderation: "low") if SiteSetting.chatbot_support_picture_creation_model == "gpt-image-1"
 
         response = client.images.generate(parameters: options)
 
