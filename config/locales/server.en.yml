@@ -171,6 +171,13 @@ en:
           parameters:
             description: a description of the picture the user wants to create
           error: there was an issue creating the picture.
+        paint_edit:
+          description: |
+            creates a picture based on the provided direction and the last image in the conversation
+          parameters:
+            description: a description of the edit to the picture the user wants to make
+          no_image_error: there was no image in the conversation to edit
+          error: there was an issue creating the new picture.
         forum_search:
           description: |
             Search the local forum for information that may help you answer the question.  Especially useful when the forum specialises in the subject matter of the query.

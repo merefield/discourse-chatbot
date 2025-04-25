@@ -125,6 +125,7 @@ module ::DiscourseChatbot
       stock_data_function = ::DiscourseChatbot::StockDataFunction.new
       escalate_to_staff_function = ::DiscourseChatbot::EscalateToStaffFunction.new
       paint_function = ::DiscourseChatbot::PaintFunction.new
+      paint_edit_function = ::DiscourseChatbot::PaintEditFunction.new
       forum_search_function = nil
       user_search_from_user_location_function = nil
       user_search_from_location_function = nil
@@ -170,6 +171,7 @@ module ::DiscourseChatbot
       functions << forum_search_function if forum_search_function
       functions << vision_function if vision_function
       functions << paint_function if SiteSetting.chatbot_support_picture_creation
+      functions << paint_edit_function if SiteSetting.chatbot_support_picture_creation && SiteSetting.chatbot_support_picture_creation_model == "gpt-image-1"
 
       functions << user_search_from_location_function if user_search_from_location_function
       functions << user_search_from_user_location_function if user_search_from_user_location_function
@@ -393,12 +395,15 @@ module ::DiscourseChatbot
           res, token_usage = func.process(args, opts).values_at(:answer, :token_usage)
         elsif ["vision"].include?(func_name)
           res, token_usage = func.process(args, opts, @client).values_at(:answer, :token_usage)
+        elsif["paint_edit_picture"].include?(func_name)
+          res, token_usage = func.process(args, opts).values_at(:answer, :token_usage)
         else
           res, token_usage = func.process(args).values_at(:answer, :token_usage)
         end
         @total_tokens += token_usage
         res
-       rescue
+       rescue => e
+         Rails.logger.error("Chatbot: There was a problem with local function arguments, message: #{e}")
          I18n.t("chatbot.prompt.rag.call_function.error")
       end
     end

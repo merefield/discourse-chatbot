@@ -1,22 +1,23 @@
 # frozen_string_literal: true
 
 require_relative '../function'
+require 'mime/types'
 
 module DiscourseChatbot
-  class PaintFunction < Function
+  class PaintEditFunction < Function
     TOKEN_COST = 1000000 # 1M tokens per request based on cost of dall-e-3 model vs gpt-4o-mini
 
     def name
-      'paint_picture'
+      'paint_edit_picture'
     end
 
     def description
-      I18n.t("chatbot.prompt.function.paint.description")
+      I18n.t("chatbot.prompt.function.paint_edit.description")
     end
 
     def parameters
       [
-        { name: "description", type: String, description: I18n.t("chatbot.prompt.function.paint.parameters.description") } ,
+        { name: "description", type: String, description: I18n.t("chatbot.prompt.function.paint_edit.parameters.description") } ,
       ]
     end
 
@@ -24,7 +25,7 @@ module DiscourseChatbot
       ['description']
     end
 
-    def process(args)
+    def process(args, opts)
       begin
         super(args)
         token_usage = 0
@@ -43,8 +44,8 @@ module DiscourseChatbot
           end
         end
 
-        size = SiteSetting.chatbot_support_picture_creation_model == "dall-e-3" ? "1792x1024" : "1536x1024"
-        quality = SiteSetting.chatbot_support_picture_creation_model == "dall-e-3" ? "standard" : "auto"
+        size = "1536x1024"
+        quality = "auto"
 
         options = {
           model: SiteSetting.chatbot_support_picture_creation_model,
@@ -53,18 +54,44 @@ module DiscourseChatbot
           quality: quality,
        }
 
-        options.merge!(response_format: "b64_json") if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
-        options.merge!(style: "natural") if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
-        options.merge!(moderation: "low") if SiteSetting.chatbot_support_picture_creation_model == "gpt-image-1"
+        type = opts[:type]
 
-        response = client.images.generate(parameters: options)
+        last_image_upload = type == ::DiscourseChatbot::POST ? last_post_image_upload(opts[:reply_to_message_or_post_id]) : last_message_image_upload(opts[:reply_to_message_or_post_id])
+
+        return {
+          answer: I18n.t("chatbot.prompt.function.paint_edit.no_image_error"),
+          token_usage: 0
+        } if last_image_upload.nil?
+
+        file_path = path = Discourse.store.path_for(last_image_upload)
+        base64_encoded_data = Base64.strict_encode64(File.read(file_path))
+
+
+        file_path = Discourse.store.path_for(last_image_upload)
+        extension = last_image_upload.extension
+        mime_type = ::MIME::Types.type_for(extension).first.to_s
+        
+        f = Tempfile.new(["e1_image", ".#{extension}"])
+        f.binmode
+        f.write(File.binread(file_path))
+        f.rewind
+        
+        # Specify the file with MIME type
+        upload_io = Faraday::Multipart::FilePart.new(f, mime_type)
+        
+        options[:image] = upload_io
+        
+        response = client.images.edit(parameters: options)
+        
+        f.close
+        f.unlink
 
         if response.dig("error")
           error_text = "ERROR when trying to call paint API: #{response.dig("error", "message")}"
           raise StandardError, error_text
         end
 
-        tokens_used = SiteSetting.chatbot_support_picture_creation_model == "gpt-image-1" ? response.dig("usage", "total_tokens") : TOKEN_COST
+        tokens_used = response.dig("usage", "total_tokens")
 
         artifacts = response.dig("data")
           .to_a
@@ -82,14 +109,14 @@ module DiscourseChatbot
           token_usage: tokens_used
         }
       rescue => e
-        Rails.logger.error("Chatbot: Error in paint function: #{e}")
+        Rails.logger.error("Chatbot: Error in paint edit function: #{e}")
         if e.respond_to?(:response)
           status = e.response[:status]
           message = e.response[:body]["error"]["message"]
           Rails.logger.error("Chatbot: There was a problem with Image call: status: #{status}, message: #{message}")
         end
         {
-          answer: I18n.t("chatbot.prompt.function.paint.error"),
+          answer: I18n.t("chatbot.prompt.function.paint_edit.error"),
           token_usage: TOKEN_COST
         }
       end
@@ -110,6 +137,34 @@ module DiscourseChatbot
 
         UploadSerializer.new(upload, root: false)
       end
+    end
+
+    def last_post_image_upload(post_id)
+      post_collection = ::DiscourseChatbot::PostPromptUtils.collect_past_interactions(post_id)
+
+      return nil if post_collection.empty?
+    
+      upload_id = post_collection.map(&:image_upload_id).compact.max
+      return Upload.find_by(id: upload_id)
+    
+      nil
+    end
+
+    def last_message_image_upload(message_id)
+      message_collection = ::DiscourseChatbot::MessagePromptUtils.collect_past_interactions(message_id)
+      uploads = []
+
+      message_collection.each do |cm|
+        cm.uploads.each do |ul|
+          if %w[png webp jpg jpeg].include?(ul.extension)
+            uploads << ul
+          end
+        end
+      end
+
+      return nil if uploads.empty?
+
+      uploads.max_by(&:created_at)
     end
   end
 end
