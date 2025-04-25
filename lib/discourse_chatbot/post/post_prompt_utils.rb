@@ -98,7 +98,6 @@ module ::DiscourseChatbot
 
       content = []
 
-      # if SiteSetting.chatbot_support_vision == "directly" && p.image_upload_id || SiteSetting.chatbot_support_pdf == true
       content << { type: "text", text: text }
       upload_refs = UploadReference.where(target_id: p.id, target_type: "Post")
       upload_refs.each do |uf|
