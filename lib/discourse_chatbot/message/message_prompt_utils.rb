@@ -22,18 +22,32 @@ module ::DiscourseChatbot
 
           content = []
 
-          if SiteSetting.chatbot_support_vision == "directly"
-            content << { type: "text", text: text }
-            cm.uploads.each do |ul|
-              if %w[png webp jpg jpeg gif ico avif].include?(ul.extension)
-                url = resolve_full_url(ul.url)
-                content << { type: "image_url", image_url: { url: url } }
+          content << { type: "text", text: text }
+          cm.uploads.each do |ul|
+            if %w[png webp jpg jpeg gif ico avif].include?(ul.extension) && SiteSetting.chatbot_support_vision == "directly" ||
+              ul.extension == "pdf" && SiteSetting.chatbot_support_pdf == true
+              role = "user"
+              file_path = path = Discourse.store.path_for(ul)
+              base64_encoded_data = Base64.strict_encode64(File.read(file_path))
+              if ul.extension == "pdf"
+                content << {
+                  "type": "file",
+                  "file": {
+                      "filename": ul.original_filename,
+                      "file_data": "data:application/pdf;base64," + base64_encoded_data
+                  }
+                }
+              else
+                content << {
+                  "type": "image_url",
+                  "image_url": {
+                    "url": "data:image/#{ul.extension};base64," + base64_encoded_data
+                  }
+                }
               end
             end
-            role = "user"
-          else
-            content = text
           end
+
           if SiteSetting.chatbot_api_supports_name_attribute
             { role: role, name: username, content: content }
           else
