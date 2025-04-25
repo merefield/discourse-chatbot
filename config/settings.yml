@@ -283,6 +283,13 @@ plugins:
   chatbot_support_picture_creation:
     client: false
     default: false
+  chatbot_support_picture_creation_model:
+    client: false
+    type: enum
+    default: dall-e-3
+    choices:
+      - dall-e-3
+      - gpt-image-1
   chatbot_reply_job_time_delay:
     client: false
     default: 2
