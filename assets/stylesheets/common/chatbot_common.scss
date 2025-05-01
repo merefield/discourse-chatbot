@@ -8,42 +8,84 @@
     background-color 2s, transform 0.5s;
 }
 
+.widget-link.post-date {
+  margin-right: 0.5em;
+}
+
+.post-info.post-date {
+  display: flex;
+  flex-direction: row;
+}
+
+.chatbot-post-launcher {
+  bottom: 0.5em;
+}
+
 #chatbot-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  @include buttonShadow;
-  @include buttonTransition;
   padding: 0;
+  padding-bottom: 0.5em;
   margin: 0;
-  height: 60px;
+  height: 30px;
   border-radius: 40px;
-  position: fixed;
-  bottom: 30px;
-  right: 50px;
   z-index: 1;
-  background-color: $tertiary;
-  color: var(--secondary);
+  background-color: var(--secondary);
+  color: var(--primary);
   white-space: nowrap;
   overflow: hidden;
   transition: all 0.3s;
   .d-icon {
     margin: 0;
-    padding: 0.7em;
-    width: 30px;
-    height: 30px;
+    padding: 0.05em;
+    width: 15px;
+    height: 15px;
+    color: var(--primary-low);
+    svg {
+      color: var(--primary-low);
+    }
   }
   img {
-    padding: 0.2em;
+    padding: 0.15em;
   }
   .d-button-label {
-    color: var(--secondary);
+    color: var(--primary);
     display: inline-block;
     margin: 0 0.7em 0 0;
+    opacity: 0;
+    width: 0;
+    margin: 0;
   }
   .d-icon,
   .avatar {
     margin: 0 0.25em;
+  }
+}
+
+#chatbot-btn:not(.post) {
+  padding: 0;
+  @include buttonShadow;
+  @include buttonTransition;
+  background-color: $tertiary;
+  .d-button-label {
+    color: var(--secondary);
+  }
+  color: var(--secondary);
+  position: fixed;
+  bottom: 30px;
+  right: 50px;
+  height: 50px;
+  border-radius: 40px;
+  .d-icon {
+    margin: 0;
+    padding: 0.7em;
+    width: 30px;
+    height: 30px;
+    color: var(--seoncdary);
+  }
+  img {
+    padding: 0.2em;
   }
   &:not(:hover):not(:active):not(:focus) {
     .d-button-label {
@@ -54,9 +96,20 @@
   }
 }
 
-#chatbot-btn:hover {
+#chatbot-btn.post:hover {
+  .d-icon {
+    color: var(--primary);
+    svg {
+      color: var(--primary);
+    }
+ }
+}
+
+#chatbot-btn:not(.post):hover {
   .d-button-label {
     transition: all 0.3s;
     width: 100%;
+    padding-right: 0.7em;
+    opacity: 100%;
   }
 }

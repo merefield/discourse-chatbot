@@ -8,6 +8,7 @@ module ::DiscourseChatbot
     before_action :ensure_plugin_enabled
 
     def start_bot_convo
+      post_id = params[:post_id]
 
       response = {}
 
@@ -25,7 +26,7 @@ module ::DiscourseChatbot
 
       start_bot = ::DiscourseChatbot::OpenAiBotRag.new(opts, false)
 
-      if SiteSetting.chatbot_user_fields_collection && start_bot.has_empty_user_fields?(opts)
+      if !post_id && SiteSetting.chatbot_user_fields_collection && start_bot.has_empty_user_fields?(opts)
 
         system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
         assistant_message = { "role": "assistant", "content": I18n.t("chatbot.prompt.quick_access_kick_off.announcement", username: current_user.username) }
@@ -51,6 +52,29 @@ module ::DiscourseChatbot
           parameters: parameters
         )
 
+        kick_off_statement = res.dig("choices", 0, "message", "content")
+      elsif post_id
+        post = ::Post.find_by(id: post_id)
+        system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
+
+        opts[:reply_to_message_or_post_id] = post_id
+
+        messages = PostPromptUtils.create_prompt(opts)
+        messages.unshift(system_message)
+        messages << { "role": "user", "content": I18n.t("chatbot.prompt.quick_access_kick_off.post_analysis") }
+        model = start_bot.model_name
+        parameters = {
+          model: model,
+          messages: messages,
+          max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
+          temperature: SiteSetting.chatbot_request_temperature / 100.0,
+          top_p: SiteSetting.chatbot_request_top_p / 100.0,
+          frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+          presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
+        }
+        res = start_bot.client.chat(
+          parameters: parameters
+        )
         kick_off_statement = res.dig("choices", 0, "message", "content")
       end
 

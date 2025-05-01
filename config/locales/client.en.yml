@@ -9,6 +9,10 @@ en:
       location_map_filter_closed: "Filter closed topics from the map topic list in this category."
       title_capitalized: "Talk to Chatbot"
       pm_prefix: "A Discussion with Chatbot"
+      post_launch:
+        title: "Talk to Chatbot about this Post"
+        thinking: "Thinking..."
+        lets_talk: "Let's talk about this post..."
       user_prefs:
         title: "Chatbot User Preferences"
         prefer_no_quickchat_pm_popup: "Disable Composer popup on mobile when using Quickchat in PMs (e.g. when using a very small mobile phone)"

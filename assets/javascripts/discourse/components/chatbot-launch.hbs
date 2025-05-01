@@ -2,8 +2,9 @@
   <DButton
     {{did-insert this.getBotUser}}
     @id="chatbot-btn"
-    @class="btn-primary chatbot-btn"
+    @class={{concatClass "btn-primary chatbot-btn" this.chatbotLaunchClass}}
     @action={{action this.startChatting}}
+    @title={{this.title}}
   >
     {{#if this.chatbotLaunchUseAvatar}}
       {{avatar this.botUser imageSize="medium"}}
