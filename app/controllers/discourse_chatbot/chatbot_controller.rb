@@ -60,8 +60,10 @@ module ::DiscourseChatbot
         opts[:reply_to_message_or_post_id] = post_id
 
         messages = PostPromptUtils.create_prompt(opts)
+        pre_message = { "role": "assistant", "content": I18n.t("chatbot.prompt.quick_access_kick_off.post_analysis_before_posts", username: current_user.username ) }
+        messages.unshift(pre_message)
         messages.unshift(system_message)
-        messages << { "role": "user", "content": I18n.t("chatbot.prompt.quick_access_kick_off.post_analysis") }
+        messages << { "role": "assistant", "content": I18n.t("chatbot.prompt.quick_access_kick_off.post_analysis", username: current_user.username ) }
         model = start_bot.model_name
         parameters = {
           model: model,

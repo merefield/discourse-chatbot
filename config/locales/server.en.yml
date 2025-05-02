@@ -102,7 +102,6 @@ en:
     pm_prefix: "A Discussion with Chatbot"
     quick_access_kick_off:
       announcement: "Hello, how can I help you?"
-      post_analysis: "Summarize the discussion, provide your opinion about it and ask me what I would like to discuss about it."
     quota_reached:
       escalation:
         title: "Chatbot Quota Reached: %{username}"
@@ -123,6 +122,8 @@ en:
         title_creation: "Create a short Topic title from summarising the prior messages"
       quick_access_kick_off:
         announcement: "I must greet @%{username} warmly and kick off any questions I want answered."
+        post_analysis_before_posts: "I am now talking to only %{username} who has asked me to consider the following posts in private.  The other users are now not present, but I have access to their conversation which is as follows:"
+        post_analysis: "I am still talking to only %{username} who has asked me to consider the above posts in private.  I should summarize the discussion, provide my opinion about it to %{username} and ask them what they would like to discuss about it."
       function:
         remaining_bot_quota:
           description: |
