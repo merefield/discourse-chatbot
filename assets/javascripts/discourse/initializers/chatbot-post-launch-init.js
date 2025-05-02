@@ -25,7 +25,7 @@ export default apiInitializer("1.8.0", (api) => {
         });
       } else if (findArgs.fetch_from_last_read) {
         const lastReadMessageId = this.currentUserMembership?.lastReadMessageId;
-        if (this.args.channel.chatable.type === "DirectMessage" ) {
+        if (this.args.channel.chatable.type === "DirectMessage") {
           this.scrollToBottom();
         } else {
           this.scrollToMessageId(lastReadMessageId);
@@ -42,8 +42,8 @@ export default apiInitializer("1.8.0", (api) => {
 
       this.debounceFillPaneAttempt();
       this.debouncedUpdateLastReadMessage();
-    }
-  })
+    },
+  });
 
   api.decorateWidget("post-date:after", (helper) => {
     if (!siteSettings.chatbot_quick_access_bot_post_kicks_off) {
