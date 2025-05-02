@@ -67,7 +67,7 @@ export default class ContentLanguageDiscovery extends Component {
         showProgressBar: true,
         data: {
           message: I18n.t("chatbot.post_launch.thinking"),
-          icon: "robot",
+          icon: this.siteSettings.chatbot_quick_access_talk_button_bot_icon,
         },
       });
     }

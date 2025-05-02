@@ -46,20 +46,19 @@
       color: var(--primary-low);
     }
   }
-  img {
-    padding: 0.15em;
-  }
   .d-button-label {
     color: var(--primary);
     display: inline-block;
-    margin: 0 0.7em 0 0;
     opacity: 0;
     width: 0;
     margin: 0;
   }
-  .d-icon,
+}
+
+#chatbot-btn.post{
   .avatar {
-    margin: 0 0.25em;
+    width: 25px;
+    height: 25px;
   }
 }
 
