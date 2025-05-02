@@ -61,27 +61,22 @@ export default class ContentLanguageDiscovery extends Component {
 
   @action
   async startChatting() {
-    this.toasts.success({
-      duration: 2000,
-      showProgressBar: true,
-      data: {
-        message: I18n.t("chatbot.post_launch.thinking"),
-        icon: "robot",
-      },
-    });
+    if (this.args?.post?.id) {
+      this.toasts.success({
+        duration: 2000,
+        showProgressBar: true,
+        data: {
+          message: I18n.t("chatbot.post_launch.thinking"),
+          icon: "robot",
+        },
+      });
+    }
     let result = {};
     if (this.siteSettings.chatbot_quick_access_bot_kicks_off) {
       result = await ajax("/chatbot/start_bot_convo", {
         type: "POST",
         data: {
-          post_id: this.args.post.id,
-        },
-      });
-      this.toasts.success({
-        duration: 1000,
-        data: {
-          message: I18n.t("chatbot.post_launch.lets_talk"),
-          icon: "robot",
+          post_id: this.args?.post?.id,
         },
       });
     }
