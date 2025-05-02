@@ -15,6 +15,7 @@ export default class ContentLanguageDiscovery extends Component {
   @service router;
   @service composer;
   @service site;
+  @service toasts;
 
   @tracked botUser = null;
 
@@ -35,6 +36,14 @@ export default class ContentLanguageDiscovery extends Component {
     );
   }
 
+  get chatbotLaunchClass() {
+    return this.args.post ? "post" : "";
+  }
+
+  get title() {
+    return this.args.post ? "chatbot.post_launch.title" : "";
+  }
+
   @action
   getBotUser() {
     User.findByUsername(this.siteSettings.chatbot_bot_user, {}).then((user) => {
@@ -52,10 +61,23 @@ export default class ContentLanguageDiscovery extends Component {
 
   @action
   async startChatting() {
+    if (this.args?.post?.id) {
+      this.toasts.success({
+        duration: 2000,
+        showProgressBar: true,
+        data: {
+          message: I18n.t("chatbot.post_launch.thinking"),
+          icon: this.siteSettings.chatbot_quick_access_talk_button_bot_icon,
+        },
+      });
+    }
     let result = {};
     if (this.siteSettings.chatbot_quick_access_bot_kicks_off) {
       result = await ajax("/chatbot/start_bot_convo", {
         type: "POST",
+        data: {
+          post_id: this.args?.post?.id,
+        },
       });
     }
 
