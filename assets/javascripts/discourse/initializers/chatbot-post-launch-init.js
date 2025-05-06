@@ -27,10 +27,15 @@ export default apiInitializer("1.8.0", (api) => {
         });
       } else if (findArgs.fetch_from_last_read) {
         const lastReadMessageId = this.currentUserMembership?.lastReadMessageId;
-        if (this.args.channel.chatable.type === "DirectMessage" &&
+        if (
+          this.args.channel.chatable.type === "DirectMessage" &&
           this.args.channel.unicodeTitle === this.siteSettings.chatbot_bot_user
         ) {
-          this.scrollToMessageId(this.messagesManager.messages[this.messagesManager.messages.length - 1].id)
+          this.scrollToMessageId(
+            this.messagesManager.messages[
+              this.messagesManager.messages.length - 1
+            ].id
+          );
         } else {
           this.scrollToMessageId(lastReadMessageId);
         }
@@ -52,14 +57,9 @@ export default apiInitializer("1.8.0", (api) => {
   if (siteSettings.chatbot_quick_access_bot_post_kicks_off) {
     api.registerValueTransformer(
       "post-menu-buttons",
-      ({
-        value: dag,
-        context: {
-          firstButtonKey,
-        },
-      }) => {
+      ({ value: dag, context: { firstButtonKey } }) => {
         dag.add("chatbot-post-launch-button", ChatbotLaunch, {
-          before: firstButtonKey
+          before: firstButtonKey,
         });
       }
     );
