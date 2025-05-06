@@ -37,7 +37,7 @@ export default class ContentLanguageDiscovery extends Component {
   }
 
   get chatbotLaunchClass() {
-    return this.args.post ? "post" : "";
+    return this.args.post ? "post post-action-menu__chatbot" : "";
   }
 
   get title() {
@@ -59,11 +59,15 @@ export default class ContentLanguageDiscovery extends Component {
     return this.siteSettings.chatbot_quick_access_talk_button_bot_icon;
   }
 
+  get primaryButton() {
+    return !this.args.post;
+  }
+
   @action
   async startChatting() {
     if (this.args?.post?.id) {
       this.toasts.success({
-        duration: 2000,
+        duration: 3000,
         showProgressBar: true,
         data: {
           message: I18n.t("chatbot.post_launch.thinking"),
