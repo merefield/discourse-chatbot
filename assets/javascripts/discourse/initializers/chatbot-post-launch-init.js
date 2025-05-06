@@ -1,11 +1,13 @@
 import { hbs } from "ember-cli-htmlbars";
 import { apiInitializer } from "discourse/lib/api";
 import RenderGlimmer from "discourse/widgets/render-glimmer";
+import ChatbotLaunch from "../components/chatbot-launch";
 
 export default apiInitializer("1.8.0", (api) => {
   const siteSettings = api.container.lookup("service:site-settings");
 
   api.modifyClass("component:chat-channel", {
+    pluginId: "discourse-chatbot",
     async fetchMessages(findArgs = {}) {
       if (this.messagesLoader.loading) {
         return;
@@ -25,8 +27,10 @@ export default apiInitializer("1.8.0", (api) => {
         });
       } else if (findArgs.fetch_from_last_read) {
         const lastReadMessageId = this.currentUserMembership?.lastReadMessageId;
-        if (this.args.channel.chatable.type === "DirectMessage") {
-          this.scrollToBottom();
+        if (this.args.channel.chatable.type === "DirectMessage" &&
+          this.args.channel.unicodeTitle === this.siteSettings.chatbot_bot_user
+        ) {
+          this.scrollToMessageId(this.messagesManager.messages[this.messagesManager.messages.length - 1].id)
         } else {
           this.scrollToMessageId(lastReadMessageId);
         }
@@ -45,24 +49,19 @@ export default apiInitializer("1.8.0", (api) => {
     },
   });
 
-  api.decorateWidget("post-date:after", (helper) => {
-    if (!siteSettings.chatbot_quick_access_bot_post_kicks_off) {
-      return;
-    }
-
-    const post = helper.getModel();
-
-    if (!post) {
-      return;
-    }
-
-    return new RenderGlimmer(
-      helper.widget,
-      "div.chatbot-post-launcher",
-      hbs`<ChatbotLaunch @post={{@data.post}} />`,
-      {
-        post,
+  if (siteSettings.chatbot_quick_access_bot_post_kicks_off) {
+    api.registerValueTransformer(
+      "post-menu-buttons",
+      ({
+        value: dag,
+        context: {
+          firstButtonKey,
+        },
+      }) => {
+        dag.add("chatbot-post-launch-button", ChatbotLaunch, {
+          before: firstButtonKey
+        });
       }
     );
-  });
+  }
 });

@@ -189,6 +189,9 @@ plugins:
   chatbot_quick_access_talk_button_bot_icon:
       client: true
       default: robot
+  chatbot_quick_access_talk_button_bot_use_avatar:
+      client: true
+      default: false
   chatbot_quick_access_bot_post_kicks_off:
     default: false
     client: true
