@@ -5,6 +5,8 @@
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
+# gem 'mime-types-data', '3.2025.0507', { require: false }
+# gem 'mime-types', '3.7.0', { require: false }
 gem 'multipart-post', '2.4.0', { require: false }
 gem 'faraday-multipart', '1.0.4', { require: false }
 gem 'event_stream_parser', '1.0.0', { require: false }
