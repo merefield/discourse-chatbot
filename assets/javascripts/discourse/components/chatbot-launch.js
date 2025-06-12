@@ -21,11 +21,13 @@ export default class ContentLanguageDiscovery extends Component {
 
   get showChatbotButton() {
     const baseRoute = this.router.currentRouteName.split(".")[0];
+    const subRoute = this.router.currentRouteName.split(".")[1];
     return (
       this.currentUser &&
       this.siteSettings.chatbot_enabled &&
       this.currentUser.chatbot_access &&
       (baseRoute === "discovery" ||
+      (baseRoute === "tags" &&  subRoute === "intersection") ||
         (!this.site.mobileView && baseRoute === "topic")) &&
       this.siteSettings.chatbot_quick_access_talk_button !== "off" &&
       ((this.siteSettings.chat_enabled &&
