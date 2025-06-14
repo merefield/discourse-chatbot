@@ -6,12 +6,12 @@ import { inject as service } from "@ember/service";
 import DButton from "discourse/components/d-button";
 import avatar from "discourse/helpers/avatar";
 import concatClass from "discourse/helpers/concat-class";
+import icon from "discourse/helpers/d-icon";
 import { ajax } from "discourse/lib/ajax";
 import DiscourseURL from "discourse/lib/url";
 import Composer from "discourse/models/composer";
 import User from "discourse/models/user";
 import I18n, { i18n } from "discourse-i18n";
-import icon from "discourse/helpers/d-icon";
 
 export default class ContentLanguageDiscovery extends Component {
   @service siteSettings;
