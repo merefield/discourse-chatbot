@@ -1,5 +1,6 @@
 import Component from "@glimmer/component";
 import { action } from "@ember/object";
+import didInsert from "@ember/render-modifiers/modifiers/did-insert";
 import { inject as service } from "@ember/service";
 import Composer from "discourse/models/composer";
 
@@ -42,4 +43,10 @@ export default class ComposerRaiserCompopnent extends Component {
       this.args.model.user_id === this.BOT_USER_ID
     );
   }
+
+  <template>
+    {{#if this.isBotConversation}}
+      <div {{didInsert this.raiseComposer}} />
+    {{/if}}
+  </template>
 }

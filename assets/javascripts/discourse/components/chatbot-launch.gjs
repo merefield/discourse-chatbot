@@ -1,12 +1,17 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
+import didInsert from "@ember/render-modifiers/modifiers/did-insert";
 import { inject as service } from "@ember/service";
+import DButton from "discourse/components/d-button";
+import avatar from "discourse/helpers/avatar";
+import concatClass from "discourse/helpers/concat-class";
 import { ajax } from "discourse/lib/ajax";
 import DiscourseURL from "discourse/lib/url";
 import Composer from "discourse/models/composer";
 import User from "discourse/models/user";
-import I18n from "I18n";
+import I18n, { i18n } from "discourse-i18n";
+import icon from "discourse/helpers/d-icon";
 
 export default class ContentLanguageDiscovery extends Component {
   @service siteSettings;
@@ -119,4 +124,28 @@ export default class ContentLanguageDiscovery extends Component {
         });
     }
   }
+
+  <template>
+    {{#if this.showChatbotButton}}
+      <DButton
+        {{didInsert this.getBotUser}}
+        @id={{if this.primaryButton "chatbot-btn"}}
+        @class={{concatClass "chatbot-btn" this.chatbotLaunchClass}}
+        ...attributes
+        @action={{action this.startChatting}}
+        @title={{this.title}}
+      >
+        {{#if this.chatbotLaunchUseAvatar}}
+          {{avatar this.botUser imageSize="medium"}}
+        {{else}}
+          {{icon this.chatbotLaunchIcon}}
+        {{/if}}
+        {{#if this.primaryButton}}
+          <label class="d-button-label">{{i18n
+              "chatbot.title_capitalized"
+            }}</label>
+        {{/if}}
+      </DButton>
+    {{/if}}
+  </template>
 }
