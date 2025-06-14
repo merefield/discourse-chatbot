@@ -1,6 +1,4 @@
-import { hbs } from "ember-cli-htmlbars";
 import { apiInitializer } from "discourse/lib/api";
-import RenderGlimmer from "discourse/widgets/render-glimmer";
 import ChatbotLaunch from "../components/chatbot-launch";
 
 export default apiInitializer("1.8.0", (api) => {

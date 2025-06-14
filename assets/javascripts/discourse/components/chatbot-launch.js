@@ -27,7 +27,7 @@ export default class ContentLanguageDiscovery extends Component {
       this.siteSettings.chatbot_enabled &&
       this.currentUser.chatbot_access &&
       (baseRoute === "discovery" ||
-      (baseRoute === "tags" &&  subRoute === "intersection") ||
+        (baseRoute === "tags" && subRoute === "intersection") ||
         (!this.site.mobileView && baseRoute === "topic")) &&
       this.siteSettings.chatbot_quick_access_talk_button !== "off" &&
       ((this.siteSettings.chat_enabled &&
