@@ -28,8 +28,31 @@ module ::DiscourseChatbot
       raise "Overwrite me!"
     end
 
-    def get_embedding_from_api(id)
+    def get_embedding(id)
       raise "Overwrite me!"
+    end
+
+    def get_embedding_from_api(text)
+      begin
+        self.setup_api
+
+        response = @client.embeddings(
+          parameters: {
+            model: @model_name,
+            input: text
+          }
+        )
+
+        if response.dig("error")
+          error_text = response.dig("error", "message")
+          raise StandardError, error_text
+        end
+      rescue StandardError => e
+        Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Embedding for post id '#{post_id}' in topic id '#{topic.id}': #{e.message}")
+        raise e
+      end
+
+      embedding_vector = response.dig("data", 0, "embedding")
     end
 
 

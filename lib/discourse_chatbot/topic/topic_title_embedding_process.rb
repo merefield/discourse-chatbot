@@ -9,7 +9,7 @@ module ::DiscourseChatbot
       if in_scope(topic_id)
         if !is_valid(topic_id)
 
-          embedding_vector = get_embedding_from_api(topic_id)
+          embedding_vector = get_embedding(topic_id)
   
           ::DiscourseChatbot::TopicTitleEmbedding.upsert({ topic_id: topic_id, model: SiteSetting.chatbot_open_ai_embeddings_model, embedding: "#{embedding_vector}" }, on_duplicate: :update, unique_by: :topic_id)
 
@@ -32,28 +32,10 @@ module ::DiscourseChatbot
       end
     end
 
-    def get_embedding_from_api(topic_id)
-      begin
-        self.setup_api
+    def get_embedding(topic_id)
+      topic = ::Topic.find_by(id: topic_id)
 
-        topic = ::Topic.find_by(id: topic_id)
-        response = @client.embeddings(
-          parameters: {
-            model: @model_name,
-            input: topic.title
-          }
-        )
-
-        if response.dig("error")
-          error_text = response.dig("error", "message")
-          raise StandardError, error_text
-        end
-      rescue StandardError => e
-        Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Embedding for topic id '#{topic_id}': #{e.message}")
-        raise e
-      end
-
-      embedding_vector = response.dig("data", 0, "embedding")
+      get_embedding_from_api(topic.title)
     end
 
 
@@ -138,9 +120,11 @@ module ::DiscourseChatbot
     end
   
     def is_valid(topic_id)
+      topic = ::Topic.find_by(id: topic_id)
       embedding_record = ::DiscourseChatbot::TopicTitleEmbedding.find_by(topic_id: topic_id)
       return false if !embedding_record.present?
       return false if embedding_record.model != SiteSetting.chatbot_open_ai_embeddings_model
+      return false if topic.updated_at > embedding_record.updated_at
       true
     end
   

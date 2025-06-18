@@ -9,7 +9,7 @@ module ::DiscourseChatbot
       if in_scope(post_id)
         if !is_valid(post_id)
 
-          embedding_vector = get_embedding_from_api(post_id)
+          embedding_vector = get_embedding(post_id)
   
           ::DiscourseChatbot::PostEmbedding.upsert({ post_id: post_id, model: SiteSetting.chatbot_open_ai_embeddings_model, embedding: "#{embedding_vector}" }, on_duplicate: :update, unique_by: :post_id)
 
@@ -32,31 +32,12 @@ module ::DiscourseChatbot
       end
     end
 
-    def get_embedding_from_api(post_id)
-      begin
-        self.setup_api
+    def get_embedding(post_id)
+      post = ::Post.find_by(id: post_id)
+      text = post.raw[0..SiteSetting.chatbot_open_ai_embeddings_char_limit]
 
-        post = ::Post.find_by(id: post_id)
-        topic = ::Topic.find_by(id: post.topic_id)
-        response = @client.embeddings(
-          parameters: {
-            model: @model_name,
-            input: post.raw[0..SiteSetting.chatbot_open_ai_embeddings_char_limit]
-          }
-        )
-
-        if response.dig("error")
-          error_text = response.dig("error", "message")
-          raise StandardError, error_text
-        end
-      rescue StandardError => e
-        Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Embedding for post id '#{post_id}' in topic id '#{topic.id}': #{e.message}")
-        raise e
-      end
-
-      embedding_vector = response.dig("data", 0, "embedding")
+      get_embedding_from_api(text)
     end
-
 
     def semantic_search(query)
       self.setup_api
@@ -157,9 +138,11 @@ module ::DiscourseChatbot
     end
   
     def is_valid(post_id)
+      post = ::Post.find_by(id: post_id)
       embedding_record = ::DiscourseChatbot::PostEmbedding.find_by(post_id: post_id)
       return false if !embedding_record.present?
       return false if embedding_record.model != SiteSetting.chatbot_open_ai_embeddings_model
+      return false if post.updated_at > embedding_record.updated_at
       true
     end
   
