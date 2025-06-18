@@ -50,9 +50,14 @@ RSpec.describe DiscourseChatbot::PostEmbeddingProcess do
   describe 'validity' do
     it "checks if a post embedding is valid" do
       SiteSetting.chatbot_open_ai_embeddings_model = "text-embedding-ada-002"
+      freeze_time(3.days.ago)
       post = Fabricate(:post)
+      pp post.updated_at
+      freeze_time(2.days.ago)
       post_embedding = ::DiscourseChatbot::PostEmbedding.create!(post_id: post.id, model: "text-embedding-3-small", embedding: "[#{(1..1536).to_a.join(",")}]")
+      pp post_embedding.updated_at
       expect(subject.is_valid(post.id)).to eq(false)
+      freeze_time(1.days.ago)
       post_embedding = ::DiscourseChatbot::PostEmbedding.upsert({post_id: post.id, model: "text-embedding-ada-002", embedding: "[#{(1..1536).to_a.join(",")}]"}, on_duplicate: :update, unique_by: :post_id)
       expect(subject.is_valid(post.id)).to eq(true)
     end
