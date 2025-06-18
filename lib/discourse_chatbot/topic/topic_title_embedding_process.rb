@@ -120,9 +120,11 @@ module ::DiscourseChatbot
     end
   
     def is_valid(topic_id)
+      topic = ::Topic.find_by(id: topic_id)
       embedding_record = ::DiscourseChatbot::TopicTitleEmbedding.find_by(topic_id: topic_id)
       return false if !embedding_record.present?
       return false if embedding_record.model != SiteSetting.chatbot_open_ai_embeddings_model
+      return false if topic.updated_at > embedding_record.updated_at
       true
     end
   
