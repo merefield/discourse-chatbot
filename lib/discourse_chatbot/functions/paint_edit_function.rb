@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative '../function'
-require 'mime/types'
 
 module DiscourseChatbot
   class PaintEditFunction < Function
