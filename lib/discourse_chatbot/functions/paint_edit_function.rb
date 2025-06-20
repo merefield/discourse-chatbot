@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative '../function'
-require 'mime/types'
 
 module DiscourseChatbot
   class PaintEditFunction < Function
@@ -66,11 +65,10 @@ module DiscourseChatbot
         file_path = path = Discourse.store.path_for(last_image_upload)
         base64_encoded_data = Base64.strict_encode64(File.read(file_path))
 
-
         file_path = Discourse.store.path_for(last_image_upload)
         extension = last_image_upload.extension
-        mime_type = ::MIME::Types.type_for(extension).first.to_s
-        
+        mime_type = MiniMime.lookup_by_extension(extension).content_type
+
         f = Tempfile.new(["e1_image", ".#{extension}"])
         f.binmode
         f.write(File.binread(file_path))
