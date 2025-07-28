@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 1.5.12
+# version: 1.5.13
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
-gem 'multipart-post', '2.2.3', { require: false }
+gem 'multipart-post', '2.4.1', { require: false }
 gem 'faraday-multipart', '1.0.4', { require: false }
 gem 'event_stream_parser', '1.0.0', { require: false }
 gem "ruby-openai", '8.1.0', { require: false }
