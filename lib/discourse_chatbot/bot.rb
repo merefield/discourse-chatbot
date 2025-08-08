@@ -14,7 +14,34 @@ module ::DiscourseChatbot
       response = get_response(content, opts)
 
       consume_quota(opts[:user_id], response[:total_tokens])
+      
+      # Логируем использование токенов с детальной информацией
+      log_token_usage(opts, response)
+      
       response
+    end
+
+    def log_token_usage(opts, response)
+      return unless SiteSetting.chatbot_enable_token_usage_tracking
+      return unless response[:total_tokens] && response[:total_tokens] > 0
+      
+      model_name = get_model_name(opts)
+      
+      TokenUsageLogger.log_chat_usage(
+        user_id: opts[:user_id],
+        model_name: model_name,
+        input_tokens: response[:input_tokens] || 0,
+        output_tokens: response[:output_tokens] || 0,
+        topic_id: opts[:topic_or_channel_id],
+        post_id: opts[:reply_to_message_or_post_id]
+      )
+    rescue => e
+      Rails.logger.error("Failed to log token usage in bot: #{e.message}")
+    end
+
+    def get_model_name(opts)
+      # Переопределяется в наследниках
+      "unknown"
     end
 
     def consume_quota(user_id, token_usage)

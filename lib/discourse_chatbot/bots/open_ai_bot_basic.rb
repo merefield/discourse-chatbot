@@ -47,12 +47,19 @@ module ::DiscourseChatbot
           parameters: parameters
         )
 
-        token_usage = response.dig("usage", "total_tokens")
-        @total_tokens += token_usage
+        usage = response.dig("usage") || {}
+        input_tokens = usage["prompt_tokens"] || 0
+        output_tokens = usage["completion_tokens"] || 0
+        total_tokens = usage["total_tokens"] || (input_tokens + output_tokens)
+
+        @total_tokens += total_tokens
 
         {
           reply: response.dig("choices", 0, "message", "content"),
-          inner_thoughts: nil
+          inner_thoughts: nil,
+          total_tokens: total_tokens,
+          input_tokens: input_tokens,
+          output_tokens: output_tokens
         }
       rescue => e
         if e.respond_to?(:response)

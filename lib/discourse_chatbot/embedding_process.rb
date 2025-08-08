@@ -47,6 +47,21 @@ module ::DiscourseChatbot
           error_text = response.dig("error", "message")
           raise StandardError, error_text
         end
+
+        # Логируем использование токенов для эмбеддингов
+        if SiteSetting.chatbot_enable_token_usage_tracking
+          usage = response.dig("usage") || {}
+          total_tokens = usage["total_tokens"] || text.split.length
+          
+          # Используем benchmark пользователя для эмбеддингов
+          user_id = benchmark_user&.id || -1
+          
+          TokenUsageLogger.log_embedding_usage(
+            user_id: user_id,
+            model_name: @model_name,
+            tokens: total_tokens
+          )
+        end
       rescue StandardError => e
         Rails.logger.error("Chatbot: Error occurred while attempting to retrieve Embedding for post id '#{post_id}' in topic id '#{topic.id}': #{e.message}")
         raise e

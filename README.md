@@ -1,8 +1,9 @@
-# discourse-chatbot
+# discourse-chatbot-advanced
 
 # What is it?
 
-* The original Discourse AI Chatbot!
+* The original Discourse AI Chatbot - now with advanced features!
+* Enhanced with comprehensive token usage tracking and cost analytics!
 * Converse with the bot in any Post or Chat Channel, one to one or with others!
 * Customise the character of your bot to suit your forum!
   * want it to sound like William Shakespeare, or Winston Churchill? can do!
@@ -15,6 +16,10 @@
   * Return current End Of Day market data for stocks.*
   * Do "complex" maths accurately (with no made up or "hallucinated" answers!)
 * EXPERIMENTAL Vision support - the bot can see your pictures and answer questions on them! (turn `chatbot_support_vision` ON)
+* **NEW: Advanced Token Usage Tracking** - comprehensive analytics and cost monitoring for all AI model usage
+* **NEW: Cost Analytics Dashboard** - detailed breakdown by user, model, and time period with visual charts
+* **NEW: Export & Management** - export usage data and manage retention with automated cleanup
+* **NEW: GPT-5 Model Support** - includes support for the latest GPT-5 series models
 * Uses cutting edge Open AI API and functions capability of their excellent, industry leading Large Language Models.
 * Includes a special quota system to manage access to the bot: more trusted and/or paying members can have greater access to the bot!
 * Also supports Azure and proxy server connections

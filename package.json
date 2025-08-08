@@ -1,8 +1,8 @@
 {
-  "name": "discourse-chatbot",
-  "version": "0.13.0",
+  "name": "discourse-chatbot-advanced",
+  "version": "1.6.0",
   "repository": "git@github.com:merefield/discourse-chatbot.git",
-  "author": "Robert Barrow",
+  "author": "Robert Barrow, DigneZzZ",
   "license": "GPL V2",
   "devDependencies": {
     "@discourse/lint-configs": "^1.0.0",

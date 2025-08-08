@@ -61,5 +61,9 @@ module ::DiscourseChatbot
       end
     end
 
+    def get_model_name(opts)
+      @model_name
+    end
+
   end
 end

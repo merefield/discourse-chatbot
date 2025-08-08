@@ -1,6 +1,6 @@
 en:
   site_settings:
-    chatbot_enabled: "Enable the chatbot plugin"
+    chatbot_enabled: "Enable the advanced chatbot plugin with token usage tracking and cost analytics"
     chatbot_open_ai_token: "Your Open AI token. Will also be used as token if you set a custom URL to service other than Open AI. You can get one at <a target='_blank' rel='noopener' href='https://platform.openai.com/account/api-keys/'>openai.com</a>"
     chatbot_bot_type_low_trust: "(LOW TRUST USERS) New Reasoning models (o1 series) currently require 'basic'.  'RAG' will give bot local deterministic functions (but be aware this uses more calls to the LLM increasing cost significantly!). Maintain associated prompts at <a target='_blank' rel='noopener' href='/admin/customize/site_texts?q=chatbot.prompt.system.'>Customize Text</a>"
     chatbot_bot_type_medium_trust: "(MEDIUM TRUST USERS) New Reasoning models (o1 series) currently require 'basic'.  'RAG' will give bot local deterministic functions (but be aware this uses more calls to the LLM increasing cost significantly!). Maintain associated prompts at <a target='_blank' rel='noopener' href='/admin/customize/site_texts?q=chatbot.prompt.system.'>Customize Text</a>"
@@ -96,16 +96,18 @@ en:
     chatbot_marketstack_api_call_token_cost: "The notional token cost used for each call to the Marketstack API against users' overall quota."
     chatbot_enable_verbose_console_logging: "Enable response retrieval progress logging to console to help debug issues"
     chatbot_enable_verbose_rails_logging: "Enable response retrieval progress logging to rails logs to help debug issues. 'api_calls_only' restricts this to just API calls, 'all' logs all progress"
-    chatbot_verbose_rails_logging_destination_level: "Choose which category of logs to send verbose logs to.  'warn' is useful in Production as 'info' logs are not exposed at /logs."
+    chatbot_verbose_rails_logging_destination_level: "Select the logging level for Rails logging output."
+    chatbot_enable_token_usage_tracking: "Enable detailed tracking of token usage and costs for analytics and cost monitoring."
+    chatbot_token_usage_retention_days: "Number of days to retain token usage data before automatic cleanup (minimum 30 days)."
   chatbot:
-    bio: "Hi, I'm not a real person. I'm a bot that can discuss things with you. Don't take me too seriously. Sometimes, I'm even right about stuff!"
-    pm_prefix: "A Discussion with Chatbot"
+    bio: "Hi, I'm not a real person. I'm an advanced AI bot with comprehensive analytics that can discuss things with you. Don't take me too seriously. Sometimes, I'm even right about stuff!"
+    pm_prefix: "A Discussion with Advanced Chatbot"
     quick_access_kick_off:
-      announcement: "Hello, how can I help you?"
+      announcement: "Hello, how can I help you? I'm your advanced AI assistant with full analytics tracking!"
     quota_reached:
       escalation:
-        title: "Chatbot Quota Reached: %{username}"
-        message: "I'm afraid user '%{username}' has reached their weekly quota for Chatbot interactions.  I'm escalating this issue to staff for further assistance."
+        title: "Advanced Chatbot Quota Reached: %{username}"
+        message: "I'm afraid user '%{username}' has reached their weekly quota for Advanced Chatbot interactions.  I'm escalating this issue to staff for further assistance."
     prompt:
       system:
         basic:

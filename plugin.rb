@@ -1,8 +1,8 @@
 # frozen_string_literal: true
-# name: discourse-chatbot
-# about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 1.5.14
-# authors: merefield
+# name: discourse-chatbot-advanced
+# about: an advanced plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages with token usage tracking and cost analytics
+# version: 1.6.0
+# authors: merefield, DigneZzZ
 # url: https://github.com/merefield/discourse-chatbot
 
 gem 'event_stream_parser', '1.0.0', { require: false }
@@ -17,7 +17,7 @@ gem "childprocess", "5.0.0"
 
 
 module ::DiscourseChatbot
-  PLUGIN_NAME = "discourse-chatbot"
+  PLUGIN_NAME = "discourse-chatbot-advanced"
   POST = "post"
   MESSAGE = "message"
   
@@ -60,6 +60,7 @@ require_relative "lib/discourse_chatbot/engine"
 
 enabled_site_setting :chatbot_enabled
 register_asset 'stylesheets/common/chatbot_common.scss'
+register_asset 'stylesheets/common/chatbot_token_stats.scss'
 register_asset 'stylesheets/mobile/chatbot_mobile.scss', :mobile
 register_svg_icon 'robot'
 
@@ -84,10 +85,13 @@ after_initialize do
     ../app/models/discourse_chatbot/post_embeddings_bookmark.rb
     ../app/models/discourse_chatbot/topic_title_embedding.rb
     ../app/models/discourse_chatbot/topic_embeddings_bookmark.rb
+    ../app/models/discourse_chatbot/token_usage.rb
     ../lib/discourse_chatbot/embedding_process.rb
     ../lib/discourse_chatbot/post/post_embedding_process.rb
     ../lib/discourse_chatbot/topic/topic_title_embedding_process.rb
     ../lib/discourse_chatbot/embedding_completionist_process.rb
+    ../lib/discourse_chatbot/token_cost_calculator.rb
+    ../lib/discourse_chatbot/token_usage_logger.rb
     ../lib/discourse_chatbot/message/message_evaluation.rb
     ../lib/discourse_chatbot/post/post_evaluation.rb
     ../lib/discourse_chatbot/bot.rb
@@ -127,6 +131,7 @@ after_initialize do
     ../lib/discourse_chatbot/post/post_reply_creator.rb
     ../lib/discourse_chatbot/message/message_reply_creator.rb
     ../app/controllers/discourse_chatbot/chatbot_controller.rb
+    ../app/controllers/discourse_chatbot/chatbot_token_stats_controller.rb
     ../app/jobs/regular/chatbot_reply.rb
     ../app/jobs/regular/chatbot_post_embedding.rb
     ../app/jobs/regular/chatbot_post_embedding_delete.rb
@@ -134,6 +139,7 @@ after_initialize do
     ../app/jobs/regular/chatbot_topic_title_embedding_delete.rb
     ../app/jobs/scheduled/chatbot_quota_reset.rb
     ../app/jobs/scheduled/chatbot_embeddings_set_completer.rb
+    ../app/jobs/scheduled/chatbot_token_usage_cleanup.rb
   ).each do |path|
     load File.expand_path(path, __FILE__)
   end

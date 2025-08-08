@@ -68,7 +68,9 @@ module ::DiscourseChatbot
       {
         reply: res["choices"][0]["message"]["content"],
         inner_thoughts: @inner_thoughts,
-        total_tokens: @total_tokens
+        total_tokens: @total_tokens,
+        input_tokens: @input_tokens || 0,
+        output_tokens: @output_tokens || 0
       }
     end
 
@@ -256,8 +258,14 @@ module ::DiscourseChatbot
           parameters: parameters
         )
 
-        token_usage = res.dig("usage", "total_tokens")
-        @total_tokens += token_usage
+        usage = res.dig("usage") || {}
+        input_tokens = usage["prompt_tokens"] || 0
+        output_tokens = usage["completion_tokens"] || 0
+        total_tokens = usage["total_tokens"] || (input_tokens + output_tokens)
+        
+        @total_tokens += total_tokens
+        @input_tokens = (@input_tokens || 0) + input_tokens
+        @output_tokens = (@output_tokens || 0) + output_tokens
 
         ::DiscourseChatbot.progress_debug_message <<~EOS
           +++++++++++++++++++++++++++++++++++++++

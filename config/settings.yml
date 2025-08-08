@@ -481,3 +481,11 @@ plugins:
     choices:
       - 'info'
       - 'warn'
+  chatbot_enable_token_usage_tracking:
+    client: false
+    default: true
+  chatbot_token_usage_retention_days:
+    client: false
+    default: 90
+    min: 30
+    max: 365

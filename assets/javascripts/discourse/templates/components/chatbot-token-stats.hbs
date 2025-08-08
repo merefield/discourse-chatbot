@@ -1,0 +1,180 @@
+<div class="chatbot-token-stats">
+  <div class="chatbot-stats-header">
+    <h2>Chatbot Token Usage Statistics</h2>
+    
+    <div class="period-selector">
+      <label>Period:</label>
+      <select {{on "change" (fn this.changePeriod)}}>
+        {{#each this.periods as |period|}}
+          <option 
+            value={{period.value}} 
+            selected={{eq this.selectedPeriod period.value}}
+          >
+            {{period.label}}
+          </option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+
+  <div class="chatbot-stats-tabs">
+    {{#each this.tabs as |tab|}}
+      <button 
+        class="btn {{if (eq this.activeTab tab.id) 'btn-primary' 'btn-default'}}"
+        {{on "click" (fn this.changeTab tab.id)}}
+      >
+        {{tab.label}}
+      </button>
+    {{/each}}
+  </div>
+
+  {{#if this.loading}}
+    <div class="spinner">Loading...</div>
+  {{else}}
+    
+    {{#if (eq this.activeTab "overview")}}
+      <div class="chatbot-stats-overview">
+        {{#if this.usageStats}}
+          <div class="stats-summary">
+            <div class="stat-card">
+              <h3>Total Cost</h3>
+              <div class="stat-value">{{this.totalCostFormatted}}</div>
+            </div>
+            
+            <div class="stat-card">
+              <h3>Total Tokens</h3>
+              <div class="stat-value">{{this.totalTokensFormatted}}</div>
+            </div>
+            
+            <div class="stat-card">
+              <h3>Total Requests</h3>
+              <div class="stat-value">{{this.usageStats.system_stats.total_requests}}</div>
+            </div>
+            
+            <div class="stat-card">
+              <h3>Active Users</h3>
+              <div class="stat-value">{{this.usageStats.system_stats.total_users}}</div>
+            </div>
+          </div>
+
+          {{#if this.chartData}}
+            <div class="stats-chart">
+              <h3>Daily Usage</h3>
+              <div class="chart-container">
+                <canvas id="usage-chart" width="800" height="400"></canvas>
+              </div>
+            </div>
+          {{/if}}
+
+          {{#if this.usageStats.top_users}}
+            <div class="top-users">
+              <h3>Top Users</h3>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Total Cost</th>
+                    <th>Total Tokens</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{#each this.usageStats.top_users as |user|}}
+                    <tr>
+                      <td>{{user.username}}</td>
+                      <td>${{user.total_cost}}</td>
+                      <td>{{user.total_tokens}}</td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          {{/if}}
+        {{/if}}
+      </div>
+    {{/if}}
+
+    {{#if (eq this.activeTab "models")}}
+      <div class="chatbot-stats-models">
+        {{#if this.modelStats}}
+          <div class="models-table">
+            <h3>Usage by Model</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Request Type</th>
+                  <th>Total Cost</th>
+                  <th>Total Tokens</th>
+                  <th>Input Price (per 1K)</th>
+                  <th>Output Price (per 1K)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each-in this.modelStats.model_stats as |model types|}}
+                  {{#each-in types as |type stats|}}
+                    <tr>
+                      <td>{{model}}</td>
+                      <td>{{type}}</td>
+                      <td>${{stats.cost}}</td>
+                      <td>{{stats.tokens}}</td>
+                      <td>
+                        {{#if (get this.modelStats.pricing_info model)}}
+                          ${{get (get this.modelStats.pricing_info model) "input"}}
+                        {{else}}
+                          N/A
+                        {{/if}}
+                      </td>
+                      <td>
+                        {{#if (get this.modelStats.pricing_info model)}}
+                          ${{get (get this.modelStats.pricing_info model) "output"}}
+                        {{else}}
+                          N/A
+                        {{/if}}
+                      </td>
+                    </tr>
+                  {{/each-in}}
+                {{/each-in}}
+              </tbody>
+            </table>
+          </div>
+        {{/if}}
+      </div>
+    {{/if}}
+
+    {{#if (eq this.activeTab "export")}}
+      <div class="chatbot-stats-export">
+        <h3>Export Data</h3>
+        <p>Export usage data for the selected period:</p>
+        
+        <div class="export-buttons">
+          <button 
+            class="btn btn-primary"
+            {{on "click" (fn this.exportData "csv")}}
+          >
+            Export as CSV
+          </button>
+          
+          <button 
+            class="btn btn-primary"
+            {{on "click" (fn this.exportData "json")}}
+          >
+            Export as JSON
+          </button>
+        </div>
+
+        <hr>
+
+        <h3>Data Management</h3>
+        <p>Clean up old token usage data (older than 90 days):</p>
+        
+        <button 
+          class="btn btn-danger"
+          {{on "click" this.cleanupOldData}}
+        >
+          Cleanup Old Data
+        </button>
+      </div>
+    {{/if}}
+
+  {{/if}}
+</div>

@@ -1,14 +1,14 @@
 en:
   js:
     discourse_chatbot:
-      title: "Chatbot"
+      title: "Advanced Chatbot"
     chatbot:
       category:
-        settings_label: "Chatbot"
+        settings_label: "Advanced Chatbot"
         auto_response_additional_prompt: "Hidden text fed to bot to influence its auto-response if set.\nIn scope Categories are set <a href='/admin/site_settings/category/plugins?filter=chatbot_auto_respond_categories'>here.</a>"
       location_map_filter_closed: "Filter closed topics from the map topic list in this category."
-      title_capitalized: "Talk to Chatbot"
-      pm_prefix: "A Discussion with Chatbot"
+      title_capitalized: "Talk to Advanced Chatbot"
+      pm_prefix: "A Discussion with Advanced Chatbot"
       post_launch:
         title: "Talk to the Chatbot about this Post"
         thinking: "Thinking..."
