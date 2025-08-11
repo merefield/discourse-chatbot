@@ -47,6 +47,9 @@ plugins:
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
+      - gpt-5
+      - gpt-5-mini
+      - gpt-5-nano
       - o4-mini
       - o3
       - o3-mini
@@ -79,6 +82,9 @@ plugins:
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
+      - gpt-5
+      - gpt-5-mini
+      - gpt-5-nano
       - o4-mini
       - o3
       - o3-mini
@@ -111,6 +117,9 @@ plugins:
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
+      - gpt-5
+      - gpt-5-mini
+      - gpt-5-nano
       - o4-mini
       - o3
       - o3-mini
@@ -130,6 +139,7 @@ plugins:
     type: enum
     default: medium
     choices:
+      - minimal
       - low
       - medium
       - high
