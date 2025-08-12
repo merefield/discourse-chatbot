@@ -5,8 +5,8 @@
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
-gem 'domain_name', '0.6.20240107', { require: false }
-gem 'http-cookie', '1.0.8', { require: false }
+#gem 'domain_name', '0.6.20240107', { require: false }
+#gem 'http-cookie', '1.0.8', { require: false }
 gem 'event_stream_parser', '1.0.0', { require: false }
 gem "ruby-openai", '8.1.0', { require: false }
 # google search
