@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
-# about: a plugin that allows you to have a conversation with a configurable chatbot in Discourse Chat, Topics and Private Messages
-# version: 1.5.14
+# about: a plugin that allows you to have a conversation with a configurable chatbot in Chat, Topics and Private Messages
+# version: 1.5.15
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
+gem 'domain_name', '0.6.20240107', { require: false }
+gem 'http-cookie', '1.0.8', { require: false }
 gem 'event_stream_parser', '1.0.0', { require: false }
 gem "ruby-openai", '8.1.0', { require: false }
 # google search
@@ -39,7 +41,7 @@ module ::DiscourseChatbot
   POST_URL_REGEX = %r{\/t/[^/]+/(\d+)/(\d+)(?!\d|\/)}
   NON_POST_URL_REGEX = %r{\bhttps?:\/\/[^\s\/$.?#].[^\s)]*}
 
-  REASONING_MODELS = ["o1", "o1-mini", "o3", "o3-mini", "o4-mini"]
+  REASONING_MODELS = ["o1", "o1-mini", "o3", "o3-mini", "o4-mini", "gpt-5", "gpt-5-mini", "gpt-5-nano"]
 
   def progress_debug_message(message)
     puts "Chatbot: #{message}" if SiteSetting.chatbot_enable_verbose_console_logging
@@ -142,16 +144,6 @@ after_initialize do
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD, :integer)
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD, :integer)
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD, :date)
-
-  # Initialize Chatbot Quotas for all users as required
-  user_count = User.count
-  queries_field_count = UserCustomField.where(name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD).count
-  token_field_count = UserCustomField.where(name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD).count
-  pp "CHATBOT: Checking presence of Chatbot Custom Fields"
-  if user_count > queries_field_count * 2 || user_count > token_field_count * 2
-    pp "CHATBOT: Resetting Chatbot Quotas for all users as many users without required Chatbot Custom Fields"
-    ::DiscourseChatbot::Bot.new.reset_all_quotas
-  end
 
   add_to_serializer(:current_user, :chatbot_access) do
     !::DiscourseChatbot::EventEvaluation.new.trust_level(object.id).blank?
@@ -273,4 +265,5 @@ after_initialize do
       end
     end
   end
+  Jobs.enqueue(:backfill_chatbot_quotas)
 end
