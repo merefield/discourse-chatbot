@@ -264,5 +264,7 @@ after_initialize do
         event_evaluation.on_submission(chat_message)
       end
     end
+
+    Jobs.enqueue(:backfill_chatbot_quotas)
   end
 end
