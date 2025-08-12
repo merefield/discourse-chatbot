@@ -5,8 +5,8 @@
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
-#gem 'domain_name', '0.6.20240107', { require: false }
-#gem 'http-cookie', '1.0.8', { require: false }
+gem 'domain_name', '0.6.20240107', { require: false }
+gem 'http-cookie', '1.0.8', { require: false }
 gem 'event_stream_parser', '1.0.0', { require: false }
 gem "ruby-openai", '8.1.0', { require: false }
 # google search
@@ -144,16 +144,6 @@ after_initialize do
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD, :integer)
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD, :integer)
   register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD, :date)
-
-  # Initialize Chatbot Quotas for all users as required
-  user_count = User.count
-  queries_field_count = UserCustomField.where(name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD).count
-  token_field_count = UserCustomField.where(name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD).count
-  pp "CHATBOT: Checking presence of Chatbot Custom Fields"
-  if user_count > queries_field_count * 2 || user_count > token_field_count * 2
-    pp "CHATBOT: Resetting Chatbot Quotas for all users as many users without required Chatbot Custom Fields"
-    ::DiscourseChatbot::Bot.new.reset_all_quotas
-  end
 
   add_to_serializer(:current_user, :chatbot_access) do
     !::DiscourseChatbot::EventEvaluation.new.trust_level(object.id).blank?
