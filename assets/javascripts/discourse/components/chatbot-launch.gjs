@@ -132,7 +132,7 @@ export default class ContentLanguageDiscovery extends Component {
         @id={{if this.primaryButton "chatbot-btn"}}
         @class={{concatClass "chatbot-btn" this.chatbotLaunchClass}}
         ...attributes
-        @action={{action this.startChatting}}
+        @action={{this.startChatting}}
         @title={{this.title}}
       >
         {{#if this.chatbotLaunchUseAvatar}}
