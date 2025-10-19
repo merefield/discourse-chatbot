@@ -2,7 +2,6 @@ import Component from "@glimmer/component";
 import { action } from "@ember/object";
 import didInsert from "@ember/render-modifiers/modifiers/did-insert";
 import { service } from "@ember/service";
-import { service } from "@ember/service";
 
 export default class ComposerRaiserCompopnent extends Component {
   @service siteSettings;
