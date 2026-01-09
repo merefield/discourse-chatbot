@@ -72,7 +72,7 @@ module DiscourseChatbot
 
           url = "https://#{Discourse.current_hostname}/t/slug/#{post.topic_id}"
 
-          CustomUserField.create!(
+          UserCustomField.create!(
             user_id: current_user.id,
             name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
             value: Time.now.utc.to_s

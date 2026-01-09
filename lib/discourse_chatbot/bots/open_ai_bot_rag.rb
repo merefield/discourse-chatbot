@@ -281,7 +281,27 @@ module ::DiscourseChatbot
       end
       functions << get_user_address if get_user_address
       if SiteSetting.chatbot_escalate_to_staff_function && opts[:private] &&
-           opts[:type] == ::DiscourseChatbot::MESSAGE
+           opts[:type] == ::DiscourseChatbot::MESSAGE &&
+           (
+             !UserCustomField.where(
+               user_id: opts[:user_id],
+               name:
+                 ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
+             ).exists? ||
+               (
+                 Time.now.utc -
+                   Time.parse(
+                     UserCustomField
+                       .where(
+                         user_id: opts[:user_id],
+                         name:
+                           ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
+                       )
+                       .first
+                       .value
+                   )
+               ) > SiteSetting.chatbot_escalate_to_staff_cool_down_period.days
+           )
         functions << escalate_to_staff_function
       end
       functions << news_function if !SiteSetting.chatbot_news_api_token.blank?
