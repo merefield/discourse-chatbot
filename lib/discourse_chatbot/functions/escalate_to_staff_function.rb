@@ -52,6 +52,22 @@ module DiscourseChatbot
 
           content = generate_transcript(message_collection, bot_user)
 
+          base_title = I18n.t("chatbot.prompt.function.escalate_to_staff.title")
+          full_title = base_title
+
+          if SiteSetting.chatbot_private_message_auto_title
+            begin
+              generated_title = generate_escalation_title(opts)
+              if generated_title.present?
+                full_title = "#{base_title}: #{generated_title}"
+              end
+            rescue => e
+              Rails.logger.error(
+                "Chatbot: Error occurred while generating escalation title for user #{current_user.username}: #{e.message}"
+              )
+            end
+          end
+
           default_opts = {
             post_alert_options: {
               skip_send_email: true
@@ -62,7 +78,7 @@ module DiscourseChatbot
                 content: content
               ),
             skip_validations: true,
-            title: I18n.t("chatbot.prompt.function.escalate_to_staff.title"),
+            title: full_title,
             archetype: Archetype.private_message,
             target_usernames: target_usernames,
             target_group_names: target_group_names
@@ -156,6 +172,38 @@ module DiscourseChatbot
         message_collection << current_message
       end
       message_collection
+    end
+
+    def generate_escalation_title(opts)
+      prior_messages = ::DiscourseChatbot::MessagePromptUtils.create_prompt(opts)
+
+      client = OpenAI::Client.new
+
+      model_name =
+        case opts[:trust_level]
+        when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
+          SiteSetting.send("chatbot_open_ai_model_custom_" + opts[:trust_level] + "_trust") ?
+            SiteSetting.send("chatbot_open_ai_model_custom_name_" + opts[:trust_level] + "_trust") :
+            SiteSetting.send("chatbot_open_ai_model_" + opts[:trust_level] + "_trust")
+        else
+          SiteSetting.chatbot_open_ai_model_custom_low_trust ? SiteSetting.chatbot_open_ai_model_custom_name_low_trust : SiteSetting.chatbot_open_ai_model_low_trust
+        end
+
+      res =
+        client.chat(
+          parameters: {
+            model: model_name,
+            messages:
+              prior_messages << {
+                role: "user",
+                content: I18n.t("chatbot.prompt.private_message.title_creation")
+              }
+          }
+        )
+
+      return nil if res["error"].present?
+
+      res.dig("choices", 0, "message", "content")&.strip
     end
   end
 end
