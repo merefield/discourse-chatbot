@@ -88,6 +88,7 @@ after_initialize do
     :boolean
   )
   register_editable_user_custom_field :chatbot_user_prefs_disable_quickchat_pm_composer_popup_mobile
+  register_editable_user_custom_field :chatbot_additional_prompt
 
   Category.register_custom_field_type(
     "chatbot_auto_response_additional_prompt",

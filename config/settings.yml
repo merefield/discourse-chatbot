@@ -11,6 +11,9 @@ plugins:
   chatbot_private_message_auto_title:
     client: false
     default: true
+  chatbot_include_custom_field_prompts:
+    client: false
+    default: false
   chatbot_permitted_in_chat:
     default: true
     client: true

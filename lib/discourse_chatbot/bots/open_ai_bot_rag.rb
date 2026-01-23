@@ -50,10 +50,8 @@ module ::DiscourseChatbot
             )
         }
 
-        if SiteSetting.chatbot_user_fields_collection &&
-             has_empty_user_fields?(opts)
-          system_message[:content] += "  " + get_system_message_suffix(opts)
-        end
+        system_message_suffix = get_system_message_suffix(opts)
+        system_message[:content] += "  " + system_message_suffix if system_message_suffix.present?
       else
         system_message = {
           role: "developer",
@@ -114,64 +112,85 @@ module ::DiscourseChatbot
     end
 
     def get_system_message_suffix(opts)
-      system_message_suffix = ""
-      system_message_suffix_array = []
-      UserField
-        .where(editable: true)
-        .order(:id)
-        .each do |user_field|
-          user_field_options = []
-          user_field_id = user_field.id
-          user_field_type = user_field.field_type_enum
-          next unless %w[dropdown confirm text].include?(user_field_type)
+      system_message_suffixes = []
 
-          if user_field_type == "dropdown"
-            UserFieldOption
-              .where(user_field_id: user_field_id)
-              .each { |option| user_field_options << option.value }
-          end
-          if !::UserCustomField.where(
-               user_id: opts[:user_id],
-               name: "user_field_#{UserField.find_by(name: user_field.name).id}"
-             ).exists? ||
-               ::UserCustomField
-                 .where(
-                   user_id: opts[:user_id],
-                   name:
-                     "user_field_#{UserField.find_by(name: user_field.name).id}"
-                 )
-                 .first
-                 .value
-                 .blank?
-            system_message_suffix_array << case user_field_type
-            when "confirm"
-              I18n.t(
-                "chatbot.prompt.function.user_information.system_message.confirmation",
-                name: user_field.name,
-                description: user_field.description
-              )
-            when "dropdown"
-              I18n.t(
-                "chatbot.prompt.function.user_information.system_message.dropdown",
-                name: user_field.name,
-                options: user_field_options.to_sentence
-              )
-            else
-              I18n.t(
-                "chatbot.prompt.function.user_information.system_message.general",
-                name: user_field.name,
-                description: user_field.description
-              )
+      if SiteSetting.chatbot_user_fields_collection &&
+           has_empty_user_fields?(opts)
+        user_field_suffixes = []
+        UserField
+          .where(editable: true)
+          .order(:id)
+          .each do |user_field|
+            user_field_options = []
+            user_field_id = user_field.id
+            user_field_type = user_field.field_type_enum
+            next unless %w[dropdown confirm text].include?(user_field_type)
+
+            if user_field_type == "dropdown"
+              UserFieldOption
+                .where(user_field_id: user_field_id)
+                .each { |option| user_field_options << option.value }
             end
+            if !::UserCustomField.where(
+                 user_id: opts[:user_id],
+                 name:
+                   "user_field_#{UserField.find_by(name: user_field.name).id}"
+               ).exists? ||
+                 ::UserCustomField
+                   .where(
+                     user_id: opts[:user_id],
+                     name:
+                       "user_field_#{UserField.find_by(name: user_field.name).id}"
+                   )
+                   .first
+                   .value
+                   .blank?
+              user_field_suffixes << case user_field_type
+              when "confirm"
+                I18n.t(
+                  "chatbot.prompt.function.user_information.system_message.confirmation",
+                  name: user_field.name,
+                  description: user_field.description
+                )
+              when "dropdown"
+                I18n.t(
+                  "chatbot.prompt.function.user_information.system_message.dropdown",
+                  name: user_field.name,
+                  options: user_field_options.to_sentence
+                )
+              else
+                I18n.t(
+                  "chatbot.prompt.function.user_information.system_message.general",
+                  name: user_field.name,
+                  description: user_field.description
+                )
+              end
+            end
+            break if user_field_suffixes.length > 1
           end
-          break if system_message_suffix_array.length > 1
+
+        if user_field_suffixes.any?
+          user_field_suffix = user_field_suffixes.reverse.join("  ")
+          user_field_suffix +=
+            "  " +
+              I18n.t(
+                "chatbot.prompt.function.user_information.system_message.closing_statement"
+              )
+          system_message_suffixes << user_field_suffix
         end
-      system_message_suffix = system_message_suffix_array.reverse.join("  ")
-      system_message_suffix +=
-        "  " +
-          I18n.t(
-            "chatbot.prompt.function.user_information.system_message.closing_statement"
+      end
+
+      if SiteSetting.chatbot_include_custom_field_prompts
+        custom_field =
+          ::UserCustomField.find_by(
+            user_id: opts[:user_id],
+            name: "chatbot_additional_prompt"
           )
+        custom_field_prompt = custom_field&.value&.strip
+        system_message_suffixes << custom_field_prompt if custom_field_prompt.present?
+      end
+
+      system_message_suffixes.join("  ")
     end
 
     def merge_functions(opts)
