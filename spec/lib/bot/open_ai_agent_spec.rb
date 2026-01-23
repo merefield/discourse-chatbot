@@ -76,7 +76,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   end
 end
 
-describe ::DiscourseChatbot::OpenAiBotRag, "get_system_message_suffix" do
+describe ::DiscourseChatbot::OpenAiBotRag, "#get_system_message_suffix" do
   let(:user) { Fabricate(:user, email: "user_#{SecureRandom.hex}@example.com") }
   let(:opts) { { user_id: user.id } }
   let(:rag) { ::DiscourseChatbot::OpenAiBotRag.new(opts) }
@@ -113,7 +113,7 @@ describe ::DiscourseChatbot::OpenAiBotRag, "get_system_message_suffix" do
 end
 
 describe ::DiscourseChatbot::OpenAiBotRag,
-         "get_system_message_suffix via api",
+         "#get_system_message_suffix via api",
          type: :request do
   let(:user) { Fabricate(:user, email: "api_user_#{SecureRandom.hex}@example.com") }
   let(:admin) { Fabricate(:admin, email: "api_admin_#{SecureRandom.hex}@example.com") }
