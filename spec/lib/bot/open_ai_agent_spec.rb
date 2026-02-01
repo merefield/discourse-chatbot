@@ -15,8 +15,8 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   let(:post_ids_found) { [] }
   let(:topic_ids_found) { [111, 222, 3333] }
 
-  fab!(:topic_user) { Fabricate(:user, email: "topic_#{SecureRandom.hex}@example.com") }
-  fab!(:post_user) { Fabricate(:user, email: "post_#{SecureRandom.hex}@example.com") }
+  fab!(:topic_user) { Fabricate(:user) }
+  fab!(:post_user) { Fabricate(:user) }
   fab!(:topic_1) { Fabricate(:topic, id: 112, user: topic_user) }
   fab!(:post_1) { Fabricate(:post, topic: topic_1, user: post_user, post_number: 2) }
 
@@ -77,7 +77,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
 end
 
 describe ::DiscourseChatbot::OpenAiBotRag, "#get_system_message_suffix" do
-  let(:user) { Fabricate(:user, email: "user_#{SecureRandom.hex}@example.com") }
+  fab!(:user)
   let(:opts) { { user_id: user.id } }
   let(:rag) { ::DiscourseChatbot::OpenAiBotRag.new(opts) }
 
@@ -115,8 +115,8 @@ end
 describe ::DiscourseChatbot::OpenAiBotRag,
          "#get_system_message_suffix via api",
          type: :request do
-  let(:user) { Fabricate(:user, email: "api_user_#{SecureRandom.hex}@example.com") }
-  let(:admin) { Fabricate(:admin, email: "api_admin_#{SecureRandom.hex}@example.com") }
+  fab!(:user)
+  fab!(:admin)
   let(:api_key) { Fabricate(:api_key, user: admin) }
   let(:opts) { { user_id: user.id } }
   let(:rag) { ::DiscourseChatbot::OpenAiBotRag.new(opts) }

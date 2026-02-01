@@ -12,8 +12,8 @@ RSpec.describe DiscourseChatbot::PostEmbeddingProcess do
     let(:post_in_scope) { Fabricate(:post, topic: topic_in_scope) }
     let(:post_out_of_scope) { Fabricate(:post, topic: topic_out_of_scope) }
 
-    let(:user) { Fabricate(:user) }
-    let(:group) { Fabricate(:group) }
+    fab!(:user)
+    fab!(:group)
     let(:group_user) { Fabricate(:group_user, user: user, group: group) }
 
     let(:some_other_user) { Fabricate(:user) }

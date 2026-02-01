@@ -8,7 +8,7 @@ RSpec.configure do |config|
 end
 
 describe ::DiscourseChatbot::EscalateToStaffFunction do
-  let(:user) { Fabricate(:user) }
+  fab!(:user)
   let(:bot_user) { Fabricate(:user) }
   let(:chatbot_user) { User.find_by(username: "Chatbot") }
 
