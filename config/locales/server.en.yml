@@ -31,6 +31,7 @@ en:
     chatbot_strip_quotes: "Determine if quotes are stripped and not sent within prompts (doesn't affect OP)"
     chatbot_permitted_in_private_messages: "Allow Chatbot to interact in Private Messages"
     chatbot_private_message_auto_title: "Automatically create a Topic title from the prior messages in a Private Message"
+    chatbot_include_custom_field_prompts: "EXPERIMENTAL: include text from User Custom Field 'chatbot_additional_prompt'"
     chatbot_include_inner_thoughts_in_private_messages: "(FUNCTION DEBUG) Get Chatbot to post its background thinking on Private Messages (RAG only)"
     chatbot_include_inner_thoughts_in_topics: "(FUNCTION DEBUG) Get Chatbot to post its background thinking on Public Topics (RAG only)"
     chatbot_include_inner_thoughts_in_topics_as_whisper: "(FUNCTION DEBUG) Get Chatbot to post its background thinking on Public Topics as a whisper (RAG only)"

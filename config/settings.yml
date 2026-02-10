@@ -11,6 +11,9 @@ plugins:
   chatbot_private_message_auto_title:
     client: false
     default: true
+  chatbot_include_custom_field_prompts:
+    client: false
+    default: false
   chatbot_permitted_in_chat:
     default: true
     client: true
@@ -433,6 +436,11 @@ plugins:
   chatbot_escalate_to_staff_max_history:
     client: false
     default: 10
+  chatbot_escalate_to_staff_cool_down_period:
+    client: false
+    default: 1
+    min: 0
+    max: 7
   chatbot_user_fields_collection:
     client: false
     default: false
