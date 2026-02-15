@@ -156,6 +156,7 @@ plugins:
       - low
       - medium
       - high
+      - xhigh
   chatbot_open_ai_model_custom_api_type:
     client: false
     default: ''
