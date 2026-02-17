@@ -146,3 +146,33 @@ describe ::DiscourseChatbot::OpenAiBotRag,
     expect(rag.get_system_message_suffix(opts)).to eq("Bring a laptop.")
   end
 end
+
+describe ::DiscourseChatbot::OpenAiBotRag, "#merge_functions" do
+  fab!(:user)
+
+  it "uses the latest escalation date custom field for cooldown checks" do
+    SiteSetting.chatbot_escalate_to_staff_function = true
+    SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
+
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
+      value: 5.days.ago.utc.to_s
+    )
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
+      value: 2.hours.ago.utc.to_s
+    )
+
+    rag =
+      described_class.new(
+        { private: true, type: ::DiscourseChatbot::MESSAGE, user_id: user.id }
+      )
+    func_mapping = rag.instance_variable_get(:@func_mapping)
+
+    expect(func_mapping).not_to have_key("escalate_to_staff")
+  end
+end
