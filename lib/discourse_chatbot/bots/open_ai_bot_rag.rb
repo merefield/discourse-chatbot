@@ -301,26 +301,8 @@ module ::DiscourseChatbot
       functions << get_user_address if get_user_address
       if SiteSetting.chatbot_escalate_to_staff_function && opts[:private] &&
            opts[:type] == ::DiscourseChatbot::MESSAGE &&
-           (
-             !UserCustomField.where(
-               user_id: opts[:user_id],
-               name:
-                 ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
-             ).exists? ||
-               (
-                 Time.now.utc -
-                   Time.parse(
-                     UserCustomField
-                       .where(
-                         user_id: opts[:user_id],
-                         name:
-                           ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
-                       )
-                       .order(id: :desc)
-                       .first
-                       .value
-                   )
-               ) > SiteSetting.chatbot_escalate_to_staff_cool_down_period.days
+           ::DiscourseChatbot.chatbot_escalation_cooldown_elapsed?(
+             opts[:user_id]
            )
         functions << escalate_to_staff_function
       end

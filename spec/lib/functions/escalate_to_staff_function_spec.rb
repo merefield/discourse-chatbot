@@ -39,4 +39,41 @@ describe ::DiscourseChatbot::EscalateToStaffFunction do
     expect(Topic.last.title).to eq("#{I18n.t("chatbot.prompt.function.escalate_to_staff.title")}: Test enquiry")
     expect(Topic.last.archetype).to eq(Archetype.private_message)
   end
+
+  it "returns a cooldown error without escalating when within cooldown period" do
+    SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
+
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
+      value: 2.hours.ago.utc.to_s
+    )
+
+    opts = {
+      type: ::DiscourseChatbot::MESSAGE,
+      topic_or_channel_id: 1,
+      user_id: user.id,
+      bot_user_id: bot_user.id,
+      reply_to_message_or_post_id: 1,
+      trust_level: ::DiscourseChatbot::TRUST_LEVELS[0]
+    }
+
+    ::Chat::Channel.expects(:find).never
+
+    result = nil
+    expect { result = subject.process({}, opts) }.not_to change { Topic.count }
+
+    expect(result).to eq(
+      {
+        answer: {
+          result: I18n.t("chatbot.prompt.function.escalate_to_staff.cool_down_error"),
+          topic_ids_found: [],
+          post_ids_found: [],
+          non_post_urls_found: []
+        },
+        token_usage: 0
+      }
+    )
+  end
 end

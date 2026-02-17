@@ -57,6 +57,39 @@ module ::DiscourseChatbot
     gpt-5.2-pro
   ]
 
+  def latest_chatbot_escalation_at(user_id)
+    values =
+      UserCustomField
+        .where(
+          user_id: user_id,
+          name: CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
+        )
+        .order(id: :desc)
+        .pluck(:value)
+
+    values.each do |value|
+      next if value.blank?
+
+      parsed_value = Time.zone.parse(value)
+      return parsed_value if parsed_value
+    rescue ArgumentError, TypeError
+      next
+    end
+
+    nil
+  end
+
+  def chatbot_escalation_cooldown_elapsed?(user_id, now: Time.zone.now)
+    last_escalation_at = latest_chatbot_escalation_at(user_id)
+    return true if last_escalation_at.nil?
+
+    now >=
+      (
+        last_escalation_at +
+          SiteSetting.chatbot_escalate_to_staff_cool_down_period.days
+      )
+  end
+
   def progress_debug_message(message)
     if SiteSetting.chatbot_enable_verbose_console_logging
       puts "Chatbot: #{message}"
@@ -71,6 +104,8 @@ module ::DiscourseChatbot
     end
   end
 
+  module_function :latest_chatbot_escalation_at
+  module_function :chatbot_escalation_cooldown_elapsed?
   module_function :progress_debug_message
 end
 

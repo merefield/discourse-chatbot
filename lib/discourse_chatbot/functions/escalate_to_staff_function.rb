@@ -30,10 +30,30 @@ module DiscourseChatbot
           )
         end
 
+        current_user = User.find(opts[:user_id])
+
+        if !::DiscourseChatbot.chatbot_escalation_cooldown_elapsed?(
+             current_user.id
+           )
+          return(
+            {
+              answer: {
+                result:
+                  I18n.t(
+                    "chatbot.prompt.function.escalate_to_staff.cool_down_error"
+                  ),
+                topic_ids_found: [],
+                post_ids_found: [],
+                non_post_urls_found: []
+              },
+              token_usage: 0
+            }
+          )
+        end
+
         channel_id = opts[:topic_or_channel_id]
         channel = ::Chat::Channel.find(channel_id)
 
-        current_user = User.find(opts[:user_id])
         bot_user = User.find(opts[:bot_user_id])
         target_usernames = current_user.username
 

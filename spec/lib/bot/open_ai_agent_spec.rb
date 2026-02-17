@@ -175,4 +175,30 @@ describe ::DiscourseChatbot::OpenAiBotRag, "#merge_functions" do
 
     expect(func_mapping).not_to have_key("escalate_to_staff")
   end
+
+  it "falls back to the most recent parseable escalation date if latest is invalid" do
+    SiteSetting.chatbot_escalate_to_staff_function = true
+    SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
+
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
+      value: 2.hours.ago.utc.to_s
+    )
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
+      value: "not-a-time"
+    )
+
+    rag =
+      described_class.new(
+        { private: true, type: ::DiscourseChatbot::MESSAGE, user_id: user.id }
+      )
+    func_mapping = rag.instance_variable_get(:@func_mapping)
+
+    expect(func_mapping).not_to have_key("escalate_to_staff")
+  end
 end
