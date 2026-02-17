@@ -316,6 +316,7 @@ module ::DiscourseChatbot
                          name:
                            ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
                        )
+                       .order(id: :desc)
                        .first
                        .value
                    )
