@@ -300,10 +300,7 @@ module ::DiscourseChatbot
       end
       functions << get_user_address if get_user_address
       if SiteSetting.chatbot_escalate_to_staff_function && opts[:private] &&
-           opts[:type] == ::DiscourseChatbot::MESSAGE &&
-           ::DiscourseChatbot.chatbot_escalation_cooldown_elapsed?(
-             opts[:user_id]
-           )
+           opts[:type] == ::DiscourseChatbot::MESSAGE
         functions << escalate_to_staff_function
       end
       functions << news_function if !SiteSetting.chatbot_news_api_token.blank?

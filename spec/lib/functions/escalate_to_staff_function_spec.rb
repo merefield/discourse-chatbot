@@ -9,7 +9,7 @@ end
 
 describe ::DiscourseChatbot::EscalateToStaffFunction do
   fab!(:user)
-  let(:bot_user) { Fabricate(:user) }
+  fab!(:bot_user, :user)
   let(:chatbot_user) { User.find_by(username: "Chatbot") }
 
   before do
@@ -18,11 +18,13 @@ describe ::DiscourseChatbot::EscalateToStaffFunction do
 
   it "returns an error if fired from a Post" do
     opts = { type: ::DiscourseChatbot::POST }
-    
-    expect(subject.process({}, opts)).to eq(I18n.t("chatbot.prompt.function.escalate_to_staff.wrong_type_error"))
+
+    expect(subject.process({}, opts)).to eq(
+      I18n.t("chatbot.prompt.function.escalate_to_staff.wrong_type_error")
+    )
   end
 
-  it "creates a Private Message" do
+  it "creates a Private Message and stores escalation topic id" do
     SiteSetting.chatbot_escalate_to_staff_groups = "2"
     opts = { type: ::DiscourseChatbot::MESSAGE }
     opts[:topic_or_channel_id] = 1
@@ -31,16 +33,26 @@ describe ::DiscourseChatbot::EscalateToStaffFunction do
     opts[:reply_to_message_or_post_id] = 1
     opts[:trust_level] = ::DiscourseChatbot::TRUST_LEVELS[0]
     ::Chat::Channel.stubs(:find).returns({})
-    described_class.any_instance.stubs(:get_messages).returns(["this", "is", "a", "test"])
+    described_class.any_instance.stubs(:get_messages).returns(
+      ["this", "is", "a", "test"]
+    )
     described_class.any_instance.stubs(:generate_transcript).returns("this is a test")
     described_class.any_instance.stubs(:generate_escalation_title).returns("Test enquiry")
 
     expect { subject.process({}, opts) }.to change { Topic.count }.by(1)
     expect(Topic.last.title).to eq("#{I18n.t("chatbot.prompt.function.escalate_to_staff.title")}: Test enquiry")
     expect(Topic.last.archetype).to eq(Archetype.private_message)
+
+    escalation_topic_id =
+      UserCustomField.find_by(
+        user_id: user.id,
+        name:
+          ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD
+      )
+    expect(escalation_topic_id.value).to eq(Topic.last.id.to_s)
   end
 
-  it "returns a cooldown error without escalating when within cooldown period" do
+  it "returns existing escalation topic when within cooldown period" do
     SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
 
     Fabricate(
@@ -48,6 +60,13 @@ describe ::DiscourseChatbot::EscalateToStaffFunction do
       user: user,
       name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
       value: 2.hours.ago.utc.to_s
+    )
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name:
+        ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD,
+      value: "1234"
     )
 
     opts = {
@@ -67,13 +86,94 @@ describe ::DiscourseChatbot::EscalateToStaffFunction do
     expect(result).to eq(
       {
         answer: {
-          result: I18n.t("chatbot.prompt.function.escalate_to_staff.cool_down_error"),
-          topic_ids_found: [],
+          result:
+            I18n.t(
+              "chatbot.prompt.function.escalate_to_staff.existing_escalation_topic",
+              url: "https://#{Discourse.current_hostname}/t/slug/1234"
+            ),
+          topic_ids_found: [1234],
           post_ids_found: [],
           non_post_urls_found: []
         },
         token_usage: 0
       }
     )
+  end
+
+  it "creates a new escalation and updates topic id when cooldown has elapsed" do
+    SiteSetting.chatbot_escalate_to_staff_groups = "2"
+    SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
+
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
+      value: 2.days.ago.utc.to_s
+    )
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name:
+        ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD,
+      value: "1234"
+    )
+
+    opts = {
+      type: ::DiscourseChatbot::MESSAGE,
+      topic_or_channel_id: 1,
+      user_id: user.id,
+      bot_user_id: bot_user.id,
+      reply_to_message_or_post_id: 1,
+      trust_level: ::DiscourseChatbot::TRUST_LEVELS[0]
+    }
+
+    ::Chat::Channel.stubs(:find).returns({})
+    described_class.any_instance.stubs(:get_messages).returns(
+      ["this", "is", "a", "test"]
+    )
+    described_class.any_instance.stubs(:generate_transcript).returns("this is a test")
+    described_class.any_instance.stubs(:generate_escalation_title).returns("Test enquiry")
+
+    expect { subject.process({}, opts) }.to change { Topic.count }.by(1)
+
+    escalation_topic_id =
+      UserCustomField.find_by(
+        user_id: user.id,
+        name:
+          ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD
+      )
+
+    expect(escalation_topic_id.value).to eq(Topic.last.id.to_s)
+    expect(escalation_topic_id.value).not_to eq("1234")
+  end
+
+  it "creates escalation when topic id is missing even if date is within cooldown" do
+    SiteSetting.chatbot_escalate_to_staff_groups = "2"
+    SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
+
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
+      value: 2.hours.ago.utc.to_s
+    )
+
+    opts = {
+      type: ::DiscourseChatbot::MESSAGE,
+      topic_or_channel_id: 1,
+      user_id: user.id,
+      bot_user_id: bot_user.id,
+      reply_to_message_or_post_id: 1,
+      trust_level: ::DiscourseChatbot::TRUST_LEVELS[0]
+    }
+
+    ::Chat::Channel.stubs(:find).returns({})
+    described_class.any_instance.stubs(:get_messages).returns(
+      ["this", "is", "a", "test"]
+    )
+    described_class.any_instance.stubs(:generate_transcript).returns("this is a test")
+    described_class.any_instance.stubs(:generate_escalation_title).returns("Test enquiry")
+
+    expect { subject.process({}, opts) }.to change { Topic.count }.by(1)
   end
 end
