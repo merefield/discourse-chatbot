@@ -115,20 +115,26 @@ module DiscourseChatbot
           url = "https://#{Discourse.current_hostname}/t/slug/#{post.topic_id}"
 
           escalation_date =
-            UserCustomField.find_or_initialize_by(
-              user_id: current_user.id,
-              name:
-                ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
-            )
+            UserCustomField
+              .where(
+                user_id: current_user.id,
+                name:
+                  ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
+              )
+              .order(id: :desc)
+              .first_or_initialize
           escalation_date.value = Time.now.utc.to_s
           escalation_date.save!
 
           escalation_topic_id =
-            UserCustomField.find_or_initialize_by(
-              user_id: current_user.id,
-              name:
-                ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD
-            )
+            UserCustomField
+              .where(
+                user_id: current_user.id,
+                name:
+                  ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD
+              )
+              .order(id: :desc)
+              .first_or_initialize
           escalation_topic_id.value = post.topic_id.to_s
           escalation_topic_id.save!
 

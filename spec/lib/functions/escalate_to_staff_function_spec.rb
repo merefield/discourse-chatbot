@@ -147,6 +147,79 @@ describe ::DiscourseChatbot::EscalateToStaffFunction do
     expect(escalation_topic_id.value).not_to eq("1234")
   end
 
+  it "updates the most recent duplicate custom field rows after cooldown" do
+    SiteSetting.chatbot_escalate_to_staff_groups = "2"
+    SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
+
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
+      value: 3.days.ago.utc.to_s
+    )
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
+      value: 2.days.ago.utc.to_s
+    )
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name:
+        ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD,
+      value: "1111"
+    )
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name:
+        ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD,
+      value: "2222"
+    )
+
+    opts = {
+      type: ::DiscourseChatbot::MESSAGE,
+      topic_or_channel_id: 1,
+      user_id: user.id,
+      bot_user_id: bot_user.id,
+      reply_to_message_or_post_id: 1,
+      trust_level: ::DiscourseChatbot::TRUST_LEVELS[0]
+    }
+
+    ::Chat::Channel.stubs(:find).returns({})
+    described_class.any_instance.stubs(:get_messages).returns(
+      ["this", "is", "a", "test"]
+    )
+    described_class.any_instance.stubs(:generate_transcript).returns("this is a test")
+    described_class.any_instance.stubs(:generate_escalation_title).returns("Test enquiry")
+
+    expect { subject.process({}, opts) }.to change { Topic.count }.by(1)
+    expect(
+      UserCustomField.where(
+        user_id: user.id,
+        name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
+      ).count
+    ).to eq(2)
+    expect(
+      UserCustomField.where(
+        user_id: user.id,
+        name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD
+      ).count
+    ).to eq(2)
+
+    latest_topic_id =
+      UserCustomField
+        .where(
+          user_id: user.id,
+          name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD
+        )
+        .order(id: :desc)
+        .first
+
+    expect(latest_topic_id.value).to eq(Topic.last.id.to_s)
+  end
+
   it "creates escalation when topic id is missing even if date is within cooldown" do
     SiteSetting.chatbot_escalate_to_staff_groups = "2"
     SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
