@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Chat, Topics and Private Messages
-# version: 1.6.3
+# version: 1.6.4
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -29,6 +29,8 @@ module ::DiscourseChatbot
   CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD =
     "chatbot_queries_quota_reach_escalation_date"
   CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD = "chatbot_last_escalation_date"
+  CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD =
+    "chatbot_last_escalation_topic_id"
   POST_TYPES_REGULAR_ONLY = [1]
   POST_TYPES_INC_WHISPERS = [1, 4]
 
@@ -57,15 +59,40 @@ module ::DiscourseChatbot
     gpt-5.2-pro
   ]
 
+  def latest_chatbot_custom_field_values(user_id, name)
+    UserCustomField
+      .where(user_id: user_id, name: name)
+      .order(id: :desc)
+      .pluck(:value)
+  end
+
+  def latest_chatbot_custom_field_value(user_id, name)
+    latest_chatbot_custom_field_values(user_id, name).first
+  end
+
+  def latest_chatbot_escalation_topic_id(user_id)
+    values =
+      latest_chatbot_custom_field_values(
+        user_id,
+        CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD
+      )
+
+    values.each do |value|
+      next if value.blank?
+      next unless value.to_s.match?(/\A\d+\z/)
+
+      return value.to_i
+    end
+
+    nil
+  end
+
   def latest_chatbot_escalation_at(user_id)
     values =
-      UserCustomField
-        .where(
-          user_id: user_id,
-          name: CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
-        )
-        .order(id: :desc)
-        .pluck(:value)
+      latest_chatbot_custom_field_values(
+        user_id,
+        CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
+      )
 
     values.each do |value|
       next if value.blank?
@@ -104,6 +131,9 @@ module ::DiscourseChatbot
     end
   end
 
+  module_function :latest_chatbot_custom_field_values
+  module_function :latest_chatbot_custom_field_value
+  module_function :latest_chatbot_escalation_topic_id
   module_function :latest_chatbot_escalation_at
   module_function :chatbot_escalation_cooldown_elapsed?
   module_function :progress_debug_message

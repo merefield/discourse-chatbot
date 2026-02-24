@@ -31,18 +31,24 @@ module DiscourseChatbot
         end
 
         current_user = User.find(opts[:user_id])
+        current_escalation_topic_id =
+          ::DiscourseChatbot.latest_chatbot_escalation_topic_id(current_user.id)
 
-        if !::DiscourseChatbot.chatbot_escalation_cooldown_elapsed?(
-             current_user.id
-           )
+        if current_escalation_topic_id.present? &&
+             !::DiscourseChatbot.chatbot_escalation_cooldown_elapsed?(
+               current_user.id
+             )
+          current_escalation_url =
+            "https://#{Discourse.current_hostname}/t/slug/#{current_escalation_topic_id}"
           return(
             {
               answer: {
                 result:
                   I18n.t(
-                    "chatbot.prompt.function.escalate_to_staff.cool_down_error"
+                    "chatbot.prompt.function.escalate_to_staff.existing_escalation_topic",
+                    url: current_escalation_url
                   ),
-                topic_ids_found: [],
+                topic_ids_found: [current_escalation_topic_id],
                 post_ids_found: [],
                 non_post_urls_found: []
               },
@@ -108,11 +114,29 @@ module DiscourseChatbot
 
           url = "https://#{Discourse.current_hostname}/t/slug/#{post.topic_id}"
 
-          UserCustomField.create!(
-            user_id: current_user.id,
-            name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
-            value: Time.now.utc.to_s
-          )
+          escalation_date =
+            UserCustomField
+              .where(
+                user_id: current_user.id,
+                name:
+                  ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
+              )
+              .order(id: :desc)
+              .first_or_initialize
+          escalation_date.value = Time.now.utc.to_s
+          escalation_date.save!
+
+          escalation_topic_id =
+            UserCustomField
+              .where(
+                user_id: current_user.id,
+                name:
+                  ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD
+              )
+              .order(id: :desc)
+              .first_or_initialize
+          escalation_topic_id.value = post.topic_id.to_s
+          escalation_topic_id.save!
 
           response =
             I18n.t(

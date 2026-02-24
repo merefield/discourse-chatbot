@@ -449,7 +449,7 @@ plugins:
     client: false
     default: 1
     min: 0
-    max: 7
+    max: 28
   chatbot_user_fields_collection:
     client: false
     default: false

@@ -150,7 +150,7 @@ end
 describe ::DiscourseChatbot::OpenAiBotRag, "#merge_functions" do
   fab!(:user)
 
-  it "uses the latest escalation date custom field for cooldown checks" do
+  it "always includes escalate_to_staff even when inside cooldown" do
     SiteSetting.chatbot_escalate_to_staff_function = true
     SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
 
@@ -173,10 +173,10 @@ describe ::DiscourseChatbot::OpenAiBotRag, "#merge_functions" do
       )
     func_mapping = rag.instance_variable_get(:@func_mapping)
 
-    expect(func_mapping).not_to have_key("escalate_to_staff")
+    expect(func_mapping).to have_key("escalate_to_staff")
   end
 
-  it "falls back to the most recent parseable escalation date if latest is invalid" do
+  it "includes escalate_to_staff even when latest cooldown date is invalid" do
     SiteSetting.chatbot_escalate_to_staff_function = true
     SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
 
@@ -199,6 +199,29 @@ describe ::DiscourseChatbot::OpenAiBotRag, "#merge_functions" do
       )
     func_mapping = rag.instance_variable_get(:@func_mapping)
 
-    expect(func_mapping).not_to have_key("escalate_to_staff")
+    expect(func_mapping).to have_key("escalate_to_staff")
+  end
+end
+
+describe ::DiscourseChatbot, ".latest_chatbot_escalation_topic_id" do
+  fab!(:user)
+
+  it "returns the most recent parseable topic id when duplicate rows exist" do
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name:
+        ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD,
+      value: "111"
+    )
+    Fabricate(
+      :user_custom_field,
+      user: user,
+      name:
+        ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD,
+      value: "not-a-topic-id"
+    )
+
+    expect(::DiscourseChatbot.latest_chatbot_escalation_topic_id(user.id)).to eq(111)
   end
 end
