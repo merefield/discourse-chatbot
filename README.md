@@ -1,5 +1,11 @@
 # discourse-chatbot
 
+## Sponsors
+
+| Sponsor | Level | Weblink | Logo |
+| --- | --- | --- | --- |
+| Surety | Silver Plus | [suretyhome.com](https://suretyhome.com/) | ![Surety](images/surety.webp) |
+
 # What is it?
 
 * The original Discourse AI Chatbot!
