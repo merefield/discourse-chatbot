@@ -1,10 +1,12 @@
 # discourse-chatbot
 
-## Sponsors
+## Project Sponsors
+
+Our kind sponsors of this project:
 
 | Sponsor | Level | Weblink | Logo |
 | --- | --- | --- | --- |
-| Surety | Silver Plus | [suretyhome.com](https://suretyhome.com/) | ![Surety](images/surety.webp) |
+| Surety | Silver Plus | [suretyhome.com](https://suretyhome.com/) | <img src="images/surety.webp" alt="Surety" width="120"> |
 
 # What is it?
 
