@@ -166,6 +166,9 @@ plugins:
   chatbot_api_supports_name_attribute:
     client: false
     default: false
+  chatbot_wikipedia_function:
+    client: false
+    default: true
   chatbot_embeddings_enabled:
     default: false
     client: false

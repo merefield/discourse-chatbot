@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require_relative '../../plugin_helper'
+require_relative "../../plugin_helper"
 
 RSpec.configure do |config|
   config.prepend_before(:suite) do
@@ -15,32 +15,48 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   let(:post_ids_found) { [] }
   let(:topic_ids_found) { [111, 222, 3333] }
 
-  fab!(:topic_user) { Fabricate(:user) }
-  fab!(:post_user) { Fabricate(:user) }
+  fab!(:topic_user, :user)
+  fab!(:post_user, :user)
   fab!(:topic_1) { Fabricate(:topic, id: 112, user: topic_user) }
   fab!(:post_1) { Fabricate(:post, topic: topic_1, user: post_user, post_number: 2) }
 
-  before do
-    SiteSetting.discourse_local_dates_enabled = false
-  end
+  before { SiteSetting.discourse_local_dates_enabled = false }
   let(:post_ids_found_2) { [post_1.id] }
-  let(:res) {"the value is 90 and I found that informaiton in [this topic](https://discourse.example.com/t/slug/112)"}
-  let(:res_2) {"the value is 99 and I found that informaiton in [this post](https://discourse.example.com/t/slug/112/2)"}
+  let(:res) do
+    "the value is 90 and I found that informaiton in [this topic](https://discourse.example.com/t/slug/112)"
+  end
+  let(:res_2) do
+    "the value is 99 and I found that informaiton in [this post](https://discourse.example.com/t/slug/112/2)"
+  end
 
   it "calls function on returning a function request from LLN" do
     DateTime.expects(:current).returns("2023-08-18T10:11:44+00:00")
 
-    query = [{role: "user", content: "merefield said what is 3 * 23.452432?" }]
+    query = [{ role: "user", content: "merefield said what is 3 * 23.452432?" }]
 
-    system_entry = { role: "developer", content: "You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is 2023-08-18T10:11:44+00:00.  When referring to users by name, include an @ symbol directly in front of their username.  Only respond to the last question, using the prior information as context, if appropriate." }
+    system_entry = {
+      role: "developer",
+      content:
+        "You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is 2023-08-18T10:11:44+00:00.  When referring to users by name, include an @ symbol directly in front of their username.  Only respond to the last question, using the prior information as context, if appropriate.",
+    }
 
-    first_query =  get_chatbot_input_fixture("llm_first_query").unshift(system_entry)
+    first_query = get_chatbot_input_fixture("llm_first_query").unshift(system_entry)
     second_query = get_chatbot_input_fixture("llm_second_query").unshift(system_entry)
 
-    described_class.any_instance.expects(:create_chat_completion).with(first_query, true, 1).returns(llm_function_response)
-    described_class.any_instance.expects(:create_chat_completion).with(second_query, true, 2).returns(llm_final_response)
+    described_class
+      .any_instance
+      .expects(:create_chat_completion)
+      .with(first_query, true, 1)
+      .returns(llm_function_response)
+    described_class
+      .any_instance
+      .expects(:create_chat_completion)
+      .with(second_query, true, 2)
+      .returns(llm_final_response)
 
-    expect(rag.get_response(query, opts)[:reply]).to eq(llm_final_response["choices"][0]["message"]["content"])
+    expect(rag.get_response(query, opts)[:reply]).to eq(
+      llm_final_response["choices"][0]["message"]["content"],
+    )
   end
 
   it "returns correct status for a response that includes and illegal topic id" do
@@ -56,7 +72,9 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   end
 
   it "correctly identifies a legal post id in a url in a response" do
-    expect(described_class.new({}).legal_post_urls?("hello /t/slug/112/2", [post_1.id], [topic_1.id])).to eq(true)
+    expect(
+      described_class.new({}).legal_post_urls?("hello /t/slug/112/2", [post_1.id], [topic_1.id]),
+    ).to eq(true)
   end
 
   it "correctly skips a full url check if a response is blank" do
@@ -64,15 +82,27 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   end
 
   it "correctly identifies an illegal topic id in a url in a response" do
-    expect(described_class.new({}).legal_post_urls?("hello /t/slug/113/2", [post_1.id], [topic_1.id])).to eq(false)
+    expect(
+      described_class.new({}).legal_post_urls?("hello /t/slug/113/2", [post_1.id], [topic_1.id]),
+    ).to eq(false)
   end
 
   it "correctly identifies an illegal non-post url in a response" do
-    expect(described_class.new({}).legal_non_post_urls?("hello https://someplace.com/t/slug/113/2 try looking at https://notanexample.com it's great", ["https://example.com", "https://otherexample.com"])).to eq(false)
+    expect(
+      described_class.new({}).legal_non_post_urls?(
+        "hello https://someplace.com/t/slug/113/2 try looking at https://notanexample.com it's great",
+        %w[https://example.com https://otherexample.com],
+      ),
+    ).to eq(false)
   end
 
   it "correctly identifies a legal non-post url in a response" do
-    expect(described_class.new({}).legal_non_post_urls?("hello https://someplace.com/t/slug/113/2 try looking at https://example.com it's great", ["https://example.com", "https://otherexample.com"])).to eq(true)
+    expect(
+      described_class.new({}).legal_non_post_urls?(
+        "hello https://someplace.com/t/slug/113/2 try looking at https://example.com it's great",
+        %w[https://example.com https://otherexample.com],
+      ),
+    ).to eq(true)
   end
 end
 
@@ -81,9 +111,7 @@ describe ::DiscourseChatbot::OpenAiBotRag, "#get_system_message_suffix" do
   let(:opts) { { user_id: user.id } }
   let(:rag) { ::DiscourseChatbot::OpenAiBotRag.new(opts) }
 
-  before do
-    SiteSetting.discourse_local_dates_enabled = false
-  end
+  before { SiteSetting.discourse_local_dates_enabled = false }
 
   it "returns custom field prompts when enabled" do
     SiteSetting.chatbot_include_custom_field_prompts = true
@@ -92,7 +120,7 @@ describe ::DiscourseChatbot::OpenAiBotRag, "#get_system_message_suffix" do
     ::UserCustomField.create!(
       user_id: user.id,
       name: "chatbot_additional_prompt",
-      value: "Bring a laptop."
+      value: "Bring a laptop.",
     )
 
     expect(rag.get_system_message_suffix(opts)).to eq("Bring a laptop.")
@@ -105,16 +133,14 @@ describe ::DiscourseChatbot::OpenAiBotRag, "#get_system_message_suffix" do
     ::UserCustomField.create!(
       user_id: user.id,
       name: "chatbot_additional_prompt",
-      value: "Bring a laptop."
+      value: "Bring a laptop.",
     )
 
     expect(rag.get_system_message_suffix(opts)).to eq("")
   end
 end
 
-describe ::DiscourseChatbot::OpenAiBotRag,
-         "#get_system_message_suffix via api",
-         type: :request do
+describe ::DiscourseChatbot::OpenAiBotRag, "#get_system_message_suffix via api", type: :request do
   fab!(:user)
   fab!(:admin)
   let(:api_key) { Fabricate(:api_key, user: admin) }
@@ -125,7 +151,6 @@ describe ::DiscourseChatbot::OpenAiBotRag,
     SiteSetting.discourse_local_dates_enabled = false
     SiteSetting.chatbot_include_custom_field_prompts = true
     SiteSetting.chatbot_user_fields_collection = false
-
   end
 
   after do
@@ -137,10 +162,12 @@ describe ::DiscourseChatbot::OpenAiBotRag,
     put "/u/#{user.username}.json",
         params: {
           custom_fields: {
-            chatbot_additional_prompt: "Bring a laptop."
-          }
+            chatbot_additional_prompt: "Bring a laptop.",
+          },
         },
-        headers: { HTTP_API_KEY: api_key.key }
+        headers: {
+          HTTP_API_KEY: api_key.key,
+        }
 
     expect(response.status).to eq(200)
     expect(rag.get_system_message_suffix(opts)).to eq("Bring a laptop.")
@@ -150,6 +177,22 @@ end
 describe ::DiscourseChatbot::OpenAiBotRag, "#merge_functions" do
   fab!(:user)
 
+  it "includes wikipedia by default" do
+    rag = described_class.new({})
+    func_mapping = rag.instance_variable_get(:@func_mapping)
+
+    expect(func_mapping).to have_key("wikipedia")
+  end
+
+  it "excludes wikipedia when disabled" do
+    SiteSetting.chatbot_wikipedia_function = false
+
+    rag = described_class.new({})
+    func_mapping = rag.instance_variable_get(:@func_mapping)
+
+    expect(func_mapping).not_to have_key("wikipedia")
+  end
+
   it "always includes escalate_to_staff even when inside cooldown" do
     SiteSetting.chatbot_escalate_to_staff_function = true
     SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
@@ -158,19 +201,17 @@ describe ::DiscourseChatbot::OpenAiBotRag, "#merge_functions" do
       :user_custom_field,
       user: user,
       name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
-      value: 5.days.ago.utc.to_s
+      value: 5.days.ago.utc.to_s,
     )
     Fabricate(
       :user_custom_field,
       user: user,
       name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
-      value: 2.hours.ago.utc.to_s
+      value: 2.hours.ago.utc.to_s,
     )
 
     rag =
-      described_class.new(
-        { private: true, type: ::DiscourseChatbot::MESSAGE, user_id: user.id }
-      )
+      described_class.new({ private: true, type: ::DiscourseChatbot::MESSAGE, user_id: user.id })
     func_mapping = rag.instance_variable_get(:@func_mapping)
 
     expect(func_mapping).to have_key("escalate_to_staff")
@@ -184,19 +225,17 @@ describe ::DiscourseChatbot::OpenAiBotRag, "#merge_functions" do
       :user_custom_field,
       user: user,
       name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
-      value: 2.hours.ago.utc.to_s
+      value: 2.hours.ago.utc.to_s,
     )
     Fabricate(
       :user_custom_field,
       user: user,
       name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
-      value: "not-a-time"
+      value: "not-a-time",
     )
 
     rag =
-      described_class.new(
-        { private: true, type: ::DiscourseChatbot::MESSAGE, user_id: user.id }
-      )
+      described_class.new({ private: true, type: ::DiscourseChatbot::MESSAGE, user_id: user.id })
     func_mapping = rag.instance_variable_get(:@func_mapping)
 
     expect(func_mapping).to have_key("escalate_to_staff")
@@ -210,16 +249,14 @@ describe ::DiscourseChatbot, ".latest_chatbot_escalation_topic_id" do
     Fabricate(
       :user_custom_field,
       user: user,
-      name:
-        ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD,
-      value: "111"
+      name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD,
+      value: "111",
     )
     Fabricate(
       :user_custom_field,
       user: user,
-      name:
-        ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD,
-      value: "not-a-topic-id"
+      name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD,
+      value: "not-a-topic-id",
     )
 
     expect(::DiscourseChatbot.latest_chatbot_escalation_topic_id(user.id)).to eq(111)
