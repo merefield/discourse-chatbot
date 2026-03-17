@@ -14,13 +14,19 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   let(:llm_final_response) { get_chatbot_output_fixture("llm_final_response") }
   let(:post_ids_found) { [] }
   let(:topic_ids_found) { [111, 222, 3333] }
+  let(:client) { mock }
+  let(:responses_api) { mock }
 
   fab!(:topic_user, :user)
   fab!(:post_user, :user)
   fab!(:topic_1) { Fabricate(:topic, id: 112, user: topic_user) }
   fab!(:post_1) { Fabricate(:post, topic: topic_1, user: post_user, post_number: 2) }
 
-  before { SiteSetting.discourse_local_dates_enabled = false }
+  before do
+    SiteSetting.discourse_local_dates_enabled = false
+    OpenAI::Client.stubs(:new).returns(client)
+    client.stubs(:responses).returns(responses_api)
+  end
   let(:post_ids_found_2) { [post_1.id] }
   let(:res) do
     "the value is 90 and I found that informaiton in [this topic](https://discourse.example.com/t/slug/112)"
@@ -103,6 +109,82 @@ describe ::DiscourseChatbot::OpenAiBotRag do
         %w[https://example.com https://otherexample.com],
       ),
     ).to eq(true)
+  end
+
+  it "uses the responses api for reasoning models" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_open_ai_model_reasoning_level = "medium"
+    SiteSetting.chatbot_open_ai_model_verbosity = "high"
+
+    client.expects(:chat).never
+    responses_api
+      .expects(:create)
+      .with do |args|
+        parameters = args[:parameters]
+
+        expect(parameters[:model]).to eq("gpt-5.4-mini")
+        expect(parameters[:reasoning]).to eq({ effort: "medium" })
+        expect(parameters[:text]).to eq({ verbosity: "high" })
+        expect(parameters[:input]).to eq(
+          [{ role: "user", content: [{ type: "input_text", text: "Hello" }] }],
+        )
+        true
+      end
+      .returns(
+        {
+          "output" => [
+            {
+              "type" => "message",
+              "content" => [{ "type" => "output_text", "text" => "Hello back" }],
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 21,
+          },
+        },
+      )
+
+    response = rag.create_chat_completion([{ role: "user", content: "Hello" }], false, 1)
+
+    expect(response.dig("choices", 0, "message", "content")).to eq("Hello back")
+    expect(response.dig("choices", 0, "finish_reason")).to eq("stop")
+  end
+
+  it "normalizes responses api tool calls into the existing rag shape" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+
+    responses_api.expects(:create).returns(
+      {
+        "output" => [
+          {
+            "type" => "function_call",
+            "id" => "fc_1",
+            "call_id" => "call_1",
+            "name" => "calculator",
+            "arguments" => "{\"expression\":\"2+2\"}",
+          },
+        ],
+        "usage" => {
+          "total_tokens" => 9,
+        },
+      },
+    )
+
+    response = rag.create_chat_completion([{ role: "user", content: "Calculate" }], false, 1)
+
+    expect(response.dig("choices", 0, "finish_reason")).to eq("tool_calls")
+    expect(response.dig("choices", 0, "message", "tool_calls")).to eq(
+      [
+        {
+          "id" => "call_1",
+          "type" => "function",
+          "function" => {
+            "name" => "calculator",
+            "arguments" => "{\"expression\":\"2+2\"}",
+          },
+        },
+      ],
+    )
   end
 end
 

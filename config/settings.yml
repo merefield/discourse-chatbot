@@ -50,6 +50,9 @@ plugins:
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
+      - gpt-5.4
+      - gpt-5.4-mini
+      - gpt-5.4-nano
       - gpt-5
       - gpt-5-mini
       - gpt-5-nano
@@ -88,6 +91,9 @@ plugins:
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
+      - gpt-5.4
+      - gpt-5.4-mini
+      - gpt-5.4-nano
       - gpt-5
       - gpt-5-mini
       - gpt-5-nano
@@ -126,6 +132,9 @@ plugins:
       - gpt-4o
       - gpt-4o-mini
       - gpt-4-turbo
+      - gpt-5.4
+      - gpt-5.4-mini
+      - gpt-5.4-nano
       - gpt-5
       - gpt-5-mini
       - gpt-5-nano
@@ -157,6 +166,14 @@ plugins:
       - medium
       - high
       - xhigh
+  chatbot_open_ai_model_verbosity:
+    client: false
+    type: enum
+    default: medium
+    choices:
+      - low
+      - medium
+      - high
   chatbot_open_ai_model_custom_api_type:
     client: false
     default: ''
