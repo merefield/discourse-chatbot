@@ -1,4 +1,3 @@
-
 # frozen_string_literal: true
 # require_dependency 'application_controller'
 
@@ -26,62 +25,96 @@ module ::DiscourseChatbot
 
       start_bot = ::DiscourseChatbot::OpenAiBotRag.new(opts, false)
 
-      if !post_id && SiteSetting.chatbot_user_fields_collection && start_bot.has_empty_user_fields?(opts)
+      if !post_id && SiteSetting.chatbot_user_fields_collection &&
+           start_bot.has_empty_user_fields?(opts)
+        system_message = {
+          role: "system",
+          content: I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current),
+        }
+        assistant_message = {
+          role: "assistant",
+          content:
+            I18n.t(
+              "chatbot.prompt.quick_access_kick_off.announcement",
+              username: current_user.username,
+            ),
+        }
 
-        system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
-        assistant_message = { "role": "assistant", "content": I18n.t("chatbot.prompt.quick_access_kick_off.announcement", username: current_user.username) }
-
-        system_message_suffix =  start_bot.get_system_message_suffix(opts)
+        system_message_suffix = start_bot.get_system_message_suffix(opts)
         system_message[:content] += "  " + system_message_suffix
 
         messages = [system_message, assistant_message]
 
         model = start_bot.model_name
 
-        parameters = {
-          model: model,
-          messages: messages,
-          max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
-          temperature: SiteSetting.chatbot_request_temperature / 100.0,
-          top_p: SiteSetting.chatbot_request_top_p / 100.0,
-          frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-          presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
-        }
+        if start_bot.reasoning_model?
+          res =
+            start_bot.client.responses.create(parameters: start_bot.responses_parameters(messages))
+          kick_off_statement = start_bot.extract_responses_text(res)
+        else
+          parameters = {
+            model: model,
+            messages: messages,
+            max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
+            temperature: SiteSetting.chatbot_request_temperature / 100.0,
+            top_p: SiteSetting.chatbot_request_top_p / 100.0,
+            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
+          }
 
-        res = start_bot.client.chat(
-          parameters: parameters
-        )
+          res = start_bot.client.chat(parameters: parameters)
 
-        kick_off_statement = res.dig("choices", 0, "message", "content")
+          kick_off_statement = res.dig("choices", 0, "message", "content")
+        end
       elsif post_id
         post = ::Post.find_by(id: post_id)
-        system_message = { "role": "system", "content": I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current) }
+        system_message = {
+          role: "system",
+          content: I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current),
+        }
 
         opts[:reply_to_message_or_post_id] = post_id
 
         messages = PostPromptUtils.create_prompt(opts)
-        pre_message = { "role": "assistant", "content": I18n.t("chatbot.prompt.quick_access_kick_off.post_analysis_before_posts", username: current_user.username ) }
+        pre_message = {
+          role: "assistant",
+          content:
+            I18n.t(
+              "chatbot.prompt.quick_access_kick_off.post_analysis_before_posts",
+              username: current_user.username,
+            ),
+        }
         messages.unshift(pre_message)
         messages.unshift(system_message)
-        messages << { "role": "assistant", "content": I18n.t("chatbot.prompt.quick_access_kick_off.post_analysis", username: current_user.username ) }
-        model = start_bot.model_name
-        parameters = {
-          model: model,
-          messages: messages,
-          max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
-          temperature: SiteSetting.chatbot_request_temperature / 100.0,
-          top_p: SiteSetting.chatbot_request_top_p / 100.0,
-          frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-          presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0
+        messages << {
+          role: "assistant",
+          content:
+            I18n.t(
+              "chatbot.prompt.quick_access_kick_off.post_analysis",
+              username: current_user.username,
+            ),
         }
-        res = start_bot.client.chat(
-          parameters: parameters
-        )
-        kick_off_statement = res.dig("choices", 0, "message", "content")
+        model = start_bot.model_name
+        if start_bot.reasoning_model?
+          res =
+            start_bot.client.responses.create(parameters: start_bot.responses_parameters(messages))
+          kick_off_statement = start_bot.extract_responses_text(res)
+        else
+          parameters = {
+            model: model,
+            messages: messages,
+            max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
+            temperature: SiteSetting.chatbot_request_temperature / 100.0,
+            top_p: SiteSetting.chatbot_request_top_p / 100.0,
+            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
+          }
+          res = start_bot.client.chat(parameters: parameters)
+          kick_off_statement = res.dig("choices", 0, "message", "content")
+        end
       end
 
       if channel_type == "chat"
-
         bot_author = ::User.find_by(username: SiteSetting.chatbot_bot_user)
         guardian = Guardian.new(bot_author)
         chat_channel_id = nil
@@ -89,7 +122,8 @@ module ::DiscourseChatbot
         direct_message = Chat::DirectMessage.for_user_ids([bot_user.id, current_user.id])
 
         if direct_message
-          chat_channel = Chat::Channel.find_by(chatable_id: direct_message.id, type: "DirectMessageChannel")
+          chat_channel =
+            Chat::Channel.find_by(chatable_id: direct_message.id, type: "DirectMessageChannel")
           chat_channel_id = chat_channel.id
 
           #TODO we might need to add a membership if it doesn't exist to prevent a NotFound error in reads controller
@@ -102,16 +136,19 @@ module ::DiscourseChatbot
 
           last_chat = ::Chat::Message.find_by(id: chat_channel.latest_not_deleted_message_id)
 
-          if (last_chat &&
-            (over_quota && last_chat.message != I18n.t('chatbot.errors.overquota') ||
-            !over_quota && last_chat.message != kick_off_statement)) ||
-            last_chat.nil?
+          if (
+               last_chat &&
+                 (
+                   over_quota && last_chat.message != I18n.t("chatbot.errors.overquota") ||
+                     !over_quota && last_chat.message != kick_off_statement
+                 )
+             ) || last_chat.nil?
             Chat::CreateMessage.call(
               params: {
                 chat_channel_id: chat_channel_id,
-                message: over_quota ? I18n.t('chatbot.errors.overquota') : kick_off_statement
+                message: over_quota ? I18n.t("chatbot.errors.overquota") : kick_off_statement,
               },
-              guardian: guardian
+              guardian: guardian,
             )
           end
 
@@ -119,12 +156,14 @@ module ::DiscourseChatbot
         end
       elsif channel_type == "personal message"
         default_opts = {
-          post_alert_options: { skip_send_email: true },
-          raw: over_quota ? I18n.t('chatbot.errors.overquota') : kick_off_statement,
+          post_alert_options: {
+            skip_send_email: true,
+          },
+          raw: over_quota ? I18n.t("chatbot.errors.overquota") : kick_off_statement,
           skip_validations: true,
           title: I18n.t("chatbot.pm_prefix"),
           archetype: Archetype.private_message,
-          target_usernames: [current_user.username, bot_user.username].join(",")
+          target_usernames: [current_user.username, bot_user.username].join(","),
         }
 
         new_post = PostCreator.create!(bot_user, default_opts)
@@ -138,9 +177,7 @@ module ::DiscourseChatbot
     private
 
     def ensure_plugin_enabled
-      unless SiteSetting.chatbot_enabled
-        redirect_to path("/")
-      end
+      redirect_to path("/") unless SiteSetting.chatbot_enabled
     end
   end
 end

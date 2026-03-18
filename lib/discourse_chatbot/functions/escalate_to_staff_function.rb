@@ -21,13 +21,14 @@ module DiscourseChatbot
     end
 
     def process(args, opts)
+      current_user = nil
+      post = nil
+
       begin
         super(args)
 
         if opts[:type] != ::DiscourseChatbot::MESSAGE
-          return(
-            I18n.t("chatbot.prompt.function.escalate_to_staff.wrong_type_error")
-          )
+          return(I18n.t("chatbot.prompt.function.escalate_to_staff.wrong_type_error"))
         end
 
         current_user = User.find(opts[:user_id])
@@ -35,9 +36,7 @@ module DiscourseChatbot
           ::DiscourseChatbot.latest_chatbot_escalation_topic_id(current_user.id)
 
         if current_escalation_topic_id.present? &&
-             !::DiscourseChatbot.chatbot_escalation_cooldown_elapsed?(
-               current_user.id
-             )
+             !::DiscourseChatbot.chatbot_escalation_cooldown_elapsed?(current_user.id)
           current_escalation_url =
             "https://#{Discourse.current_hostname}/t/slug/#{current_escalation_topic_id}"
           return(
@@ -46,13 +45,13 @@ module DiscourseChatbot
                 result:
                   I18n.t(
                     "chatbot.prompt.function.escalate_to_staff.existing_escalation_topic",
-                    url: current_escalation_url
+                    url: current_escalation_url,
                   ),
                 topic_ids_found: [current_escalation_topic_id],
                 post_ids_found: [],
-                non_post_urls_found: []
+                non_post_urls_found: [],
               },
-              token_usage: 0
+              token_usage: 0,
             }
           )
         end
@@ -84,30 +83,24 @@ module DiscourseChatbot
           if SiteSetting.chatbot_private_message_auto_title
             begin
               generated_title = generate_escalation_title(opts)
-              if generated_title.present?
-                full_title = "#{base_title}: #{generated_title}"
-              end
+              full_title = "#{base_title}: #{generated_title}" if generated_title.present?
             rescue => e
               Rails.logger.error(
-                "Chatbot: Error occurred while generating escalation title for user #{current_user.username}: #{e.message}"
+                "Chatbot: Error occurred while generating escalation title for user #{current_user.username}: #{e.message}",
               )
             end
           end
 
           default_opts = {
             post_alert_options: {
-              skip_send_email: true
+              skip_send_email: true,
             },
-            raw:
-              I18n.t(
-                "chatbot.prompt.function.escalate_to_staff.announcement",
-                content: content
-              ),
+            raw: I18n.t("chatbot.prompt.function.escalate_to_staff.announcement", content: content),
             skip_validations: true,
             title: full_title,
             archetype: Archetype.private_message,
             target_usernames: target_usernames,
-            target_group_names: target_group_names
+            target_group_names: target_group_names,
           }
 
           post = PostCreator.create!(current_user, default_opts)
@@ -118,8 +111,7 @@ module DiscourseChatbot
             UserCustomField
               .where(
                 user_id: current_user.id,
-                name:
-                  ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
+                name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD,
               )
               .order(id: :desc)
               .first_or_initialize
@@ -130,50 +122,38 @@ module DiscourseChatbot
             UserCustomField
               .where(
                 user_id: current_user.id,
-                name:
-                  ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD
+                name: ::DiscourseChatbot::CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD,
               )
               .order(id: :desc)
               .first_or_initialize
           escalation_topic_id.value = post.topic_id.to_s
           escalation_topic_id.save!
 
-          response =
-            I18n.t(
-              "chatbot.prompt.function.escalate_to_staff.answer_summary",
-              url: url
-            )
+          response = I18n.t("chatbot.prompt.function.escalate_to_staff.answer_summary", url: url)
         else
-          response =
-            I18n.t(
-              "chatbot.prompt.function.escalate_to_staff.no_escalation_groups"
-            )
+          response = I18n.t("chatbot.prompt.function.escalate_to_staff.no_escalation_groups")
         end
         {
           answer: {
             result: response,
-            topic_ids_found: [post.topic_id],
+            topic_ids_found: post ? [post.topic_id] : [],
             post_ids_found: [],
-            non_post_urls_found: []
+            non_post_urls_found: [],
           },
-          token_usage: 0
+          token_usage: 0,
         }
       rescue => e
         Rails.logger.error(
-          "Chatbot: Error occurred while attempting to escalate for user #{current_user.username}: #{e.message}"
+          "Chatbot: Error occurred while attempting to escalate for user #{current_user&.username || opts[:user_id]}: #{e.message}",
         )
         {
           answer: {
-            result:
-              I18n.t(
-                "chatbot.prompt.function.escalate_to_staff.error",
-                parameter: args[parameters[0][:name]]
-              ),
-            topic_ids_found: [post.topic_id],
+            result: I18n.t("chatbot.prompt.function.escalate_to_staff.error", parameter: "unknown"),
+            topic_ids_found: post ? [post.topic_id] : [],
             post_ids_found: [],
-            non_post_urls_found: []
+            non_post_urls_found: [],
           },
-          token_usage: 0
+          token_usage: 0,
         }
       end
     end
@@ -181,11 +161,7 @@ module DiscourseChatbot
     def generate_transcript(messages, acting_user)
       messages = Array.wrap(messages)
       Chat::TranscriptService
-        .new(
-          messages.first.chat_channel,
-          acting_user,
-          messages_or_ids: messages.map(&:id)
-        )
+        .new(messages.first.chat_channel, acting_user, messages_or_ids: messages.map(&:id))
         .generate_markdown
         .chomp
     end
@@ -202,10 +178,7 @@ module DiscourseChatbot
       while message_collection.length < collect_amount
         prior_message =
           ::Chat::Message
-            .where(
-              chat_channel_id: current_message.chat_channel_id,
-              deleted_at: nil
-            )
+            .where(chat_channel_id: current_message.chat_channel_id, deleted_at: nil)
             .where("chat_messages.id < ?", current_message.id)
             .last
         if prior_message.nil?
@@ -221,33 +194,23 @@ module DiscourseChatbot
     def generate_escalation_title(opts)
       prior_messages = ::DiscourseChatbot::MessagePromptUtils.create_prompt(opts)
 
-      client = OpenAI::Client.new
+      bot = ::DiscourseChatbot::OpenAiBotBasic.new(opts)
+      messages =
+        prior_messages << {
+          role: "user",
+          content: I18n.t("chatbot.prompt.private_message.title_creation"),
+        }
 
-      model_name =
-        case opts[:trust_level]
-        when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
-          SiteSetting.send("chatbot_open_ai_model_custom_" + opts[:trust_level] + "_trust") ?
-            SiteSetting.send("chatbot_open_ai_model_custom_name_" + opts[:trust_level] + "_trust") :
-            SiteSetting.send("chatbot_open_ai_model_" + opts[:trust_level] + "_trust")
-        else
-          SiteSetting.chatbot_open_ai_model_custom_low_trust ? SiteSetting.chatbot_open_ai_model_custom_name_low_trust : SiteSetting.chatbot_open_ai_model_low_trust
-        end
+      if bot.reasoning_model?
+        res = bot.client.responses.create(parameters: bot.responses_parameters(messages))
+        bot.extract_responses_text(res)&.strip
+      else
+        res = bot.client.chat(parameters: { model: bot.model_name, messages: messages })
 
-      res =
-        client.chat(
-          parameters: {
-            model: model_name,
-            messages:
-              prior_messages << {
-                role: "user",
-                content: I18n.t("chatbot.prompt.private_message.title_creation")
-              }
-          }
-        )
+        return nil if res["error"].present?
 
-      return nil if res["error"].present?
-
-      res.dig("choices", 0, "message", "content")&.strip
+        res.dig("choices", 0, "message", "content")&.strip
+      end
     end
   end
 end

@@ -314,50 +314,56 @@ module ::DiscourseChatbot
           +++++++++++++++++++++++++++++++
         EOS
 
-        reasoning_model = true if REASONING_MODELS.include?(@model_name)
+        if reasoning_model?
+          parameters = responses_parameters(messages)
 
-        parameters = {
-          model: @model_name,
-          messages: messages,
-          max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
-        }
-
-        additional_non_reasoning_parameters = {
-          temperature: SiteSetting.chatbot_request_temperature / 100.0,
-          top_p: SiteSetting.chatbot_request_top_p / 100.0,
-          frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-          presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
-        }
-
-        additional_reasoning_parameters = { reasoning_effort: @model_reasoning_level }
-
-        if reasoning_model
-          parameters.merge!(additional_reasoning_parameters)
-        else
-          parameters.merge!(additional_non_reasoning_parameters)
-        end
-
-        if use_functions && @tools
-          parameters.merge!(tools: @tools)
-          if iteration == 1
-            if SiteSetting.chatbot_tool_choice_first_iteration == FORCE_A_FUNCTION
-              parameters.merge!(tool_choice: "required")
-            elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_FUNCTION
-              parameters.merge!(
-                tool_choice: {
-                  type: "function",
-                  function: {
-                    name: "local_forum_search",
-                  },
-                },
-              )
+          if use_functions && @tools
+            parameters[:tools] = responses_tools
+            if iteration == 1
+              if SiteSetting.chatbot_tool_choice_first_iteration == FORCE_A_FUNCTION
+                parameters[:tool_choice] = "required"
+              elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_FUNCTION
+                parameters[:tool_choice] = { type: "function", name: "local_forum_search" }
+              end
             end
           end
+
+          raw_response = @client.responses.create(parameters: parameters)
+          res = normalize_responses_response(raw_response)
+          token_usage = raw_response.dig("usage", "total_tokens")
+        else
+          parameters = {
+            model: @model_name,
+            messages: messages,
+            max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
+            temperature: SiteSetting.chatbot_request_temperature / 100.0,
+            top_p: SiteSetting.chatbot_request_top_p / 100.0,
+            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
+          }
+
+          if use_functions && @tools
+            parameters.merge!(tools: @tools)
+            if iteration == 1
+              if SiteSetting.chatbot_tool_choice_first_iteration == FORCE_A_FUNCTION
+                parameters.merge!(tool_choice: "required")
+              elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_FUNCTION
+                parameters.merge!(
+                  tool_choice: {
+                    type: "function",
+                    function: {
+                      name: "local_forum_search",
+                    },
+                  },
+                )
+              end
+            end
+          end
+
+          res = @client.chat(parameters: parameters)
+          token_usage = res.dig("usage", "total_tokens")
         end
 
-        res = @client.chat(parameters: parameters)
-
-        token_usage = res.dig("usage", "total_tokens")
         @total_tokens += token_usage
 
         ::DiscourseChatbot.progress_debug_message <<~EOS
