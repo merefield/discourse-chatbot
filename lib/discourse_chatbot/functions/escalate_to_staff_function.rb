@@ -148,11 +148,7 @@ module DiscourseChatbot
         )
         {
           answer: {
-            result:
-              I18n.t(
-                "chatbot.prompt.function.escalate_to_staff.error",
-                parameter: args[parameters[0][:name]],
-              ),
+            result: I18n.t("chatbot.prompt.function.escalate_to_staff.error", parameter: "unknown"),
             topic_ids_found: post ? [post.topic_id] : [],
             post_ids_found: [],
             non_post_urls_found: [],
