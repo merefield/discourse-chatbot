@@ -21,6 +21,9 @@ module DiscourseChatbot
     end
 
     def process(args, opts)
+      current_user = nil
+      post = nil
+
       begin
         super(args)
 
@@ -133,7 +136,7 @@ module DiscourseChatbot
         {
           answer: {
             result: response,
-            topic_ids_found: [post.topic_id],
+            topic_ids_found: post ? [post.topic_id] : [],
             post_ids_found: [],
             non_post_urls_found: [],
           },
@@ -141,7 +144,7 @@ module DiscourseChatbot
         }
       rescue => e
         Rails.logger.error(
-          "Chatbot: Error occurred while attempting to escalate for user #{current_user.username}: #{e.message}",
+          "Chatbot: Error occurred while attempting to escalate for user #{current_user&.username || opts[:user_id]}: #{e.message}",
         )
         {
           answer: {
@@ -150,7 +153,7 @@ module DiscourseChatbot
                 "chatbot.prompt.function.escalate_to_staff.error",
                 parameter: args[parameters[0][:name]],
               ),
-            topic_ids_found: [post.topic_id],
+            topic_ids_found: post ? [post.topic_id] : [],
             post_ids_found: [],
             non_post_urls_found: [],
           },
