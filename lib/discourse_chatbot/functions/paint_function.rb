@@ -6,13 +6,6 @@ module DiscourseChatbot
   class PaintFunction < Function
     TOKEN_COST = 1000000 # 1M tokens per request based on cost of dall-e-3 model vs gpt-4o-mini
     ASPECT_RATIO_OPTIONS = %w[square landscape portrait].freeze
-    AVAILABLE_IMAGE_SIZES =
-      %w[auto 1024x1024 1536x1024 1024x1536 256x256 512x512 1792x1024 1024x1792].freeze
-    MODEL_IMAGE_SIZES = {
-      "dall-e-2" => %w[256x256 512x512 1024x1024].freeze,
-      "dall-e-3" => %w[1024x1024 1792x1024 1024x1792].freeze,
-      "gpt-image" => %w[auto 1024x1024 1536x1024 1024x1536].freeze,
-    }.freeze
     DEFAULT_ASPECT_RATIO = "landscape"
     SIZE_BY_MODEL_AND_ASPECT_RATIO = {
       "dall-e-2" => {
