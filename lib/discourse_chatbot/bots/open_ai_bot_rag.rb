@@ -17,6 +17,7 @@ module ::DiscourseChatbot
       DiscourseChatbot::ForumUserDistanceFromLocationFunction
       DiscourseChatbot::ForumSearchFunction
       DiscourseChatbot::PaintFunction
+      DiscourseChatbot::PaintEditFunction
       DiscourseChatbot::VisionFunction
       DiscourseChatbot::WikipediaFunction
       DiscourseChatbot::WebSearchFunction
