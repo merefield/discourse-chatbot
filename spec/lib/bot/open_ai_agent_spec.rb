@@ -322,6 +322,28 @@ describe ::DiscourseChatbot::OpenAiBotRag, "#merge_functions" do
 
     expect(func_mapping).to have_key("escalate_to_staff")
   end
+
+  %w[gpt-image-1 gpt-image-1-mini gpt-image-1.5].each do |model_name|
+    it "includes paint_edit_picture for #{model_name}" do
+      SiteSetting.chatbot_support_picture_creation = true
+      SiteSetting.chatbot_support_picture_creation_model = model_name
+
+      rag = described_class.new({})
+      func_mapping = rag.instance_variable_get(:@func_mapping)
+
+      expect(func_mapping).to have_key("paint_edit_picture")
+    end
+  end
+
+  it "does not include paint_edit_picture for dall-e-3" do
+    SiteSetting.chatbot_support_picture_creation = true
+    SiteSetting.chatbot_support_picture_creation_model = "dall-e-3"
+
+    rag = described_class.new({})
+    func_mapping = rag.instance_variable_get(:@func_mapping)
+
+    expect(func_mapping).not_to have_key("paint_edit_picture")
+  end
 end
 
 describe ::DiscourseChatbot, ".latest_chatbot_escalation_topic_id" do

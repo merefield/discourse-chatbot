@@ -36,13 +36,16 @@ module ::DiscourseChatbot
 
     def self.func_to_json(func)
       params = {}
-       func.parameters.each do |param|
-         params.merge!("#{param[:name]}": {})
+      func.parameters.each do |param|
+        params.merge!("#{param[:name]}": {})
 
         params[:"#{param[:name]}"].merge!("type": type_mapping(param[:type]).to_s)
         params[:"#{param[:name]}"].merge!("description": param[:description])
-       end
-       params = JSON.parse(params.to_json)
+        if param[:enum].present?
+          params[:"#{param[:name]}"].merge!("enum": param[:enum])
+        end
+      end
+      params = JSON.parse(params.to_json)
 
       func_json = {
         'name' => func.name,

@@ -317,6 +317,8 @@ plugins:
     choices:
       - dall-e-3
       - gpt-image-1
+      - gpt-image-1-mini
+      - gpt-image-1.5
   chatbot_reply_job_time_delay:
     client: false
     default: 2

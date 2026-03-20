@@ -5,6 +5,25 @@ require_relative '../function'
 module DiscourseChatbot
   class PaintFunction < Function
     TOKEN_COST = 1000000 # 1M tokens per request based on cost of dall-e-3 model vs gpt-4o-mini
+    ASPECT_RATIO_OPTIONS = %w[square landscape portrait].freeze
+    DEFAULT_ASPECT_RATIO = "landscape"
+    SIZE_BY_MODEL_AND_ASPECT_RATIO = {
+      "dall-e-2" => {
+        "square" => "1024x1024",
+        "landscape" => "1024x1024",
+        "portrait" => "1024x1024",
+      }.freeze,
+      "dall-e-3" => {
+        "square" => "1024x1024",
+        "landscape" => "1792x1024",
+        "portrait" => "1024x1792",
+      }.freeze,
+      "gpt-image" => {
+        "square" => "1024x1024",
+        "landscape" => "1536x1024",
+        "portrait" => "1024x1536",
+      }.freeze,
+    }.freeze
 
     def name
       'paint_picture'
@@ -16,7 +35,17 @@ module DiscourseChatbot
 
     def parameters
       [
-        { name: "description", type: String, description: I18n.t("chatbot.prompt.function.paint.parameters.description") } ,
+        {
+          name: "description",
+          type: String,
+          description: I18n.t("chatbot.prompt.function.paint.parameters.description"),
+        },
+        {
+          name: "aspect_ratio",
+          type: String,
+          enum: ASPECT_RATIO_OPTIONS,
+          description: I18n.t("chatbot.prompt.function.paint.parameters.aspect_ratio"),
+        },
       ]
     end
 
@@ -30,6 +59,7 @@ module DiscourseChatbot
         token_usage = 0
 
         description = args[parameters[0][:name]]
+        aspect_ratio = normalized_aspect_ratio(args[parameters[1][:name]])
 
         client = OpenAI::Client.new do |f|
           f.response :logger, Logger.new($stdout), bodies: true if SiteSetting.chatbot_enable_verbose_console_logging
@@ -43,7 +73,7 @@ module DiscourseChatbot
           end
         end
 
-        size = SiteSetting.chatbot_support_picture_creation_model == "dall-e-3" ? "1792x1024" : "1536x1024"
+        size = size_for(SiteSetting.chatbot_support_picture_creation_model, aspect_ratio)
         quality = SiteSetting.chatbot_support_picture_creation_model == "dall-e-3" ? "standard" : "auto"
 
         options = {
@@ -55,7 +85,7 @@ module DiscourseChatbot
 
         options.merge!(response_format: "b64_json") if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
         options.merge!(style: "natural") if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
-        options.merge!(moderation: "low") if SiteSetting.chatbot_support_picture_creation_model == "gpt-image-1"
+        options.merge!(moderation: "low") if gpt_image_model?
 
         response = client.images.generate(parameters: options)
 
@@ -64,7 +94,7 @@ module DiscourseChatbot
           raise StandardError, error_text
         end
 
-        tokens_used = SiteSetting.chatbot_support_picture_creation_model == "gpt-image-1" ? response.dig("usage", "total_tokens") : TOKEN_COST
+        tokens_used = gpt_image_model? ? response.dig("usage", "total_tokens") : TOKEN_COST
 
         artifacts = response.dig("data")
           .to_a
@@ -110,6 +140,25 @@ module DiscourseChatbot
 
         UploadSerializer.new(upload, root: false)
       end
+    end
+
+    def gpt_image_model?
+      SiteSetting.chatbot_support_picture_creation_model.start_with?("gpt-image-")
+    end
+
+    def normalized_aspect_ratio(aspect_ratio)
+      aspect_ratio.presence || DEFAULT_ASPECT_RATIO
+    end
+
+    def size_for(model_name, aspect_ratio)
+      model_family = image_model_family(model_name)
+      SIZE_BY_MODEL_AND_ASPECT_RATIO[model_family][aspect_ratio]
+    end
+
+    def image_model_family(model_name)
+      return "gpt-image" if model_name.start_with?("gpt-image-")
+
+      model_name
     end
   end
 end
