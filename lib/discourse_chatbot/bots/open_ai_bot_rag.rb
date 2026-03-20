@@ -255,7 +255,7 @@ module ::DiscourseChatbot
       functions << vision_function if vision_function
       functions << paint_function if SiteSetting.chatbot_support_picture_creation
       if SiteSetting.chatbot_support_picture_creation &&
-           SiteSetting.chatbot_support_picture_creation_model == "gpt-image-1"
+           SiteSetting.chatbot_support_picture_creation_model.start_with?("gpt-image-")
         functions << paint_edit_function
       end
 

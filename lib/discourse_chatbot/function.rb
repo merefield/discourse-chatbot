@@ -44,8 +44,18 @@ module ::DiscourseChatbot
       end
 
       args.each do |arg|
-        unless arg[1].is_a?(@parameters.find { |param| param[:name] == arg[0] }[:type])
-          raise ArgumentError, "Argument #{index + 1} should be of type #{parameter[:type]}"
+        parameter = @parameters.find { |param| param[:name] == arg[0] }
+
+        if parameter.nil?
+          raise ArgumentError, "Unexpected argument '#{arg[0]}'"
+        end
+
+        unless arg[1].is_a?(parameter[:type])
+          raise ArgumentError, "Argument '#{arg[0]}' should be of type #{parameter[:type]}"
+        end
+
+        if parameter[:enum].present? && !parameter[:enum].include?(arg[1])
+          raise ArgumentError, "Argument '#{arg[0]}' should be one of #{parameter[:enum].join(", ")}"
         end
       end
 
