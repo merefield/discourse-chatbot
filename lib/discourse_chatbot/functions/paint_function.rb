@@ -88,10 +88,7 @@ module DiscourseChatbot
         }
 
         if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
-          options.merge!(response_format: "b64_json")
-        end
-        if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
-          options.merge!(style: "natural")
+          options.merge!(response_format: "b64_json", style: "natural")
         end
         options.merge!(moderation: "low") if gpt_image_model?
 
