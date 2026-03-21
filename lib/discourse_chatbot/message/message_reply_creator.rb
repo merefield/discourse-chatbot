@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 module ::DiscourseChatbot
   class MessageReplyCreator < ReplyCreator
-
     def initialize(options = {})
       super(options)
     end
@@ -11,10 +10,17 @@ module ::DiscourseChatbot
       begin
         if @private && @human_participants_count == 1
           # latest_message_id = ::Topic.find(@topic_or_channel_id).posts.order('created_at DESC').first.id
-          latest_message_id = ::Chat::Message.where(chat_channel_id: @topic_or_channel_id, deleted_at: nil).order('created_at DESC').first.id
+          latest_message_id =
+            ::Chat::Message
+              .where(chat_channel_id: @topic_or_channel_id, deleted_at: nil)
+              .order("created_at DESC")
+              .first
+              .id
 
           if @reply_to != latest_message_id
-            ::DiscourseChatbot.progress_debug_message("7. The Message was discarded as there is a newer human message")
+            ::DiscourseChatbot.progress_debug_message(
+              "7. The Message was discarded as there is a newer human message",
+            )
             # do not create a new response if the message is not the latest
             return
           end
@@ -24,19 +30,13 @@ module ::DiscourseChatbot
         upload = find_upload_from_markdown(@message_body)
 
         # if the message is a picture, message body is just a placeholder
-        params =  {
-          chat_channel_id: @topic_or_channel_id,
-          message: @message_body
-        }
+        params = { chat_channel_id: @topic_or_channel_id, message: @message_body }
 
         params.merge!(thread_id: @thread_id) if @thread_id.present?
 
         message = nil
 
-        Chat::CreateMessage.call(
-          params: params,
-          guardian: @guardian
-        ) do
+        Chat::CreateMessage.call(params: params, guardian: @guardian) do
           on_success { |message_instance:| message = message_instance }
         end
 
@@ -55,7 +55,7 @@ module ::DiscourseChatbot
         begin
           presence = PresenceChannel.new("/chat-reply/#{@topic_or_channel_id}")
           presence.leave(user_id: @author.id, client_id: "12345")
-        rescue
+        rescue StandardError
           # ignore issues with permissions related to communicating presence
         end
 
@@ -69,7 +69,7 @@ module ::DiscourseChatbot
     private
 
     def find_upload_from_markdown(string)
-      regex = /\A!\[([^\]]+)\|690x460\]\((upload:\/\/[^\s)]+)\)\z/
+      regex = %r{\A!\[([^\]]+)\|\d+x\d+\]\((upload://[^\s)]+)\)\z}
       match = string.match(regex)
       return nil unless match
 
@@ -77,9 +77,10 @@ module ::DiscourseChatbot
 
       # Find the upload using the short_url
       # This is a bit of a hack because short_url is not a field but a method
-      Upload.order(id: :desc).limit(5).each do |upload|
-        return upload if upload.short_url == short_url
-      end
+      Upload
+        .order(id: :desc)
+        .limit(5)
+        .each { |upload| return upload if upload.short_url == short_url }
     end
   end
 end

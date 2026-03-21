@@ -183,6 +183,7 @@ en:
             creates a picture based on the provided direction and the last image in the conversation
           parameters:
             description: a description of the edit to the picture the user wants to make
+            aspect_ratio: optional image shape override. if omitted, keep the original image aspect ratio
           no_image_error: there was no image in the conversation to edit
           error: there was an issue creating the new picture.
         forum_search:
