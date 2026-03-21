@@ -98,11 +98,12 @@ module DiscourseChatbot
         upload_io = Faraday::Multipart::FilePart.new(f, mime_type)
 
         options[:image] = upload_io
-
-        response = client.images.edit(parameters: options)
-
-        f.close
-        f.unlink
+        begin
+          response = client.images.edit(parameters: options)
+        ensure
+          f.close
+          f.unlink
+        end
 
         if response.dig("error")
           error_text = "ERROR when trying to call paint API: #{response.dig("error", "message")}"
