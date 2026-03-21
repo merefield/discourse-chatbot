@@ -141,8 +141,12 @@ module DiscourseChatbot
         f.binmode
         f.write(Base64.decode64(art))
         f.rewind
-        upload = UploadCreator.new(f, attribution).create_for(user_id)
-        f.unlink
+        begin
+          upload = UploadCreator.new(f, attribution).create_for(user_id)
+        ensure
+          f.close
+          f.unlink
+        end
 
         upload
       end
