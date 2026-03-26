@@ -1,61 +1,39 @@
 import { apiInitializer } from "discourse/lib/api";
+import ChatChannel from "discourse/plugins/chat/discourse/components/chat-channel";
 import ChatbotLaunch from "../components/chatbot-launch";
 
-export default apiInitializer("1.8.0", (api) => {
+const CHATBOT_FETCH_MESSAGES_PATCHED = Symbol(
+  "chatbot-fetch-messages-patched"
+);
+
+export default apiInitializer((api) => {
   const siteSettings = api.container.lookup("service:site-settings");
 
-  api.modifyClass(
-    "component:chat-channel",
-    (Superclass) =>
-      class extends Superclass {
-        async fetchMessages(findArgs = {}) {
-          if (this.messagesLoader.loading) {
-            return;
-          }
+  if (!ChatChannel[CHATBOT_FETCH_MESSAGES_PATCHED]) {
+    const originalFetchMessages = ChatChannel.prototype.fetchMessages;
 
-          this.messagesManager.clear();
+    ChatChannel.prototype.fetchMessages = async function (findArgs = {}) {
+      if (this.messagesLoader.loading) {
+        return originalFetchMessages.call(this, findArgs);
+      }
 
-          const result = await this.messagesLoader.load(findArgs);
-          this.messagesManager.messages = this.processMessages(
-            this.args.channel,
-            result
-          );
-          if (findArgs.target_message_id) {
-            this.scrollToMessageId(findArgs.target_message_id, {
-              highlight: true,
-              position: findArgs.position,
-            });
-          } else if (findArgs.fetch_from_last_read) {
-            const lastReadMessageId =
-              this.currentUserMembership?.lastReadMessageId;
-            if (
-              this.args.channel.chatable.type === "DirectMessage" &&
-              this.args.channel.unicodeTitle ===
-                this.siteSettings.chatbot_bot_user
-            ) {
-              this.scrollToMessageId(
-                this.messagesManager.messages[
-                  this.messagesManager.messages.length - 1
-                ].id
-              );
-            } else {
-              this.scrollToMessageId(lastReadMessageId);
-            }
-          } else if (findArgs.target_date) {
-            this.scrollToMessageId(result.meta.target_message_id, {
-              highlight: true,
-              position: "center",
-            });
-          } else {
-            this._ignoreNextScroll = true;
-            this.scrollToBottom();
-          }
+      await originalFetchMessages.call(this, findArgs);
 
-          this.debounceFillPaneAttempt();
-          this.debouncedUpdateLastReadMessage();
+      if (
+        findArgs.fetch_from_last_read &&
+        this.args.channel?.chatable?.type === "DirectMessage" &&
+        this.args.channel?.unicodeTitle === this.siteSettings.chatbot_bot_user
+      ) {
+        const lastMessageId = this.messagesManager.messages.at(-1)?.id;
+
+        if (lastMessageId) {
+          this.scrollToMessageId(lastMessageId);
         }
       }
-  );
+    };
+
+    ChatChannel[CHATBOT_FETCH_MESSAGES_PATCHED] = true;
+  }
 
   if (siteSettings.chatbot_quick_access_bot_post_kicks_off) {
     api.registerValueTransformer(
