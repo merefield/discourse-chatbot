@@ -1,4 +1,3 @@
-import { importSync } from "@embroider/macros";
 import { apiInitializer } from "discourse/lib/api";
 import ChatbotLaunch from "../components/chatbot-launch";
 
@@ -8,9 +7,15 @@ const CHATBOT_FETCH_MESSAGES_PATCHED = Symbol(
 
 export default apiInitializer((api) => {
   const siteSettings = api.container.lookup("service:site-settings");
-  const ChatChannel = importSync(
-    "discourse/plugins/chat/discourse/components/chat-channel"
-  ).default;
+  let ChatChannel;
+
+  try {
+    ChatChannel = require(
+      "discourse/plugins/chat/discourse/components/chat-channel"
+    )?.default;
+  } catch {
+    ChatChannel = null;
+  }
 
   if (ChatChannel && !ChatChannel[CHATBOT_FETCH_MESSAGES_PATCHED]) {
     const originalFetchMessages = ChatChannel.prototype.fetchMessages;
