@@ -15,9 +15,7 @@ export default class SetChatbot extends Component {
   }
 
   get additionalPromptLabel() {
-    return trustHTML(
-      i18n("chatbot.category.auto_response_additional_prompt")
-    );
+    return trustHTML(i18n("chatbot.category.auto_response_additional_prompt"));
   }
 
   @action
