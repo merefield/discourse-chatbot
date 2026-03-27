@@ -1,18 +1,15 @@
 import { apiInitializer } from "discourse/lib/api";
 import ChatbotLaunch from "../components/chatbot-launch";
 
-const CHATBOT_FETCH_MESSAGES_PATCHED = Symbol(
-  "chatbot-fetch-messages-patched"
-);
+const CHATBOT_FETCH_MESSAGES_PATCHED = Symbol("chatbot-fetch-messages-patched");
 
 export default apiInitializer((api) => {
   const siteSettings = api.container.lookup("service:site-settings");
   let ChatChannel;
 
   try {
-    ChatChannel = require(
-      "discourse/plugins/chat/discourse/components/chat-channel"
-    )?.default;
+    ChatChannel =
+      require("discourse/plugins/chat/discourse/components/chat-channel")?.default;
   } catch {
     ChatChannel = null;
   }
