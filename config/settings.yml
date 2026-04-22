@@ -319,6 +319,7 @@ plugins:
       - gpt-image-1
       - gpt-image-1-mini
       - gpt-image-1.5
+      - gpt-image-2
   chatbot_reply_job_time_delay:
     client: false
     default: 2
