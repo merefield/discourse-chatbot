@@ -18,6 +18,10 @@ describe ::DiscourseChatbot::PaintFunction do
       expect(described_class.size_for("gpt-image-1.5", "landscape")).to eq("1536x1024")
     end
 
+    it "supports new gpt image models using gpt image dimensions" do
+      expect(described_class.size_for("gpt-image-2", "landscape")).to eq("1536x1024")
+    end
+
     it "supports square dimensions for gpt image models" do
       expect(described_class.size_for("gpt-image-1-mini", "square")).to eq("1024x1024")
     end

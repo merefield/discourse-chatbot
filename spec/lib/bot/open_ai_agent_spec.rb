@@ -323,7 +323,7 @@ describe ::DiscourseChatbot::OpenAiBotRag, "#merge_functions" do
     expect(func_mapping).to have_key("escalate_to_staff")
   end
 
-  %w[gpt-image-1 gpt-image-1-mini gpt-image-1.5].each do |model_name|
+  %w[gpt-image-1 gpt-image-1-mini gpt-image-1.5 gpt-image-2].each do |model_name|
     it "includes paint_edit_picture for #{model_name}" do
       SiteSetting.chatbot_support_picture_creation = true
       SiteSetting.chatbot_support_picture_creation_model = model_name
