@@ -5,6 +5,10 @@ import { trustHTML } from "@ember/template";
 import { i18n } from "discourse-i18n";
 
 export default class SetChatbot extends Component {
+  static shouldRender(args, context) {
+    return !context.siteSettings.enable_simplified_category_creation;
+  }
+
   constructor() {
     super(...arguments);
     this.args.outletArgs.category.custom_fields ||= {};
