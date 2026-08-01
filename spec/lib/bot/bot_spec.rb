@@ -22,7 +22,7 @@ describe ::DiscourseChatbot::Bot do
     expect(event.get_remaining_quota(user.id, remaining_quota_field_name)).to eq(1900)
   end
 
-  it "consumes a query" do
+  it "consumes a query when no token usage is reported" do
     SiteSetting.chatbot_enabled = true
     SiteSetting.chatbot_quota_basis = "queries"
     SiteSetting.chatbot_quota_reach_escalation_groups = "3"
@@ -38,7 +38,44 @@ describe ::DiscourseChatbot::Bot do
     ::DiscourseChatbot::Bot.new.reset_all_quotas
     remaining_quota_field_name = ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD
     expect(event.get_remaining_quota(user.id, remaining_quota_field_name)).to eq(200)
-    described_class.new.consume_quota(user.id, 100)
+    described_class.new.consume_quota(user.id, 0)
     expect(event.get_remaining_quota(user.id, remaining_quota_field_name)).to eq(199)
+  end
+
+  it "consumes accumulated tokens when a response fails" do
+    SiteSetting.chatbot_quota_basis = "tokens"
+    user = Fabricate(:user)
+    bot_user = Fabricate(:user)
+    post = Fabricate(:post, user: user)
+    quota =
+      UserCustomField.create!(
+        user_id: user.id,
+        name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD,
+        value: "100",
+      )
+    failed_bot_class =
+      Class.new(described_class) do
+        attr_reader :total_tokens
+
+        def get_response(*)
+          @total_tokens = 10
+          raise ::DiscourseChatbot::OpenAIBotBase::TokenBudgetError, "budget reached"
+        end
+      end
+    opts = {
+      type: ::DiscourseChatbot::POST,
+      user_id: user.id,
+      bot_user_id: bot_user.id,
+      reply_to_message_or_post_id: post.id,
+      original_post_number: post.post_number,
+      category_id: post.topic.category_id,
+    }
+
+    expect { failed_bot_class.new.ask(opts) }.to raise_error(
+      ::DiscourseChatbot::OpenAIBotBase::TokenBudgetError,
+      "budget reached",
+    )
+
+    expect(quota.reload.value).to eq("90")
   end
 end

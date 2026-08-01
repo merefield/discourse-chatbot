@@ -203,7 +203,7 @@ module DiscourseChatbot
 
       if bot.reasoning_model?
         res = bot.client.responses.create(parameters: bot.responses_parameters(messages))
-        bot.extract_responses_text(res)&.strip
+        bot.responses_text(res)&.strip
       else
         res = bot.client.chat(parameters: { model: bot.model_name, messages: messages })
 

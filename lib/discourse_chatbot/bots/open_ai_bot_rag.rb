@@ -33,6 +33,8 @@ module ::DiscourseChatbot
     FORCE_A_FUNCTION = "force_a_function"
     FORCE_LOCAL_SEARCH_FUNCTION = "force_local_forum_search"
 
+    attr_reader :inner_thoughts
+
     def initialize(opts, tools = true)
       super(opts)
       merge_functions(opts) if tools
@@ -63,9 +65,11 @@ module ::DiscourseChatbot
       end
 
       @inner_thoughts = []
+      @responses_context = []
       @posts_ids_found = []
       @topic_ids_found = []
       @non_post_urls_found = []
+      @trusted_url_provenance_collected = false
 
       @chat_history += prompt
 
@@ -316,7 +320,11 @@ module ::DiscourseChatbot
         EOS
 
         if reasoning_model?
-          parameters = responses_parameters(messages)
+          parameters =
+            responses_parameters(
+              messages,
+              include_reasoning_summary: SiteSetting.chatbot_open_ai_include_reasoning_summaries,
+            )
 
           if use_functions && @tools
             parameters[:tools] = responses_tools
@@ -330,18 +338,19 @@ module ::DiscourseChatbot
           end
 
           raw_response = @client.responses.create(parameters: parameters)
-          res = normalize_responses_response(raw_response)
           token_usage = raw_response.dig("usage", "total_tokens")
+          @total_tokens += token_usage.to_i
+          res = normalize_responses_response(raw_response)
         else
           parameters = {
             model: @model_name,
             messages: messages,
-            max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
             temperature: SiteSetting.chatbot_request_temperature / 100.0,
             top_p: SiteSetting.chatbot_request_top_p / 100.0,
             frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
             presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
           }
+          parameters.merge!(completion_token_limit_parameters)
 
           if use_functions && @tools
             parameters.merge!(tools: @tools)
@@ -363,9 +372,8 @@ module ::DiscourseChatbot
 
           res = @client.chat(parameters: parameters)
           token_usage = res.dig("usage", "total_tokens")
+          @total_tokens += token_usage.to_i
         end
-
-        @total_tokens += token_usage
 
         ::DiscourseChatbot.progress_debug_message <<~EOS
           +++++++++++++++++++++++++++++++++++++++
@@ -388,17 +396,32 @@ module ::DiscourseChatbot
 
     def generate_response(opts)
       iteration = 1
+      tool_call_count = 0
+      url_validation_retries = 0
+      max_iterations = SiteSetting.chatbot_chain_of_thought_max_iterations
+      max_tool_calls = SiteSetting.chatbot_chain_of_thought_max_tool_calls
+      max_url_repair_attempts = SiteSetting.chatbot_chain_of_thought_max_url_repair_attempts
       ::DiscourseChatbot.progress_debug_message <<~EOS
         ===============================
         # New Query
         -------------------------------
       EOS
       loop do
+        ensure_chain_token_budget!
+
+        if iteration > max_iterations
+          raise ChainLimitError, "Chatbot response exceeded the maximum number of iterations"
+        end
+
         ::DiscourseChatbot.progress_debug_message <<~EOS
           # Iteration: #{iteration}
           -------------------------------
         EOS
-        res = create_chat_completion(@chat_history + @inner_thoughts, true, iteration)
+        messages = @chat_history + (reasoning_model? ? @responses_context : @inner_thoughts)
+        use_functions = iteration < max_iterations
+        res = create_chat_completion(messages, use_functions, iteration)
+        append_responses_output(res) if reasoning_model?
+        append_reasoning_summaries(res) if reasoning_model?
 
         if res.dig("error")
           error_text =
@@ -409,50 +432,104 @@ module ::DiscourseChatbot
 
         finish_reason = res["choices"][0]["finish_reason"]
         tools_calls = res["choices"][0]["message"]["tool_calls"]
+        tool_results = []
 
-        # the tools calls check is a workaround and is required because sending a query with tools: required leads to an apparently incorrect finish reason.
+        content = res["choices"][0]["message"]["content"]
+        if finish_reason == "length" && (content.blank? || tools_calls.present?)
+          raise TokenBudgetError,
+                "OpenAI response reached its token limit before producing usable content"
+        end
 
-        if (
-             %w[stop length].include?(finish_reason) && tools_calls.nil? ||
-               @inner_thoughts.length > 7
-           )
-          if iteration > 1 && SiteSetting.chatbot_url_integrity_check
-            if legal_post_urls?(
-                 res["choices"][0]["message"]["content"],
-                 @posts_ids_found,
-                 @topic_ids_found,
-               ) &&
-                 legal_non_post_urls?(res["choices"][0]["message"]["content"], @non_post_urls_found)
-              return res
-            else
-              @inner_thoughts << {
-                role: "user",
-                content: I18n.t("chatbot.prompt.system.rag.illegal_urls"),
-              }
+        if reasoning_model? && finish_reason.nil? && tools_calls.nil? &&
+             res["response_output"].present?
+          iteration += 1
+          next
+        end
+
+        if %w[stop length].include?(finish_reason) && tools_calls.nil?
+          if response_urls_valid?(content)
+            if finish_reason == "length"
+              Rails.logger.warn("Chatbot: Returning a partial response after reaching its token limit")
             end
-          else
             return res
           end
+
+          url_validation_retries += 1
+          if url_validation_retries > max_url_repair_attempts || iteration >= max_iterations
+            raise ChainLimitError, "Chatbot response repeatedly contained unsupported URLs"
+          end
+
+          append_url_validation_feedback
         elsif finish_reason == "tool_calls" || !tools_calls.nil?
-          handle_function_call(res, opts)
+          if !use_functions
+            raise ChainLimitError, "Chatbot requested a tool after tools were disabled"
+          end
+          raise "Chatbot returned a tool finish reason without tool calls" if tools_calls.blank?
+
+          tool_call_count += tools_calls.length
+          if tool_call_count > max_tool_calls
+            raise ChainLimitError, "Chatbot response exceeded the maximum number of tool calls"
+          end
+
+          ensure_chain_token_budget!
+          tool_results = handle_function_call(res, opts)
         else
           raise "Unexpected finish reason: #{finish_reason}"
         end
 
-        # If the response is an image, we don't want to continue the loop of thought
-        content = @inner_thoughts.last[:content]
-
-        if content[0] == "!" && content[content.length - 1] == ")" &&
-             (content =~ %r{(upload://)?([a-zA-Z0-9]+)(\..*)?}) > 0
-          return({ "choices" => [{ "message" => { "content" => "#{content}" } }] })
+        if (image_content = direct_image_tool_result(tool_results))
+          return({ "choices" => [{ "message" => { "content" => image_content } }] })
         end
 
         iteration += 1
       end
     end
 
+    def append_responses_output(res)
+      @responses_context.concat(
+        Array(res["response_output"]).map { |output_item| output_item.deep_symbolize_keys },
+      )
+    end
+
+    def append_reasoning_summaries(res)
+      Array(res["response_output"]).each do |output_item|
+        next if output_item["type"] != "reasoning"
+
+        Array(output_item["summary"]).each do |summary|
+          next if summary["text"].blank?
+
+          @inner_thoughts << { type: "reasoning_summary", content: summary["text"] }
+        end
+      end
+    end
+
+    def append_url_validation_feedback
+      feedback = {
+        role: "developer",
+        content: I18n.t("chatbot.prompt.system.rag.illegal_urls"),
+      }
+
+      if reasoning_model?
+        @responses_context << feedback
+      else
+        @inner_thoughts << feedback
+      end
+    end
+
+    def direct_image_tool_result(tool_results)
+      return if !tool_results.one?
+
+      tool_result = tool_results.first
+      return if %w[paint_picture paint_edit_picture].exclude?(tool_result[:name])
+
+      content = tool_result[:content]
+      return if !content.start_with?("!") || !content.end_with?(")")
+      return if !content.match?(%r{(upload://)?([a-zA-Z0-9]+)(\..*)?})
+
+      content if response_urls_valid?(content)
+    end
+
     def handle_function_call(res, opts)
-      res_msgs = []
       functions_called = res["choices"][0]["message"]
 
       tools_called = functions_called["tool_calls"]
@@ -474,37 +551,118 @@ module ::DiscourseChatbot
       tools_thought = { role: "assistant", content: "", tool_calls: ruby_object_array }
 
       @inner_thoughts << tools_thought
+      tool_results = []
 
       tools_called.each do |function_called|
+        ensure_chain_token_budget!
+
         func_name = function_called["function"]["name"]
         args_str = function_called["function"]["arguments"]
         tool_call_id = function_called["id"]
-        if func_name == "local_forum_search" || func_name == "escalate_to_staff"
-          result_hash = call_function(func_name, args_str, opts)
-          result, post_ids_found, topic_ids_found, non_post_urls_found =
-            result_hash.values_at(:result, :post_ids_found, :topic_ids_found, :non_post_urls_found)
-          @posts_ids_found = (@posts_ids_found.to_set | (post_ids_found&.to_set || Set.new)).to_a
-          @topic_ids_found = (@topic_ids_found.to_set | (topic_ids_found&.to_set || Set.new)).to_a
-          @non_post_urls_found =
-            (@non_post_urls_found.to_set | (non_post_urls_found&.to_set || Set.new)).to_a
-        else
-          result = call_function(func_name, args_str, opts)
+        tool_result = normalize_tool_result(call_function(func_name, args_str, opts))
+        collect_trusted_url_provenance(tool_result)
+        result = tool_result[:content].to_s
+        tool_results << { name: func_name, content: result }
+        @inner_thoughts << { role: "tool", tool_call_id: tool_call_id, content: result }
+        if reasoning_model?
+          @responses_context << {
+            type: "function_call_output",
+            call_id: tool_call_id,
+            output: result,
+          }
         end
-        @inner_thoughts << { role: "tool", tool_call_id: tool_call_id, content: result.to_s }
+      end
+      tool_results
+    end
+
+    def normalize_tool_result(result)
+      result_hash = result.with_indifferent_access if result.is_a?(Hash)
+      result_hash = nil if result_hash && !result_hash.key?(:result)
+
+      if result_hash
+        {
+          content: result_hash[:result],
+          post_ids_found: Array(result_hash[:post_ids_found]),
+          topic_ids_found: Array(result_hash[:topic_ids_found]),
+          non_post_urls_found: Array(result_hash[:non_post_urls_found]),
+          provenance_declared: true,
+        }
+      else
+        {
+          content: result,
+          post_ids_found: [],
+          topic_ids_found: [],
+          non_post_urls_found: [],
+          provenance_declared: false,
+        }
+      end
+    end
+
+    def collect_trusted_url_provenance(tool_result)
+      content = tool_result[:content].to_s
+      absolute_urls = extract_http_urls(content)
+      relative_forum_paths = extract_relative_forum_paths(content)
+
+      post_ids_found = tool_result[:post_ids_found]
+      topic_ids_found = tool_result[:topic_ids_found]
+      non_post_urls_found = tool_result[:non_post_urls_found]
+
+      absolute_urls.each do |url|
+        uri = URI.parse(url)
+        if uri.host&.casecmp?(Discourse.current_hostname) && legal_forum_path?(uri.path)
+          collect_forum_path_provenance(uri.path, post_ids_found, topic_ids_found)
+        else
+          normalized_url = normalize_url(url)
+          non_post_urls_found << normalized_url if normalized_url
+        end
+      rescue URI::Error
+        next
+      end
+
+      relative_forum_paths.each do |path|
+        uri = URI.parse(path)
+        collect_forum_path_provenance(uri.path, post_ids_found, topic_ids_found) if legal_forum_path?(uri.path)
+      rescue URI::Error
+        next
+      end
+
+      @trusted_url_provenance_collected ||=
+        tool_result[:provenance_declared] || absolute_urls.present? || relative_forum_paths.present?
+      @posts_ids_found = (@posts_ids_found.to_set | post_ids_found.to_set).to_a
+      @topic_ids_found = (@topic_ids_found.to_set | topic_ids_found.to_set).to_a
+      normalized_non_post_urls = non_post_urls_found.filter_map { |url| normalize_url(url) }
+      @non_post_urls_found =
+        (@non_post_urls_found.to_set | normalized_non_post_urls.to_set).to_a
+    end
+
+    def collect_forum_path_provenance(path, post_ids_found, topic_ids_found)
+      match = path.match(%r{\A/t/[^/]+/(\d+)(?:/(\d+))?/?\z})
+      return if !match
+
+      topic_id = match[1].to_i
+      post_number = match[2]
+      if post_number
+        post = ::Post.find_by(topic_id: topic_id, post_number: post_number.to_i)
+        if post
+          post_ids_found << post.id
+          topic_ids_found << post.topic_id
+        end
+      else
+        topic_ids_found << topic_id
       end
     end
 
     def call_function(func_name, args_str, opts)
-      ::DiscourseChatbot.progress_debug_message <<~EOS
-        +++++++++++++++++++++++++++++++++++++++
-        I used '#{func_name}' to help me
-        args_str was '#{JSON.pretty_generate(JSON.parse(args_str))}'
-        opts was '#{JSON.pretty_generate(opts)}'
-        +++++++++++++++++++++++++++++++++++++++
-      EOS
       begin
         token_usage = 0
         args = JSON.parse(args_str)
+        ::DiscourseChatbot.progress_debug_message <<~EOS
+          +++++++++++++++++++++++++++++++++++++++
+          I used '#{func_name}' to help me
+          args_str was '#{JSON.pretty_generate(args)}'
+          opts was '#{JSON.pretty_generate(opts)}'
+          +++++++++++++++++++++++++++++++++++++++
+        EOS
         func = @func_mapping[func_name]
         if %w[escalate_to_staff remaining_bot_quota].include?(func_name)
           res, token_usage = func.process(args, opts).values_at(:answer, :token_usage)
@@ -515,7 +673,7 @@ module ::DiscourseChatbot
         else
           res, token_usage = func.process(args).values_at(:answer, :token_usage)
         end
-        @total_tokens += token_usage
+        @total_tokens += token_usage.to_i
         res
       rescue => e
         Rails.logger.error(
@@ -528,39 +686,92 @@ module ::DiscourseChatbot
     def legal_post_urls?(res, post_ids_found, topic_ids_found)
       return true if res.blank?
 
-      post_url_regex = ::DiscourseChatbot::POST_URL_REGEX
-      topic_url_regex = ::DiscourseChatbot::TOPIC_URL_REGEX
+      absolute_forum_urls =
+        extract_http_urls(res).select do |url|
+          uri = URI.parse(url)
+          uri.host&.casecmp?(Discourse.current_hostname) && uri.path.include?("/t/")
+        rescue URI::Error
+          false
+        end
 
-      topic_ids_in_text = res.scan(topic_url_regex).flatten
-      post_combos_in_text = res.scan(post_url_regex)
+      forum_paths =
+        absolute_forum_urls.map { |url| URI.parse(url).path } + extract_relative_forum_paths(res)
+      forum_paths.each do |path|
+        match = path.match(%r{\A/t/[^/]+/(\d+)(?:/(\d+))?/?\z})
+        return false if !match
 
-      topic_ids_in_text.each do |topic_id_in_text|
-        return false if !topic_ids_found.include?(topic_id_in_text.to_i)
-      end
-
-      post_combos_in_text.each do |post_combo|
-        topic_id_in_text = post_combo[0]
-        post_number_in_text = post_combo[1]
-
-        post =
-          ::Post.find_by(topic_id: topic_id_in_text.to_i, post_number: post_number_in_text.to_i)
-
-        return false if post.nil? || !post_ids_found.include?(post.id)
+        topic_id = match[1].to_i
+        post_number = match[2]
+        if post_number
+          post = ::Post.find_by(topic_id: topic_id, post_number: post_number.to_i)
+          return false if post.nil? || !post_ids_found.include?(post.id)
+        elsif !topic_ids_found.include?(topic_id)
+          return false
+        end
       end
 
       true
     end
 
+    def legal_forum_path?(path)
+      path.match?(%r{\A/t/[^/]+/\d+(?:/\d+)?/?\z})
+    end
+
     def legal_non_post_urls?(res, non_post_urls_found)
       return true if res.blank?
-      non_post_url_regex = ::DiscourseChatbot::NON_POST_URL_REGEX
 
-      urls_in_text = res.scan(non_post_url_regex)
+      normalized_allowed_urls = non_post_urls_found.filter_map { |url| normalize_url(url) }.to_set
+      extract_http_urls(res)
+        .reject { |url| local_forum_url?(url) }
+        .all? { |url| normalized_allowed_urls.include?(normalize_url(url)) }
+    end
 
-      urls_in_text = urls_in_text.reject { |url| url.include?("/t/") }
+    def extract_http_urls(content)
+      content.to_s.scan(%r{\bhttps?://[^\s<]+}).map do |url|
+        url.sub(/[\]\[)},.;:!?"']+\z/, "")
+      end
+    end
 
-      urls_in_text.each { |url| return false if !non_post_urls_found.include?(url) }
-      true
+    def extract_relative_forum_paths(content)
+      content
+        .to_s
+        .scan(%r{(?<![[:alnum:]])(/t/[^\s<]+)})
+        .flatten
+        .map { |path| path.sub(/[\]\[)},.;:!?"']+\z/, "") }
+        .filter_map do |path|
+          URI.parse(path).path
+        rescue URI::Error
+          nil
+        end
+    end
+
+    def normalize_url(url)
+      uri = URI.parse(url)
+      return if !uri.is_a?(URI::HTTP) || uri.host.blank?
+
+      uri.scheme = uri.scheme.downcase
+      uri.host = uri.host.downcase
+      uri.fragment = nil
+      uri.port = nil if uri.default_port == uri.port
+      uri.path = "" if uri.path == "/"
+      uri.path = uri.path.delete_suffix("/") if uri.path.length > 1
+      uri.to_s
+    rescue URI::Error
+      nil
+    end
+
+    def local_forum_url?(url)
+      uri = URI.parse(url)
+      uri.host&.casecmp?(Discourse.current_hostname) && uri.path.start_with?("/t/")
+    rescue URI::Error
+      false
+    end
+
+    def response_urls_valid?(content)
+      return true if !SiteSetting.chatbot_url_integrity_check || !@trusted_url_provenance_collected
+
+      legal_post_urls?(content, @posts_ids_found, @topic_ids_found) &&
+        legal_non_post_urls?(content, @non_post_urls_found)
     end
 
     private

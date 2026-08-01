@@ -142,6 +142,9 @@ plugins:
       - medium
       - high
       - xhigh
+  chatbot_open_ai_include_reasoning_summaries:
+    client: false
+    default: true
   chatbot_open_ai_model_verbosity:
     client: false
     type: enum
@@ -348,6 +351,27 @@ plugins:
   chatbot_max_response_tokens:
     client: false
     default: 200
+    min: 0
+  chatbot_open_ai_max_reasoning_output_tokens:
+    client: false
+    default: 25000
+    min: 0
+  chatbot_open_ai_max_chain_tokens:
+    client: false
+    default: 100000
+    min: 0
+  chatbot_chain_of_thought_max_iterations:
+    client: false
+    default: 8
+    min: 1
+  chatbot_chain_of_thought_max_tool_calls:
+    client: false
+    default: 8
+    min: 1
+  chatbot_chain_of_thought_max_url_repair_attempts:
+    client: false
+    default: 2
+    min: 0
   chatbot_bot_user:
     client: true
     type: username
