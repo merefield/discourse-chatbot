@@ -140,6 +140,8 @@ class ::Jobs::ChatbotReply < Jobs::Base
           bot = ::DiscourseChatbot::OpenAiBotBasic.new(opts)
         end
         reply_and_thoughts = bot.ask(opts)
+      rescue ::DiscourseChatbot::OpenAIBotBase::TokenBudgetError => e
+        Rails.logger.warn("Chatbot: Token budget reached; the reply job will not retry: #{e}")
       rescue => e
         Rails.logger.error("Chatbot: There was a problem, but will retry til limit: #{e}")
         fail e
