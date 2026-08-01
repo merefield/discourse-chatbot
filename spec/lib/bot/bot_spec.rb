@@ -22,7 +22,7 @@ describe ::DiscourseChatbot::Bot do
     expect(event.get_remaining_quota(user.id, remaining_quota_field_name)).to eq(1900)
   end
 
-  it "consumes a query" do
+  it "consumes a query when no token usage is reported" do
     SiteSetting.chatbot_enabled = true
     SiteSetting.chatbot_quota_basis = "queries"
     SiteSetting.chatbot_quota_reach_escalation_groups = "3"
@@ -38,7 +38,7 @@ describe ::DiscourseChatbot::Bot do
     ::DiscourseChatbot::Bot.new.reset_all_quotas
     remaining_quota_field_name = ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD
     expect(event.get_remaining_quota(user.id, remaining_quota_field_name)).to eq(200)
-    described_class.new.consume_quota(user.id, 100)
+    described_class.new.consume_quota(user.id, 0)
     expect(event.get_remaining_quota(user.id, remaining_quota_field_name)).to eq(199)
   end
 

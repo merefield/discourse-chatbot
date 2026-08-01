@@ -21,10 +21,11 @@ module ::DiscourseChatbot
     end
 
     def consume_quota(user_id, token_usage)
-      return if token_usage == 0
+      query_quota = SiteSetting.chatbot_quota_basis == "queries"
+      return if token_usage == 0 && !query_quota
 
-      remaining_quota_field_name = SiteSetting.chatbot_quota_basis == "queries" ? CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD : CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD
-      deduction = SiteSetting.chatbot_quota_basis == "queries" ? 1 : token_usage
+      remaining_quota_field_name = query_quota ? CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD : CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD
+      deduction = query_quota ? 1 : token_usage
 
       current_record = UserCustomField.find_by(user_id: user_id, name: remaining_quota_field_name)
 
