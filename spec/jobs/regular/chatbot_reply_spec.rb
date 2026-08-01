@@ -33,6 +33,24 @@ RSpec.describe Jobs::ChatbotReply do
     )
   end
 
+  it "replies immediately when a chain limit is reached" do
+    post =
+      PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
+    opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
+    opts[:trust_level] = "low"
+
+    ::DiscourseChatbot::OpenAiBotRag
+      .any_instance
+      .stubs(:ask)
+      .raises(::DiscourseChatbot::OpenAIBotBase::ChainLimitError, "iteration limit reached")
+
+    described_class.new.execute(opts)
+
+    expect(pm_topic.posts.order(:post_number).last.raw).to eq(
+      I18n.t("chatbot.errors.chain_limit"),
+    )
+  end
+
   it "retries provider errors" do
     post =
       PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")

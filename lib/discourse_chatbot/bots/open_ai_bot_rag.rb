@@ -406,8 +406,9 @@ module ::DiscourseChatbot
       loop do
         ensure_chain_token_budget!
 
-        raise "Chatbot response exceeded the maximum number of iterations" if iteration >
-          MAX_RESPONSE_ITERATIONS
+        if iteration > MAX_RESPONSE_ITERATIONS
+          raise ChainLimitError, "Chatbot response exceeded the maximum number of iterations"
+        end
 
         ::DiscourseChatbot.progress_debug_message <<~EOS
           # Iteration: #{iteration}
@@ -459,7 +460,7 @@ module ::DiscourseChatbot
               url_validation_retries += 1
               if url_validation_retries > MAX_URL_VALIDATION_RETRIES ||
                    iteration >= MAX_RESPONSE_ITERATIONS
-                raise "Chatbot response repeatedly contained unsupported URLs"
+                raise ChainLimitError, "Chatbot response repeatedly contained unsupported URLs"
               end
 
               append_url_validation_feedback
@@ -468,12 +469,15 @@ module ::DiscourseChatbot
             return res
           end
         elsif finish_reason == "tool_calls" || !tools_calls.nil?
-          raise "Chatbot requested a tool after tools were disabled" if !use_functions
+          if !use_functions
+            raise ChainLimitError, "Chatbot requested a tool after tools were disabled"
+          end
           raise "Chatbot returned a tool finish reason without tool calls" if tools_calls.blank?
 
           tool_call_count += tools_calls.length
-          raise "Chatbot response exceeded the maximum number of tool calls" if tool_call_count >
-            MAX_TOOL_CALLS
+          if tool_call_count > MAX_TOOL_CALLS
+            raise ChainLimitError, "Chatbot response exceeded the maximum number of tool calls"
+          end
 
           ensure_chain_token_budget!
           handle_function_call(res, opts)

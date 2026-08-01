@@ -6,7 +6,13 @@ module ::DiscourseChatbot
     class ResponsesApiError < StandardError
     end
 
-    class TokenBudgetError < StandardError
+    class NonRetryableError < StandardError
+    end
+
+    class TokenBudgetError < NonRetryableError
+    end
+
+    class ChainLimitError < NonRetryableError
     end
 
     attr_reader :client, :model_name, :total_tokens

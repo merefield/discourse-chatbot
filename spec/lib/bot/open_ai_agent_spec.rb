@@ -641,6 +641,28 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(requests.first).to have_key(:tools)
     expect(requests.last).not_to have_key(:tools)
   end
+
+  it "raises a non-retryable error after exhausting response iterations" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    reasoning_only_response = {
+      "status" => "completed",
+      "output" => [{ "type" => "reasoning", "summary" => [] }],
+      "usage" => {
+        "total_tokens" => 1,
+      },
+    }
+    responses_api
+      .expects(:create)
+      .times(described_class::MAX_RESPONSE_ITERATIONS)
+      .returns(*Array.new(described_class::MAX_RESPONSE_ITERATIONS, reasoning_only_response))
+
+    expect do
+      rag.get_response([{ role: "user", content: "Keep reasoning" }], opts)
+    end.to raise_error(
+      ::DiscourseChatbot::OpenAIBotBase::ChainLimitError,
+      "Chatbot response exceeded the maximum number of iterations",
+    )
+  end
 end
 
 describe ::DiscourseChatbot::OpenAiBotRag, "#get_system_message_suffix" do
