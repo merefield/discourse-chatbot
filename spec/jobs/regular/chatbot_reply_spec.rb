@@ -15,7 +15,7 @@ RSpec.describe Jobs::ChatbotReply do
     SiteSetting.chatbot_private_message_auto_title = false
   end
 
-  it "does not retry token budget errors" do
+  it "replies immediately when the token budget is reached" do
     post =
       PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
     opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
@@ -26,7 +26,11 @@ RSpec.describe Jobs::ChatbotReply do
       .stubs(:ask)
       .raises(::DiscourseChatbot::OpenAIBotBase::TokenBudgetError, "budget reached")
 
-    expect { described_class.new.execute(opts) }.not_to raise_error
+    described_class.new.execute(opts)
+
+    expect(pm_topic.posts.order(:post_number).last.raw).to eq(
+      I18n.t("chatbot.errors.token_budget"),
+    )
   end
 
   it "retries provider errors" do
