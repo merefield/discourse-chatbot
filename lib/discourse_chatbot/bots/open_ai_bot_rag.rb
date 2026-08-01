@@ -515,7 +515,12 @@ module ::DiscourseChatbot
     end
 
     def apply_advanced_local_reasoning(res, messages, iteration, max_iterations)
-      case advanced_local_reasoning_strategy
+      strategy = advanced_local_reasoning_strategy
+      return res if strategy == SIMPLE_LOCAL_REASONING
+
+      append_advanced_local_reasoning_outcome("strategy_started", strategy: strategy)
+
+      case strategy
       when VERIFY_AND_REVISE
         verify_and_revise(res, messages, iteration, max_iterations)
       when BEST_OF_TWO
@@ -526,6 +531,10 @@ module ::DiscourseChatbot
         res
       end
     rescue => e
+      append_advanced_local_reasoning_outcome(
+        "strategy_failed",
+        strategy: strategy || "advanced",
+      )
       Rails.logger.warn(
         "Chatbot: Advanced local reasoning failed; returning the initial answer: #{e.class}: #{e.message}",
       )
@@ -533,7 +542,10 @@ module ::DiscourseChatbot
     end
 
     def verify_and_revise(res, messages, iteration, max_iterations)
-      return res if !advanced_calls_available?(iteration, max_iterations, 2)
+      if !advanced_calls_available?(iteration, max_iterations, 2)
+        append_advanced_local_reasoning_outcome("review_skipped_iteration_limit")
+        return res
+      end
 
       answer = response_content(res)
       review_messages =
@@ -552,13 +564,22 @@ module ::DiscourseChatbot
           token_limit: REVIEW_TOKEN_LIMIT,
         )
       review = usable_advanced_response_content(review_res)&.strip
-      return res if review.blank?
+      if review.blank?
+        append_advanced_local_reasoning_outcome("review_unusable")
+        return res
+      end
 
       @inner_thoughts << { type: "advanced_local_reasoning_review", content: review }
-      return res if review.match?(/\APASS\z/i)
+      if review.match?(/\APASS\z/i)
+        append_advanced_local_reasoning_outcome("review_passed")
+        return res
+      end
 
       findings = review[/\AREVISE:\s*(.+)\z/im, 1]&.strip
-      return res if findings.blank?
+      if findings.blank?
+        append_advanced_local_reasoning_outcome("review_unrecognized")
+        return res
+      end
 
       revision_messages =
         messages +
@@ -576,7 +597,16 @@ module ::DiscourseChatbot
       revision_res = create_advanced_local_reasoning_completion(revision_messages, iteration + 2)
       revision = usable_advanced_response_content(revision_res)
 
-      revision.present? && response_urls_valid?(revision) ? revision_res : res
+      if revision.blank?
+        append_advanced_local_reasoning_outcome("revision_unusable")
+        res
+      elsif !response_urls_valid?(revision)
+        append_advanced_local_reasoning_outcome("revision_url_rejected")
+        res
+      else
+        append_advanced_local_reasoning_outcome("revision_adopted")
+        revision_res
+      end
     end
 
     def uncertainty_guided_search(res, messages, iteration, max_iterations)
@@ -593,7 +623,10 @@ module ::DiscourseChatbot
     end
 
     def choose_best_of_two(res, messages, iteration, max_iterations)
-      return res if !advanced_calls_available?(iteration, max_iterations, 2)
+      if !advanced_calls_available?(iteration, max_iterations, 2)
+        append_advanced_local_reasoning_outcome("comparison_skipped_iteration_limit")
+        return res
+      end
 
       alternative_messages =
         messages +
@@ -606,7 +639,13 @@ module ::DiscourseChatbot
       alternative_res =
         create_advanced_local_reasoning_completion(alternative_messages, iteration + 1)
       alternative = usable_advanced_response_content(alternative_res)
-      return res if alternative.blank? || !response_urls_valid?(alternative)
+      if alternative.blank?
+        append_advanced_local_reasoning_outcome("alternative_unusable")
+        return res
+      elsif !response_urls_valid?(alternative)
+        append_advanced_local_reasoning_outcome("alternative_url_rejected")
+        return res
+      end
 
       candidates = JSON.generate(A: response_content(res), B: alternative)
       judge_messages =
@@ -628,7 +667,10 @@ module ::DiscourseChatbot
           token_limit: JUDGE_TOKEN_LIMIT,
         )
       selection = usable_advanced_response_content(judge_res)&.strip&.upcase
-      return res if %w[A B].exclude?(selection)
+      if %w[A B].exclude?(selection)
+        append_advanced_local_reasoning_outcome("judge_unusable")
+        return res
+      end
 
       @inner_thoughts << {
         type: "advanced_local_reasoning_selection",
@@ -639,6 +681,17 @@ module ::DiscourseChatbot
           ),
       }
       selection == "B" ? alternative_res : res
+    end
+
+    def append_advanced_local_reasoning_outcome(key, **options)
+      @inner_thoughts << {
+        type: "advanced_local_reasoning_outcome",
+        content:
+          I18n.t(
+            "chatbot.prompt.system.rag.advanced_local_reasoning.outcomes.#{key}",
+            **options,
+          ),
+      }
     end
 
     def create_advanced_local_reasoning_completion(messages, iteration, token_limit: nil)

@@ -43,6 +43,18 @@ describe ::DiscourseChatbot::OpenAiBotRag do
       { "choices" => [choice], "usage" => { "total_tokens" => total_tokens } }
     end
   end
+  let(:advanced_outcome) do
+    lambda do |key, **options|
+      {
+        type: "advanced_local_reasoning_outcome",
+        content:
+          I18n.t(
+            "chatbot.prompt.system.rag.advanced_local_reasoning.outcomes.#{key}",
+            **options,
+          ),
+      }
+    end
+  end
 
   it "calls function on returning a function request from LLN" do
     DateTime.expects(:current).returns("2023-08-18T10:11:44+00:00")
@@ -710,10 +722,30 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(response[:reply]).to eq("The answer is four.")
     expect(response[:inner_thoughts]).to include(
       { type: "advanced_local_reasoning_review", content: "REVISE: The arithmetic is incorrect." },
+      advanced_outcome.call("strategy_started", strategy: "verify_and_revise"),
+      advanced_outcome.call("revision_adopted"),
     )
     expect(requests.second[:max_completion_tokens]).to eq(96)
     expect(requests.second).not_to have_key(:tools)
     expect(requests.third).not_to have_key(:tools)
+  end
+
+  it "records when a review passes and retains the first answer" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "verify_and_revise"
+    client
+      .expects(:chat)
+      .twice
+      .returns(completion_response.call("Initial answer"), completion_response.call("PASS"))
+
+    response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
+
+    expect(response[:reply]).to eq("Initial answer")
+    expect(response[:inner_thoughts]).to contain_exactly(
+      advanced_outcome.call("strategy_started", strategy: "verify_and_revise"),
+      { type: "advanced_local_reasoning_review", content: "PASS" },
+      advanced_outcome.call("review_passed"),
+    )
   end
 
   it "generates two Chat Completions answers and returns the judge's selection" do
@@ -738,6 +770,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
 
     expect(response[:reply]).to eq("Candidate B")
     expect(response[:inner_thoughts]).to include(
+      advanced_outcome.call("strategy_started", strategy: "best_of_two"),
       {
         type: "advanced_local_reasoning_selection",
         content:
@@ -748,6 +781,46 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(requests.third[:max_completion_tokens]).to eq(8)
     expect(requests.third[:messages].last[:content]).to include(
       JSON.generate(A: "Candidate A", B: "Candidate B"),
+    )
+  end
+
+  it "records when the pairwise judge does not produce a usable selection" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "best_of_two"
+    client
+      .expects(:chat)
+      .times(3)
+      .returns(
+        completion_response.call("Candidate A"),
+        completion_response.call("Candidate B"),
+        completion_response.call("Neither"),
+      )
+
+    response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
+
+    expect(response[:reply]).to eq("Candidate A")
+    expect(response[:inner_thoughts]).to contain_exactly(
+      advanced_outcome.call("strategy_started", strategy: "best_of_two"),
+      advanced_outcome.call("judge_unusable"),
+    )
+  end
+
+  it "records when advanced local reasoning fails and retains the first answer" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "best_of_two"
+    client
+      .expects(:chat)
+      .twice
+      .returns(completion_response.call("Initial answer"))
+      .then
+      .raises(RuntimeError, "provider failed")
+
+    response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
+
+    expect(response[:reply]).to eq("Initial answer")
+    expect(response[:inner_thoughts]).to contain_exactly(
+      advanced_outcome.call("strategy_started", strategy: "best_of_two"),
+      advanced_outcome.call("strategy_failed", strategy: "best_of_two"),
     )
   end
 
@@ -843,6 +916,10 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
 
     expect(response[:reply]).to eq("Initial answer")
+    expect(response[:inner_thoughts]).to contain_exactly(
+      advanced_outcome.call("strategy_started", strategy: "best_of_two"),
+      advanced_outcome.call("comparison_skipped_iteration_limit"),
+    )
   end
 
   it "does not claim an uncertainty comparison when the iteration limit prevents one" do
@@ -863,6 +940,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
 
     expect(response[:reply]).to eq("Initial answer")
     expect(response[:inner_thoughts]).to contain_exactly(
+      advanced_outcome.call("strategy_started", strategy: "uncertainty_guided"),
       {
         type: "advanced_local_reasoning_confidence",
         content:
@@ -875,6 +953,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
               ),
           ),
       },
+      advanced_outcome.call("comparison_skipped_iteration_limit"),
     )
   end
 
@@ -958,6 +1037,19 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(requests.second).to have_key(:tools)
     expect(requests.third).not_to have_key(:tools)
     expect(requests.fourth).not_to have_key(:tools)
+    expect(response[:inner_thoughts]).to include(
+      a_hash_including(
+        role: "assistant",
+        tool_calls: [a_hash_including(id: "call_1", function: a_hash_including(name: "calculate"))],
+      ),
+      { role: "tool", tool_call_id: "call_1", content: "4" },
+      advanced_outcome.call("strategy_started", strategy: "best_of_two"),
+      {
+        type: "advanced_local_reasoning_selection",
+        content:
+          I18n.t("chatbot.prompt.system.rag.advanced_local_reasoning.selection", candidate: "B"),
+      },
+    )
   end
 
   it "returns partial Chat Completions text after reaching the completion budget" do

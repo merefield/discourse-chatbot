@@ -188,7 +188,7 @@ These strategies have several safeguards:
 * Usable partial responses produced at the configured completion length limit are returned without additional reasoning.
 * If optional reasoning fails, exceeds its available budget, produces malformed control output, or proposes an invalid answer, the already-valid first answer is returned.
 
-The review and judge produce compact summaries for the bot's inner-thoughts trace. They do not request or expose a model's hidden chain-of-thought.
+The staff-visible inner-thoughts trace records the selected advanced strategy, compact review, confidence, and selection information, and the final outcome, including safe fallbacks. It does not request or expose a model's hidden chain-of-thought.
 
 ### References
 
