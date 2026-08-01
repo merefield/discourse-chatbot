@@ -166,6 +166,38 @@ RAG mode is superior but will make more calls to the API, potentially increasing
 
 For Chatbot to work in Chat you must have Chat enabled.
 
+## Local chain-of-thought strategies
+
+RAG requests made through the Chat Completions API can use additional inference-time computation to review or compare an answer before returning it. Configure this with `chatbot_advanced_local_reasoning`:
+
+| Strategy | Behaviour | Additional model calls after the first answer |
+| --- | --- | --- |
+| `simple` | Uses the existing tool and answer loop without extra local reasoning. This is the default. | None |
+| `verify_and_revise` | Asks for a compact review. A corrected answer is generated only when the review identifies a material defect. | One review, plus one conditional revision |
+| `best_of_two` | Generates an independent second answer and asks a compact pairwise judge to select the stronger candidate. | One alternative and one judge |
+| `uncertainty_guided` | Uses generated-token probabilities to accept a confident first answer immediately. A low-confidence answer is escalated to `best_of_two`. | None when confident; otherwise one alternative and one judge |
+
+For `uncertainty_guided`, `chatbot_advanced_local_reasoning_min_confidence` sets the acceptance threshold from 0 to 100. Confidence is the geometric mean probability of the generated tokens. If an OpenAI-compatible provider does not return log probabilities, the strategy falls back to comparing two answers. If the provider rejects the `logprobs` parameter, the request is retried without it before falling back.
+
+These strategies have several safeguards:
+
+* They apply only to Chat Completions. Reasoning models using the Responses API retain their native reasoning flow.
+* Tools run only on the shared initial path. They are disabled for alternative, review, revision, and judge calls, preventing repeated side effects.
+* Additional calls count towards `chatbot_chain_of_thought_max_iterations` and `chatbot_open_ai_max_chain_tokens`.
+* Revised and alternative answers are checked against any trusted URL provenance collected from tools.
+* Usable partial responses produced at the configured completion length limit are returned without additional reasoning.
+* If optional reasoning fails, exceeds its available budget, produces malformed control output, or proposes an invalid answer, the already-valid first answer is returned.
+
+The review and judge produce compact summaries for the bot's inner-thoughts trace. They do not request or expose a model's hidden chain-of-thought.
+
+### References
+
+* [Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters](https://arxiv.org/abs/2408.03314) motivates adaptive allocation of inference-time compute and compares search strategies with best-of-N sampling.
+* [Self-Refine: Iterative Refinement with Self-Feedback](https://arxiv.org/abs/2303.17651) describes the generate, self-review, and revise pattern behind `verify_and_revise`.
+* [Self-Consistency Improves Chain of Thought Reasoning in Language Models](https://arxiv.org/abs/2203.11171) establishes the value of sampling multiple reasoning paths rather than relying on one greedy answer.
+* [Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena](https://arxiv.org/abs/2306.05685) studies model-based pairwise evaluation and its biases, informing the compact judge used by `best_of_two`.
+* [Semantic Uncertainty: Linguistic Invariances for Uncertainty Estimation in Natural Language Generation](https://arxiv.org/abs/2302.09664) motivates uncertainty-aware escalation. The plugin uses a cheaper token-probability signal rather than semantic entropy.
+
 ## Bot's speed of response
 
 This is governed mostly by a setting: `‎chatbot_reply_job_time_delay‎` over which you have discretion.
