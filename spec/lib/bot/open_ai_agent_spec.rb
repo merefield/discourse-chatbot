@@ -32,7 +32,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     "the value is 90 and I found that informaiton in [this topic](https://discourse.example.com/t/slug/112)"
   end
   let(:res_2) do
-    "the value is 99 and I found that informaiton in [this post](https://discourse.example.com/t/slug/112/2)"
+    "the value is 99 and I found that informaiton in [this post](https://#{Discourse.current_hostname}/t/slug/112/2)"
   end
 
   it "calls function on returning a function request from LLN" do
@@ -91,6 +91,24 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(
       described_class.new({}).legal_post_urls?("hello /t/slug/113/2", [post_1.id], [topic_1.id]),
     ).to eq(false)
+  end
+
+  it "rejects forum URLs on another host" do
+    response = "See https://evil.example/t/slug/#{topic_1.id}"
+
+    expect(described_class.new({}).legal_post_urls?(response, [], [topic_1.id])).to eq(false)
+  end
+
+  it "rejects malformed forum paths with an allowed topic id" do
+    response = "See https://#{Discourse.current_hostname}/t/slug/#{topic_1.id}/unexpected/path"
+
+    expect(described_class.new({}).legal_post_urls?(response, [], [topic_1.id])).to eq(false)
+  end
+
+  it "accepts a relative forum URL with an allowed topic id" do
+    response = "See /t/slug/#{topic_1.id}"
+
+    expect(described_class.new({}).legal_post_urls?(response, [], [topic_1.id])).to eq(true)
   end
 
   it "correctly identifies an illegal non-post url in a response" do

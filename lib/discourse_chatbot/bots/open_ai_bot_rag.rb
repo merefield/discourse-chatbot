@@ -615,6 +615,29 @@ module ::DiscourseChatbot
       post_url_regex = ::DiscourseChatbot::POST_URL_REGEX
       topic_url_regex = ::DiscourseChatbot::TOPIC_URL_REGEX
 
+      absolute_forum_urls =
+        res.scan(::DiscourseChatbot::NON_POST_URL_REGEX).select do |url|
+          URI.parse(url).path.include?("/t/")
+        rescue URI::InvalidURIError
+          true
+        end
+
+      absolute_forum_urls.each do |url|
+        uri = URI.parse(url)
+        return false if uri.host&.casecmp?(Discourse.current_hostname) != true
+        return false if !legal_forum_path?(uri.path)
+      rescue URI::InvalidURIError
+        return false
+      end
+
+      relative_forum_paths = res.scan(%r{(?<![[:alnum:]])(/t/[^\s)]+)}).flatten
+      relative_forum_paths.each do |path|
+        uri = URI.parse(path)
+        return false if !legal_forum_path?(uri.path)
+      rescue URI::InvalidURIError
+        return false
+      end
+
       topic_ids_in_text = res.scan(topic_url_regex).flatten
       post_combos_in_text = res.scan(post_url_regex)
 
@@ -633,6 +656,10 @@ module ::DiscourseChatbot
       end
 
       true
+    end
+
+    def legal_forum_path?(path)
+      path.match?(%r{\A/t/[^/]+/\d+(?:/\d+)?/?\z})
     end
 
     def legal_non_post_urls?(res, non_post_urls_found)
