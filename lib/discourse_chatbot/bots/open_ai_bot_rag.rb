@@ -588,7 +588,7 @@ module ::DiscourseChatbot
         return res
       end
 
-      append_confidence_trace(confidence, "confidence_escalated")
+      append_confidence_trace(confidence, "confidence_not_accepted")
       choose_best_of_two(res, messages, iteration, max_iterations)
     end
 

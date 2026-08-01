@@ -135,7 +135,7 @@ en:
             confidence: "Estimated first-answer confidence: %{confidence}. %{decision}"
             confidence_unavailable: "unavailable"
             confidence_accepted: "Accepted the first answer."
-            confidence_escalated: "Compared it with an alternative answer."
+            confidence_not_accepted: "Confidence did not qualify the first answer for immediate acceptance."
       title: "The subject of this conversation is %{topic_title}"
       first_post: "The first thing someone said was %{username} who said %{raw}"
       post: "%{username} said %{raw}"

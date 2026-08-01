@@ -845,6 +845,39 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(response[:reply]).to eq("Initial answer")
   end
 
+  it "does not claim an uncertainty comparison when the iteration limit prevents one" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "uncertainty_guided"
+    SiteSetting.chatbot_chain_of_thought_max_iterations = 2
+    client
+      .expects(:chat)
+      .once
+      .returns(
+        completion_response.call(
+          "Initial answer",
+          logprobs: [{ "token" => "Initial", "logprob" => -2.0 }],
+        ),
+      )
+
+    response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
+
+    expect(response[:reply]).to eq("Initial answer")
+    expect(response[:inner_thoughts]).to contain_exactly(
+      {
+        type: "advanced_local_reasoning_confidence",
+        content:
+          I18n.t(
+            "chatbot.prompt.system.rag.advanced_local_reasoning.confidence",
+            confidence: "13.5%",
+            decision:
+              I18n.t(
+                "chatbot.prompt.system.rag.advanced_local_reasoning.confidence_not_accepted",
+              ),
+          ),
+      },
+    )
+  end
+
   it "does not apply advanced local reasoning to the Responses API" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_advanced_local_reasoning = "best_of_two"
