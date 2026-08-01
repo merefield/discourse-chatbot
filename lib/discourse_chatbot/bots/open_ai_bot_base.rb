@@ -9,7 +9,7 @@ module ::DiscourseChatbot
     class TokenBudgetError < StandardError
     end
 
-    attr_reader :client, :model_name
+    attr_reader :client, :model_name, :total_tokens
 
     def initialize(opts)
       ::OpenAI.configure do |config|

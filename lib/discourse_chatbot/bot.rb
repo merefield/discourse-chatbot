@@ -8,13 +8,16 @@ module ::DiscourseChatbot
     end
 
     def ask(opts)
-      user_id = opts[:user_id]
-      content = opts[:type] == POST ? PostPromptUtils.create_prompt(opts) : MessagePromptUtils.create_prompt(opts)
+      content =
+        opts[:type] == POST ? PostPromptUtils.create_prompt(opts) : MessagePromptUtils.create_prompt(opts)
 
-      response = get_response(content, opts)
+      get_response(content, opts)
+    ensure
+      consume_quota(opts[:user_id], total_tokens)
+    end
 
-      consume_quota(opts[:user_id], response[:total_tokens])
-      response
+    def total_tokens
+      0
     end
 
     def consume_quota(user_id, token_usage)

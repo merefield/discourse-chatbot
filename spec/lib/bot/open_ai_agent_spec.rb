@@ -370,6 +370,28 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(response[:reply]).to eq("Partial answer")
   end
 
+  it "records token usage before validating a responses api response" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    responses_api.expects(:create).returns(
+      {
+        "status" => "incomplete",
+        "incomplete_details" => {
+          "reason" => "max_output_tokens",
+        },
+        "output" => [],
+        "usage" => {
+          "total_tokens" => 10,
+        },
+      },
+    )
+
+    expect do
+      rag.get_response([{ role: "user", content: "Think this through" }], opts)
+    end.to raise_error(::DiscourseChatbot::OpenAIBotBase::TokenBudgetError)
+
+    expect(rag.total_tokens).to eq(10)
+  end
+
   it "stops a reasoning continuation after reaching the aggregate chain budget" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_open_ai_max_chain_tokens = 5

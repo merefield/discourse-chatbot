@@ -338,8 +338,9 @@ module ::DiscourseChatbot
           end
 
           raw_response = @client.responses.create(parameters: parameters)
-          res = normalize_responses_response(raw_response)
           token_usage = raw_response.dig("usage", "total_tokens")
+          @total_tokens += token_usage.to_i
+          res = normalize_responses_response(raw_response)
         else
           parameters = {
             model: @model_name,
@@ -371,9 +372,8 @@ module ::DiscourseChatbot
 
           res = @client.chat(parameters: parameters)
           token_usage = res.dig("usage", "total_tokens")
+          @total_tokens += token_usage.to_i
         end
-
-        @total_tokens += token_usage.to_i
 
         ::DiscourseChatbot.progress_debug_message <<~EOS
           +++++++++++++++++++++++++++++++++++++++
