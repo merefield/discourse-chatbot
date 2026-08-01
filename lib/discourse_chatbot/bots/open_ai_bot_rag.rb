@@ -593,8 +593,8 @@ module ::DiscourseChatbot
 
     def collect_trusted_url_provenance(tool_result)
       content = tool_result[:content].to_s
-      absolute_urls = content.scan(::DiscourseChatbot::NON_POST_URL_REGEX)
-      relative_forum_paths = content.scan(%r{(?<![[:alnum:]])(/t/[^\s)]+)}).flatten
+      absolute_urls = extract_http_urls(content)
+      relative_forum_paths = extract_relative_forum_paths(content)
 
       post_ids_found = tool_result[:post_ids_found]
       topic_ids_found = tool_result[:topic_ids_found]
@@ -605,16 +605,17 @@ module ::DiscourseChatbot
         if uri.host&.casecmp?(Discourse.current_hostname) && legal_forum_path?(uri.path)
           collect_forum_path_provenance(uri.path, post_ids_found, topic_ids_found)
         else
-          non_post_urls_found << url
+          normalized_url = normalize_url(url)
+          non_post_urls_found << normalized_url if normalized_url
         end
-      rescue URI::InvalidURIError
+      rescue URI::Error
         next
       end
 
       relative_forum_paths.each do |path|
         uri = URI.parse(path)
         collect_forum_path_provenance(uri.path, post_ids_found, topic_ids_found) if legal_forum_path?(uri.path)
-      rescue URI::InvalidURIError
+      rescue URI::Error
         next
       end
 
@@ -622,7 +623,9 @@ module ::DiscourseChatbot
         tool_result[:provenance_declared] || absolute_urls.present? || relative_forum_paths.present?
       @posts_ids_found = (@posts_ids_found.to_set | post_ids_found.to_set).to_a
       @topic_ids_found = (@topic_ids_found.to_set | topic_ids_found.to_set).to_a
-      @non_post_urls_found = (@non_post_urls_found.to_set | non_post_urls_found.to_set).to_a
+      normalized_non_post_urls = non_post_urls_found.filter_map { |url| normalize_url(url) }
+      @non_post_urls_found =
+        (@non_post_urls_found.to_set | normalized_non_post_urls.to_set).to_a
     end
 
     def collect_forum_path_provenance(path, post_ids_found, topic_ids_found)
@@ -676,47 +679,28 @@ module ::DiscourseChatbot
     def legal_post_urls?(res, post_ids_found, topic_ids_found)
       return true if res.blank?
 
-      post_url_regex = ::DiscourseChatbot::POST_URL_REGEX
-      topic_url_regex = ::DiscourseChatbot::TOPIC_URL_REGEX
-
       absolute_forum_urls =
-        res.scan(::DiscourseChatbot::NON_POST_URL_REGEX).select do |url|
-          URI.parse(url).path.include?("/t/")
-        rescue URI::InvalidURIError
-          true
+        extract_http_urls(res).select do |url|
+          uri = URI.parse(url)
+          uri.host&.casecmp?(Discourse.current_hostname) && uri.path.include?("/t/")
+        rescue URI::Error
+          false
         end
 
-      absolute_forum_urls.each do |url|
-        uri = URI.parse(url)
-        return false if uri.host&.casecmp?(Discourse.current_hostname) != true
-        return false if !legal_forum_path?(uri.path)
-      rescue URI::InvalidURIError
-        return false
-      end
+      forum_paths =
+        absolute_forum_urls.map { |url| URI.parse(url).path } + extract_relative_forum_paths(res)
+      forum_paths.each do |path|
+        match = path.match(%r{\A/t/[^/]+/(\d+)(?:/(\d+))?/?\z})
+        return false if !match
 
-      relative_forum_paths = res.scan(%r{(?<![[:alnum:]])(/t/[^\s)]+)}).flatten
-      relative_forum_paths.each do |path|
-        uri = URI.parse(path)
-        return false if !legal_forum_path?(uri.path)
-      rescue URI::InvalidURIError
-        return false
-      end
-
-      topic_ids_in_text = res.scan(topic_url_regex).flatten
-      post_combos_in_text = res.scan(post_url_regex)
-
-      topic_ids_in_text.each do |topic_id_in_text|
-        return false if !topic_ids_found.include?(topic_id_in_text.to_i)
-      end
-
-      post_combos_in_text.each do |post_combo|
-        topic_id_in_text = post_combo[0]
-        post_number_in_text = post_combo[1]
-
-        post =
-          ::Post.find_by(topic_id: topic_id_in_text.to_i, post_number: post_number_in_text.to_i)
-
-        return false if post.nil? || !post_ids_found.include?(post.id)
+        topic_id = match[1].to_i
+        post_number = match[2]
+        if post_number
+          post = ::Post.find_by(topic_id: topic_id, post_number: post_number.to_i)
+          return false if post.nil? || !post_ids_found.include?(post.id)
+        elsif !topic_ids_found.include?(topic_id)
+          return false
+        end
       end
 
       true
@@ -728,14 +712,52 @@ module ::DiscourseChatbot
 
     def legal_non_post_urls?(res, non_post_urls_found)
       return true if res.blank?
-      non_post_url_regex = ::DiscourseChatbot::NON_POST_URL_REGEX
 
-      urls_in_text = res.scan(non_post_url_regex)
+      normalized_allowed_urls = non_post_urls_found.filter_map { |url| normalize_url(url) }.to_set
+      extract_http_urls(res)
+        .reject { |url| local_forum_url?(url) }
+        .all? { |url| normalized_allowed_urls.include?(normalize_url(url)) }
+    end
 
-      urls_in_text = urls_in_text.reject { |url| url.include?("/t/") }
+    def extract_http_urls(content)
+      content.to_s.scan(%r{\bhttps?://[^\s<]+}).map do |url|
+        url.sub(/[\]\[)},.;:!?"']+\z/, "")
+      end
+    end
 
-      urls_in_text.each { |url| return false if !non_post_urls_found.include?(url) }
-      true
+    def extract_relative_forum_paths(content)
+      content
+        .to_s
+        .scan(%r{(?<![[:alnum:]])(/t/[^\s<]+)})
+        .flatten
+        .map { |path| path.sub(/[\]\[)},.;:!?"']+\z/, "") }
+        .filter_map do |path|
+          URI.parse(path).path
+        rescue URI::Error
+          nil
+        end
+    end
+
+    def normalize_url(url)
+      uri = URI.parse(url)
+      return if !uri.is_a?(URI::HTTP) || uri.host.blank?
+
+      uri.scheme = uri.scheme.downcase
+      uri.host = uri.host.downcase
+      uri.fragment = nil
+      uri.port = nil if uri.default_port == uri.port
+      uri.path = "" if uri.path == "/"
+      uri.path = uri.path.delete_suffix("/") if uri.path.length > 1
+      uri.to_s
+    rescue URI::Error
+      nil
+    end
+
+    def local_forum_url?(url)
+      uri = URI.parse(url)
+      uri.host&.casecmp?(Discourse.current_hostname) && uri.path.start_with?("/t/")
+    rescue URI::Error
+      false
     end
 
     def response_urls_valid?(content)

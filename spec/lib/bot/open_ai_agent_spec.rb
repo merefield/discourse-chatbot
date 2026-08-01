@@ -29,7 +29,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   end
   let(:post_ids_found_2) { [post_1.id] }
   let(:res) do
-    "the value is 90 and I found that informaiton in [this topic](https://discourse.example.com/t/slug/112)"
+    "the value is 90 and I found that informaiton in [this topic](https://#{Discourse.current_hostname}/t/slug/112)"
   end
   let(:res_2) do
     "the value is 99 and I found that informaiton in [this post](https://#{Discourse.current_hostname}/t/slug/112/2)"
@@ -145,10 +145,11 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     ).to eq(false)
   end
 
-  it "rejects forum URLs on another host" do
+  it "does not trust forum ids on another host" do
     response = "See https://evil.example/t/slug/#{topic_1.id}"
 
-    expect(described_class.new({}).legal_post_urls?(response, [], [topic_1.id])).to eq(false)
+    expect(described_class.new({}).legal_post_urls?(response, [], [topic_1.id])).to eq(true)
+    expect(described_class.new({}).legal_non_post_urls?(response, [])).to eq(false)
   end
 
   it "rejects malformed forum paths with an allowed topic id" do
@@ -175,10 +176,38 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   it "correctly identifies a legal non-post url in a response" do
     expect(
       described_class.new({}).legal_non_post_urls?(
-        "hello https://someplace.com/t/slug/113/2 try looking at https://example.com it's great",
+        "hello https://#{Discourse.current_hostname}/t/slug/113/2 try looking at https://example.com it's great",
         %w[https://example.com https://otherexample.com],
       ),
     ).to eq(true)
+  end
+
+  it "normalizes trusted non-post URLs before comparing them" do
+    response = "See [the documentation](https://EXAMPLE.com/docs/#install)."
+
+    expect(described_class.new({}).legal_non_post_urls?(response, ["https://example.com/docs"])).to eq(
+      true,
+    )
+  end
+
+  it "requires query strings to match trusted non-post URLs" do
+    response = "See https://example.com/docs?section=other"
+
+    expect(
+      described_class.new({}).legal_non_post_urls?(
+        response,
+        ["https://example.com/docs?section=install"],
+      ),
+    ).to eq(false)
+  end
+
+  it "allows a trusted external URL that resembles a Discourse topic" do
+    response = "See https://meta.example.com/t/slug/123"
+
+    expect(described_class.new({}).legal_post_urls?(response, [], [])).to eq(true)
+    expect(described_class.new({}).legal_non_post_urls?(response, [response.delete_prefix("See ")])).to eq(
+      true,
+    )
   end
 
   it "uses the responses api for reasoning models" do
