@@ -427,6 +427,12 @@ module ::DiscourseChatbot
         finish_reason = res["choices"][0]["finish_reason"]
         tools_calls = res["choices"][0]["message"]["tool_calls"]
 
+        if reasoning_model? && finish_reason.nil? && tools_calls.nil? &&
+             res["response_output"].present?
+          iteration += 1
+          next
+        end
+
         if finish_reason == "stop" && tools_calls.nil?
           if iteration > 1 && SiteSetting.chatbot_url_integrity_check
             if legal_post_urls?(

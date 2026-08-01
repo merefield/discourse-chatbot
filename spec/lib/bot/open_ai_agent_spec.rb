@@ -286,6 +286,63 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(JSON.generate(response[:inner_thoughts])).not_to include(encrypted_content)
   end
 
+  it "continues after a reasoning-only response and includes its summary in inner thoughts" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    reasoning_item = {
+      "id" => "rs_1",
+      "type" => "reasoning",
+      "summary" => [
+        {
+          "type" => "summary_text",
+          "text" => "I need another step before answering.",
+        },
+      ],
+    }
+    requests = []
+
+    responses_api
+      .expects(:create)
+      .twice
+      .with do |args|
+        requests << args[:parameters]
+        true
+      end
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [reasoning_item],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "message",
+              "content" => [{ "type" => "output_text", "text" => "Final answer" }],
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+      )
+
+    response = rag.get_response([{ role: "user", content: "Think this through" }], opts)
+
+    expect(response[:reply]).to eq("Final answer")
+    expect(response[:inner_thoughts]).to eq(
+      [
+        {
+          type: "reasoning_summary",
+          content: "I need another step before answering.",
+        },
+      ],
+    )
+    expect(requests.second[:input].last).to eq(reasoning_item.deep_symbolize_keys)
+  end
+
   it "can omit reasoning summaries for compatible responses endpoints" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_open_ai_include_reasoning_summaries = false
