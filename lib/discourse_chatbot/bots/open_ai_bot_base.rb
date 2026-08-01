@@ -182,7 +182,8 @@ module ::DiscourseChatbot
 
     def normalize_responses_response(response)
       output_items = Array(response["output"])
-      message_text = responses_text(response)
+      validate_responses_response!(response)
+      message_text = extract_responses_text(response)
       message_returned = output_items.any? { |item| item["type"] == "message" }
 
       tool_calls =

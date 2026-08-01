@@ -16,21 +16,27 @@ RSpec.describe Jobs::ChatbotReply do
   end
 
   it "replies immediately when the token budget is reached" do
+    SiteSetting.chatbot_include_inner_thoughts_in_private_messages = true
     post =
       PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
     opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
     opts[:trust_level] = "low"
+    summary_text = "I used the available budget to investigate the question."
 
     ::DiscourseChatbot::OpenAiBotRag
       .any_instance
       .stubs(:ask)
       .raises(::DiscourseChatbot::OpenAIBotBase::TokenBudgetError, "budget reached")
+    ::DiscourseChatbot::OpenAiBotRag
+      .any_instance
+      .stubs(:inner_thoughts)
+      .returns([{ type: "reasoning_summary", content: summary_text }])
 
     described_class.new.execute(opts)
 
-    expect(pm_topic.posts.order(:post_number).last.raw).to eq(
-      I18n.t("chatbot.errors.token_budget"),
-    )
+    replies = pm_topic.posts.order(:post_number).last(2)
+    expect(replies.first.raw).to include(summary_text)
+    expect(replies.last.raw).to eq(I18n.t("chatbot.errors.token_budget"))
   end
 
   it "replies immediately when a chain limit is reached" do

@@ -36,6 +36,8 @@ module ::DiscourseChatbot
     MAX_TOOL_CALLS = 8
     MAX_URL_VALIDATION_RETRIES = 2
 
+    attr_reader :inner_thoughts
+
     def initialize(opts, tools = true)
       super(opts)
       merge_functions(opts) if tools

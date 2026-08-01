@@ -392,6 +392,34 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(rag.total_tokens).to eq(10)
   end
 
+  it "preserves reasoning summaries when a responses api response exhausts its output budget" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    summary_text = "I used the available budget to investigate the question."
+    responses_api.expects(:create).returns(
+      {
+        "status" => "incomplete",
+        "incomplete_details" => {
+          "reason" => "max_output_tokens",
+        },
+        "output" => [
+          {
+            "type" => "reasoning",
+            "summary" => [{ "type" => "summary_text", "text" => summary_text }],
+          },
+        ],
+        "usage" => {
+          "total_tokens" => 25_000,
+        },
+      },
+    )
+
+    expect do
+      rag.get_response([{ role: "user", content: "Think this through" }], opts)
+    end.to raise_error(::DiscourseChatbot::OpenAIBotBase::TokenBudgetError)
+
+    expect(rag.inner_thoughts).to eq([{ type: "reasoning_summary", content: summary_text }])
+  end
+
   it "stops a reasoning continuation after reaching the aggregate chain budget" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_open_ai_max_chain_tokens = 5
