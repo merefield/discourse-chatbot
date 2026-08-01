@@ -537,6 +537,26 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(requests.second[:input].last).to eq(reasoning_item.deep_symbolize_keys)
   end
 
+  it "rejects a completed responses api message without visible content" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    responses_api.expects(:create).returns(
+      {
+        "status" => "completed",
+        "output" => [{ "type" => "message", "content" => [] }],
+        "usage" => {
+          "total_tokens" => 2,
+        },
+      },
+    )
+
+    expect do
+      rag.get_response([{ role: "user", content: "Answer me" }], opts)
+    end.to raise_error(
+      ::DiscourseChatbot::OpenAIBotBase::ResponsesApiError,
+      "OpenAI Responses API completed without visible message content",
+    )
+  end
+
   it "returns visible text when a responses api response reaches its output budget" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
 

@@ -200,6 +200,10 @@ module ::DiscourseChatbot
             }
           end
 
+      if tool_calls.blank? && (message_returned || output_items.blank?)
+        validate_visible_responses_message!(response, message_text)
+      end
+
       finish_reason = if response["status"] == "incomplete"
         "length"
       elsif tool_calls.present?
@@ -226,6 +230,7 @@ module ::DiscourseChatbot
     def responses_text(response)
       validate_responses_response!(response)
       text = extract_responses_text(response)
+      validate_visible_responses_message!(response, text)
 
       if response["status"] == "incomplete" && text.blank?
         raise TokenBudgetError,
@@ -237,6 +242,12 @@ module ::DiscourseChatbot
       end
 
       text
+    end
+
+    def validate_visible_responses_message!(response, text)
+      return if response["status"] == "incomplete" || text.present?
+
+      raise ResponsesApiError, "OpenAI Responses API completed without visible message content"
     end
 
     def extract_responses_text(response)

@@ -70,6 +70,25 @@ describe ::DiscourseChatbot::OpenAiBotBasic do
     expect(response[:reply]).to eq("I cannot help with that.")
   end
 
+  it "rejects a completed responses api response without a message" do
+    responses_api.expects(:create).returns(
+      {
+        "status" => "completed",
+        "output" => [],
+        "usage" => {
+          "total_tokens" => 3,
+        },
+      },
+    )
+
+    expect do
+      described_class.new(opts).get_response([{ role: "user", content: "Hi" }], opts)
+    end.to raise_error(
+      ::DiscourseChatbot::OpenAIBotBase::ResponsesApiError,
+      "OpenAI Responses API completed without visible message content",
+    )
+  end
+
   it "raises when the responses api exhausts its budget without visible output" do
     responses_api.expects(:create).returns(
       {
