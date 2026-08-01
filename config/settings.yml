@@ -352,6 +352,27 @@ plugins:
     client: false
     default: 200
     min: 0
+  chatbot_advanced_local_reasoning:
+    client: false
+    type: enum
+    default: simple
+    choices:
+      - simple
+      - verify_and_revise
+      - best_of_two
+      - uncertainty_guided
+  chatbot_advanced_local_reasoning_min_confidence:
+    client: false
+    default: 50
+    min: 0
+    max: 100
+    depends_on:
+      - chatbot_advanced_local_reasoning
+    depends_on_values:
+      chatbot_advanced_local_reasoning:
+        - uncertainty_guided
+    depends_behavior: hidden
+    dependent_setting_display: inline
   chatbot_open_ai_max_reasoning_output_tokens:
     client: false
     default: 25000

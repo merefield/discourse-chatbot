@@ -32,6 +32,12 @@ module ::DiscourseChatbot
     NOT_FORCED = "not_forced"
     FORCE_A_FUNCTION = "force_a_function"
     FORCE_LOCAL_SEARCH_FUNCTION = "force_local_forum_search"
+    SIMPLE_LOCAL_REASONING = "simple"
+    VERIFY_AND_REVISE = "verify_and_revise"
+    BEST_OF_TWO = "best_of_two"
+    UNCERTAINTY_GUIDED = "uncertainty_guided"
+    REVIEW_TOKEN_LIMIT = 96
+    JUDGE_TOKEN_LIMIT = 8
 
     attr_reader :inner_thoughts
 
@@ -310,7 +316,13 @@ module ::DiscourseChatbot
       functions.index_by(&:name)
     end
 
-    def create_chat_completion(messages, use_functions = true, iteration)
+    def create_chat_completion(
+      messages,
+      use_functions = true,
+      iteration,
+      parameter_overrides: {},
+      include_logprobs: nil
+    )
       begin
         ::DiscourseChatbot.progress_debug_message <<~EOS
           I called the LLM to help me
@@ -351,6 +363,9 @@ module ::DiscourseChatbot
             presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
           }
           parameters.merge!(completion_token_limit_parameters)
+          include_logprobs = uncertainty_guided_reasoning? if include_logprobs.nil?
+          parameters[:logprobs] = true if include_logprobs && @logprobs_supported != false
+          parameters.merge!(parameter_overrides)
 
           if use_functions && @tools
             parameters.merge!(tools: @tools)
@@ -370,7 +385,18 @@ module ::DiscourseChatbot
             end
           end
 
-          res = @client.chat(parameters: parameters)
+          begin
+            res = @client.chat(parameters: parameters)
+          rescue => e
+            raise if !parameters[:logprobs] || !unsupported_logprobs_parameter?(e)
+
+            @logprobs_supported = false
+            parameters.delete(:logprobs)
+            Rails.logger.warn(
+              "Chatbot: Chat Completions provider rejected logprobs; continuing without confidence data",
+            )
+            res = @client.chat(parameters: parameters)
+          end
           token_usage = res.dig("usage", "total_tokens")
           @total_tokens += token_usage.to_i
         end
@@ -449,9 +475,12 @@ module ::DiscourseChatbot
         if %w[stop length].include?(finish_reason) && tools_calls.nil?
           if response_urls_valid?(content)
             if finish_reason == "length"
-              Rails.logger.warn("Chatbot: Returning a partial response after reaching its token limit")
+              Rails.logger.warn(
+                "Chatbot: Returning a partial response after reaching its token limit",
+              )
+              return res
             end
-            return res
+            return apply_advanced_local_reasoning(res, messages, iteration, max_iterations)
           end
 
           url_validation_retries += 1
@@ -483,6 +512,226 @@ module ::DiscourseChatbot
 
         iteration += 1
       end
+    end
+
+    def apply_advanced_local_reasoning(res, messages, iteration, max_iterations)
+      case advanced_local_reasoning_strategy
+      when VERIFY_AND_REVISE
+        verify_and_revise(res, messages, iteration, max_iterations)
+      when BEST_OF_TWO
+        choose_best_of_two(res, messages, iteration, max_iterations)
+      when UNCERTAINTY_GUIDED
+        uncertainty_guided_search(res, messages, iteration, max_iterations)
+      else
+        res
+      end
+    rescue => e
+      Rails.logger.warn(
+        "Chatbot: Advanced local reasoning failed; returning the initial answer: #{e.class}: #{e.message}",
+      )
+      res
+    end
+
+    def verify_and_revise(res, messages, iteration, max_iterations)
+      return res if !advanced_calls_available?(iteration, max_iterations, 2)
+
+      answer = response_content(res)
+      review_messages =
+        messages +
+          [
+            { role: "assistant", content: answer },
+            {
+              role: "developer",
+              content: I18n.t("chatbot.prompt.system.rag.advanced_local_reasoning.review"),
+            },
+          ]
+      review_res =
+        create_advanced_local_reasoning_completion(
+          review_messages,
+          iteration + 1,
+          token_limit: REVIEW_TOKEN_LIMIT,
+        )
+      review = usable_advanced_response_content(review_res)&.strip
+      return res if review.blank?
+
+      @inner_thoughts << { type: "advanced_local_reasoning_review", content: review }
+      return res if review.match?(/\APASS\z/i)
+
+      findings = review[/\AREVISE:\s*(.+)\z/im, 1]&.strip
+      return res if findings.blank?
+
+      revision_messages =
+        messages +
+          [
+            { role: "assistant", content: answer },
+            {
+              role: "developer",
+              content:
+                I18n.t(
+                  "chatbot.prompt.system.rag.advanced_local_reasoning.revise",
+                  findings: JSON.generate(findings),
+                ),
+            },
+          ]
+      revision_res = create_advanced_local_reasoning_completion(revision_messages, iteration + 2)
+      revision = usable_advanced_response_content(revision_res)
+
+      revision.present? && response_urls_valid?(revision) ? revision_res : res
+    end
+
+    def uncertainty_guided_search(res, messages, iteration, max_iterations)
+      confidence = response_confidence(res)
+      threshold = SiteSetting.chatbot_advanced_local_reasoning_min_confidence
+
+      if confidence && confidence >= threshold
+        append_confidence_trace(confidence, "confidence_accepted")
+        return res
+      end
+
+      append_confidence_trace(confidence, "confidence_escalated")
+      choose_best_of_two(res, messages, iteration, max_iterations)
+    end
+
+    def choose_best_of_two(res, messages, iteration, max_iterations)
+      return res if !advanced_calls_available?(iteration, max_iterations, 2)
+
+      alternative_messages =
+        messages +
+          [
+            {
+              role: "developer",
+              content: I18n.t("chatbot.prompt.system.rag.advanced_local_reasoning.alternative"),
+            },
+          ]
+      alternative_res =
+        create_advanced_local_reasoning_completion(alternative_messages, iteration + 1)
+      alternative = usable_advanced_response_content(alternative_res)
+      return res if alternative.blank? || !response_urls_valid?(alternative)
+
+      candidates = JSON.generate(A: response_content(res), B: alternative)
+      judge_messages =
+        messages +
+          [
+            {
+              role: "developer",
+              content:
+                I18n.t(
+                  "chatbot.prompt.system.rag.advanced_local_reasoning.judge",
+                  candidates: candidates,
+                ),
+            },
+          ]
+      judge_res =
+        create_advanced_local_reasoning_completion(
+          judge_messages,
+          iteration + 2,
+          token_limit: JUDGE_TOKEN_LIMIT,
+        )
+      selection = usable_advanced_response_content(judge_res)&.strip&.upcase
+      return res if %w[A B].exclude?(selection)
+
+      @inner_thoughts << {
+        type: "advanced_local_reasoning_selection",
+        content:
+          I18n.t(
+            "chatbot.prompt.system.rag.advanced_local_reasoning.selection",
+            candidate: selection,
+          ),
+      }
+      selection == "B" ? alternative_res : res
+    end
+
+    def create_advanced_local_reasoning_completion(messages, iteration, token_limit: nil)
+      ensure_chain_token_budget!
+      parameter_overrides = {}
+      if token_limit
+        configured_limit = SiteSetting.chatbot_max_response_tokens
+        parameter_overrides[:max_completion_tokens] = (
+          if configured_limit.positive?
+            [configured_limit, token_limit].min
+          else
+            token_limit
+          end
+        )
+      end
+
+      create_chat_completion(
+        messages,
+        false,
+        iteration,
+        parameter_overrides: parameter_overrides,
+        include_logprobs: false,
+      )
+    end
+
+    def response_content(res)
+      res.dig("choices", 0, "message", "content").to_s
+    end
+
+    def usable_advanced_response_content(res)
+      return if res.dig("choices", 0, "finish_reason") != "stop"
+
+      content = response_content(res)
+      content.presence
+    end
+
+    def response_confidence(res)
+      logprobs =
+        Array(res.dig("choices", 0, "logprobs", "content")).filter_map do |token|
+          value = Float(token["logprob"], exception: false)
+          value if value&.finite?
+        end
+      return if logprobs.empty?
+
+      Math.exp(logprobs.sum / logprobs.length) * 100
+    end
+
+    def append_confidence_trace(confidence, decision_key)
+      confidence_text =
+        if confidence
+          "#{confidence.round(1)}%"
+        else
+          I18n.t("chatbot.prompt.system.rag.advanced_local_reasoning.confidence_unavailable")
+        end
+      @inner_thoughts << {
+        type: "advanced_local_reasoning_confidence",
+        content:
+          I18n.t(
+            "chatbot.prompt.system.rag.advanced_local_reasoning.confidence",
+            confidence: confidence_text,
+            decision: I18n.t("chatbot.prompt.system.rag.advanced_local_reasoning.#{decision_key}"),
+          ),
+      }
+    end
+
+    def advanced_calls_available?(iteration, max_iterations, required_calls)
+      iteration + required_calls <= max_iterations
+    end
+
+    def advanced_local_reasoning_strategy
+      return SIMPLE_LOCAL_REASONING if reasoning_model?
+
+      SiteSetting.chatbot_advanced_local_reasoning
+    end
+
+    def uncertainty_guided_reasoning?
+      advanced_local_reasoning_strategy == UNCERTAINTY_GUIDED
+    end
+
+    def unsupported_logprobs_parameter?(error)
+      return false if !error.respond_to?(:response)
+
+      response = error.response
+      status = response[:status] || response["status"]
+      body = response[:body] || response["body"]
+      message =
+        if body.is_a?(Hash)
+          body.dig("error", "message") || body.dig(:error, :message)
+        else
+          body
+        end
+
+      [400, 422].include?(status.to_i) && message.to_s.match?(/logprobs?/i)
     end
 
     def append_responses_output(res)

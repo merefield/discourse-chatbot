@@ -35,6 +35,15 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     "the value is 99 and I found that information in [this post](https://#{Discourse.current_hostname}/t/slug/112/2)"
   end
 
+  let(:completion_response) do
+    lambda do |content, total_tokens: 2, logprobs: nil|
+      choice = { "finish_reason" => "stop", "message" => { "content" => content } }
+      choice["logprobs"] = { "content" => logprobs } if logprobs
+
+      { "choices" => [choice], "usage" => { "total_tokens" => total_tokens } }
+    end
+  end
+
   it "calls function on returning a function request from LLN" do
     DateTime.expects(:current).returns("2023-08-18T10:11:44+00:00")
 
@@ -657,6 +666,265 @@ describe ::DiscourseChatbot::OpenAiBotRag do
       ::DiscourseChatbot::OpenAIBotBase::TokenBudgetError,
       "OpenAI response exceeded the configured chatbot_open_ai_max_chain_tokens budget",
     )
+  end
+
+  it "keeps the simple Chat Completions flow to one final-answer request" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "simple"
+
+    client
+      .expects(:chat)
+      .once
+      .with do |args|
+        expect(args[:parameters]).not_to have_key(:logprobs)
+        true
+      end
+      .returns(completion_response.call("Initial answer"))
+
+    response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
+
+    expect(response[:reply]).to eq("Initial answer")
+    expect(response[:inner_thoughts]).to be_empty
+  end
+
+  it "reviews and revises a Chat Completions answer" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "verify_and_revise"
+    requests = []
+
+    client
+      .expects(:chat)
+      .times(3)
+      .with do |args|
+        requests << args[:parameters]
+        true
+      end
+      .returns(
+        completion_response.call("The answer is five."),
+        completion_response.call("REVISE: The arithmetic is incorrect."),
+        completion_response.call("The answer is four."),
+      )
+
+    response = rag.get_response([{ role: "user", content: "What is 2 + 2?" }], opts)
+
+    expect(response[:reply]).to eq("The answer is four.")
+    expect(response[:inner_thoughts]).to include(
+      { type: "advanced_local_reasoning_review", content: "REVISE: The arithmetic is incorrect." },
+    )
+    expect(requests.second[:max_completion_tokens]).to eq(96)
+    expect(requests.second).not_to have_key(:tools)
+    expect(requests.third).not_to have_key(:tools)
+  end
+
+  it "generates two Chat Completions answers and returns the judge's selection" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "best_of_two"
+    requests = []
+
+    client
+      .expects(:chat)
+      .times(3)
+      .with do |args|
+        requests << args[:parameters]
+        true
+      end
+      .returns(
+        completion_response.call("Candidate A"),
+        completion_response.call("Candidate B"),
+        completion_response.call("B"),
+      )
+
+    response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
+
+    expect(response[:reply]).to eq("Candidate B")
+    expect(response[:inner_thoughts]).to include(
+      {
+        type: "advanced_local_reasoning_selection",
+        content:
+          I18n.t("chatbot.prompt.system.rag.advanced_local_reasoning.selection", candidate: "B"),
+      },
+    )
+    expect(requests.second).not_to have_key(:tools)
+    expect(requests.third[:max_completion_tokens]).to eq(8)
+    expect(requests.third[:messages].last[:content]).to include(
+      JSON.generate(A: "Candidate A", B: "Candidate B"),
+    )
+  end
+
+  it "accepts a confident uncertainty-guided Chat Completions answer without escalation" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "uncertainty_guided"
+    SiteSetting.chatbot_advanced_local_reasoning_min_confidence = 50
+
+    client
+      .expects(:chat)
+      .once
+      .with do |args|
+        expect(args[:parameters][:logprobs]).to eq(true)
+        true
+      end
+      .returns(
+        completion_response.call(
+          "Confident answer",
+          logprobs: [{ "token" => "Confident", "logprob" => -0.1 }],
+        ),
+      )
+
+    response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
+
+    expect(response[:reply]).to eq("Confident answer")
+    expect(response[:inner_thoughts].last[:content]).to include("90.5%")
+  end
+
+  it "compares a second answer when uncertainty confidence is below the threshold" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "uncertainty_guided"
+    requests = []
+
+    client
+      .expects(:chat)
+      .times(3)
+      .with do |args|
+        requests << args[:parameters]
+        true
+      end
+      .returns(
+        completion_response.call(
+          "Candidate A",
+          logprobs: [{ "token" => "Candidate", "logprob" => -2.0 }],
+        ),
+        completion_response.call("Candidate B"),
+        completion_response.call("A"),
+      )
+
+    response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
+
+    expect(response[:reply]).to eq("Candidate A")
+    expect(requests.first[:logprobs]).to eq(true)
+    expect(requests.second).not_to have_key(:logprobs)
+    expect(requests.third).not_to have_key(:logprobs)
+  end
+
+  it "retries without logprobs when a Chat Completions provider rejects them" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "uncertainty_guided"
+    error = RuntimeError.new("unsupported parameter")
+    error.stubs(:response).returns(
+      status: 400,
+      body: {
+        "error" => {
+          "message" => "Unsupported parameter: logprobs",
+        },
+      },
+    )
+
+    client
+      .expects(:chat)
+      .times(4)
+      .raises(error)
+      .then
+      .returns(completion_response.call("Candidate A"))
+      .then
+      .returns(completion_response.call("Candidate B"))
+      .then
+      .returns(completion_response.call("A"))
+
+    response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
+
+    expect(response[:reply]).to eq("Candidate A")
+  end
+
+  it "does not exceed the iteration limit for optional advanced reasoning" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "best_of_two"
+    SiteSetting.chatbot_chain_of_thought_max_iterations = 2
+    client.expects(:chat).once.returns(completion_response.call("Initial answer"))
+
+    response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
+
+    expect(response[:reply]).to eq("Initial answer")
+  end
+
+  it "does not apply advanced local reasoning to the Responses API" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "best_of_two"
+    client.expects(:chat).never
+    responses_api
+      .expects(:create)
+      .once
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "message",
+              "content" => [{ "type" => "output_text", "text" => "Reasoning answer" }],
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+      )
+
+    response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
+
+    expect(response[:reply]).to eq("Reasoning answer")
+  end
+
+  it "executes tools only on the shared path before comparing answers" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_advanced_local_reasoning = "best_of_two"
+    ::DiscourseChatbot::CalculatorFunction
+      .any_instance
+      .expects(:process)
+      .once
+      .returns({ answer: "4", token_usage: 0 })
+    requests = []
+
+    client
+      .expects(:chat)
+      .times(4)
+      .with do |args|
+        requests << args[:parameters]
+        true
+      end
+      .returns(
+        {
+          "choices" => [
+            {
+              "finish_reason" => "tool_calls",
+              "message" => {
+                "content" => nil,
+                "tool_calls" => [
+                  {
+                    "id" => "call_1",
+                    "type" => "function",
+                    "function" => {
+                      "name" => "calculate",
+                      "arguments" => "{\"input\":\"2 + 2\"}",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+        completion_response.call("Candidate A"),
+        completion_response.call("Candidate B"),
+        completion_response.call("B"),
+      )
+
+    response = rag.get_response([{ role: "user", content: "What is 2 + 2?" }], opts)
+
+    expect(response[:reply]).to eq("Candidate B")
+    expect(requests.first).to have_key(:tools)
+    expect(requests.second).to have_key(:tools)
+    expect(requests.third).not_to have_key(:tools)
+    expect(requests.fourth).not_to have_key(:tools)
   end
 
   it "returns partial Chat Completions text after reaching the completion budget" do
