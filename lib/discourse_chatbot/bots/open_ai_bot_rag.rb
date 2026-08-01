@@ -432,6 +432,7 @@ module ::DiscourseChatbot
 
         finish_reason = res["choices"][0]["finish_reason"]
         tools_calls = res["choices"][0]["message"]["tool_calls"]
+        tool_results = []
 
         content = res["choices"][0]["message"]["content"]
         if finish_reason == "length" && (content.blank? || tools_calls.present?)
@@ -471,14 +472,13 @@ module ::DiscourseChatbot
           end
 
           ensure_chain_token_budget!
-          handle_function_call(res, opts)
+          tool_results = handle_function_call(res, opts)
         else
           raise "Unexpected finish reason: #{finish_reason}"
         end
 
-        if image_tool_result?(@inner_thoughts.last)
-          content = @inner_thoughts.last[:content]
-          return({ "choices" => [{ "message" => { "content" => "#{content}" } }] })
+        if (image_content = direct_image_tool_result(tool_results))
+          return({ "choices" => [{ "message" => { "content" => image_content } }] })
         end
 
         iteration += 1
@@ -516,16 +516,20 @@ module ::DiscourseChatbot
       end
     end
 
-    def image_tool_result?(thought)
-      return false if thought&.dig(:role) != "tool"
+    def direct_image_tool_result(tool_results)
+      return if !tool_results.one?
 
-      content = thought[:content]
-      content.start_with?("!") && content.end_with?(")") &&
-        content.match?(%r{(upload://)?([a-zA-Z0-9]+)(\..*)?})
+      tool_result = tool_results.first
+      return if %w[paint_picture paint_edit_picture].exclude?(tool_result[:name])
+
+      content = tool_result[:content]
+      return if !content.start_with?("!") || !content.end_with?(")")
+      return if !content.match?(%r{(upload://)?([a-zA-Z0-9]+)(\..*)?})
+
+      content if response_urls_valid?(content)
     end
 
     def handle_function_call(res, opts)
-      res_msgs = []
       functions_called = res["choices"][0]["message"]
 
       tools_called = functions_called["tool_calls"]
@@ -547,6 +551,7 @@ module ::DiscourseChatbot
       tools_thought = { role: "assistant", content: "", tool_calls: ruby_object_array }
 
       @inner_thoughts << tools_thought
+      tool_results = []
 
       tools_called.each do |function_called|
         ensure_chain_token_budget!
@@ -557,6 +562,7 @@ module ::DiscourseChatbot
         tool_result = normalize_tool_result(call_function(func_name, args_str, opts))
         collect_trusted_url_provenance(tool_result)
         result = tool_result[:content].to_s
+        tool_results << { name: func_name, content: result }
         @inner_thoughts << { role: "tool", tool_call_id: tool_call_id, content: result }
         if reasoning_model?
           @responses_context << {
@@ -566,6 +572,7 @@ module ::DiscourseChatbot
           }
         end
       end
+      tool_results
     end
 
     def normalize_tool_result(result)

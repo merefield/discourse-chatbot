@@ -117,6 +117,100 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     )
   end
 
+  it "returns a single successful image tool result directly" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_support_picture_creation = true
+    image_markdown = "![generated image](upload://image.png)"
+    ::DiscourseChatbot::PaintFunction.any_instance.stubs(:process).returns(
+      { answer: image_markdown, token_usage: 10 },
+    )
+
+    responses_api.expects(:create).once.returns(
+      {
+        "status" => "completed",
+        "output" => [
+          {
+            "type" => "function_call",
+            "call_id" => "call_1",
+            "name" => "paint_picture",
+            "arguments" => "{\"description\":\"an image\"}",
+          },
+        ],
+        "usage" => {
+          "total_tokens" => 2,
+        },
+      },
+    )
+
+    response = rag.get_response([{ role: "user", content: "Paint an image" }], opts)
+
+    expect(response[:reply]).to eq(image_markdown)
+  end
+
+  it "continues mixed tool batches when the image result is last" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_support_picture_creation = true
+    image_markdown = "![generated image](upload://image.png)"
+    ::DiscourseChatbot::PaintFunction.any_instance.stubs(:process).returns(
+      { answer: image_markdown, token_usage: 10 },
+    )
+    requests = []
+
+    responses_api
+      .expects(:create)
+      .times(2)
+      .with do |args|
+        requests << args[:parameters]
+        true
+      end
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "function_call",
+              "call_id" => "call_1",
+              "name" => "calculate",
+              "arguments" => "{\"input\":\"2 + 2\"}",
+            },
+            {
+              "type" => "function_call",
+              "call_id" => "call_2",
+              "name" => "paint_picture",
+              "arguments" => "{\"description\":\"the number four\"}",
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "message",
+              "content" => [
+                { "type" => "output_text", "text" => "The result is 4, shown below." },
+              ],
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+      )
+
+    response = rag.get_response([{ role: "user", content: "Calculate and paint" }], opts)
+
+    expect(response[:reply]).to eq("The result is 4, shown below.")
+    expect(requests.second[:input].last(2)).to eq(
+      [
+        { type: "function_call_output", call_id: "call_1", output: "4" },
+        { type: "function_call_output", call_id: "call_2", output: image_markdown },
+      ],
+    )
+  end
+
   it "returns correct status for a response that includes and illegal topic id" do
     result = rag.legal_post_urls?(res, post_ids_found, topic_ids_found)
 
