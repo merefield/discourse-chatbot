@@ -29,10 +29,10 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   end
   let(:post_ids_found_2) { [post_1.id] }
   let(:res) do
-    "the value is 90 and I found that informaiton in [this topic](https://#{Discourse.current_hostname}/t/slug/112)"
+    "the value is 90 and I found that information in [this topic](https://#{Discourse.current_hostname}/t/slug/112)"
   end
   let(:res_2) do
-    "the value is 99 and I found that informaiton in [this post](https://#{Discourse.current_hostname}/t/slug/112/2)"
+    "the value is 99 and I found that information in [this post](https://#{Discourse.current_hostname}/t/slug/112/2)"
   end
 
   it "calls function on returning a function request from LLN" do
