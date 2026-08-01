@@ -351,6 +351,15 @@ plugins:
   chatbot_max_response_tokens:
     client: false
     default: 200
+    min: 0
+  chatbot_open_ai_max_reasoning_output_tokens:
+    client: false
+    default: 25000
+    min: 0
+  chatbot_open_ai_max_chain_tokens:
+    client: false
+    default: 100000
+    min: 0
   chatbot_bot_user:
     client: true
     type: username

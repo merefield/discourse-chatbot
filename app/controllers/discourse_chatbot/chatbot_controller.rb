@@ -50,17 +50,17 @@ module ::DiscourseChatbot
         if start_bot.reasoning_model?
           res =
             start_bot.client.responses.create(parameters: start_bot.responses_parameters(messages))
-          kick_off_statement = start_bot.extract_responses_text(res)
+          kick_off_statement = start_bot.responses_text(res)
         else
           parameters = {
             model: model,
             messages: messages,
-            max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
             temperature: SiteSetting.chatbot_request_temperature / 100.0,
             top_p: SiteSetting.chatbot_request_top_p / 100.0,
             frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
             presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
           }
+          parameters.merge!(start_bot.completion_token_limit_parameters)
 
           res = start_bot.client.chat(parameters: parameters)
 
@@ -98,17 +98,17 @@ module ::DiscourseChatbot
         if start_bot.reasoning_model?
           res =
             start_bot.client.responses.create(parameters: start_bot.responses_parameters(messages))
-          kick_off_statement = start_bot.extract_responses_text(res)
+          kick_off_statement = start_bot.responses_text(res)
         else
           parameters = {
             model: model,
             messages: messages,
-            max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
             temperature: SiteSetting.chatbot_request_temperature / 100.0,
             top_p: SiteSetting.chatbot_request_top_p / 100.0,
             frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
             presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
           }
+          parameters.merge!(start_bot.completion_token_limit_parameters)
           res = start_bot.client.chat(parameters: parameters)
           kick_off_statement = res.dig("choices", 0, "message", "content")
         end

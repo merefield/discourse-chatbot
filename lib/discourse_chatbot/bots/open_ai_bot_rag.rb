@@ -344,12 +344,12 @@ module ::DiscourseChatbot
           parameters = {
             model: @model_name,
             messages: messages,
-            max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
             temperature: SiteSetting.chatbot_request_temperature / 100.0,
             top_p: SiteSetting.chatbot_request_top_p / 100.0,
             frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
             presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
           }
+          parameters.merge!(completion_token_limit_parameters)
 
           if use_functions && @tools
             parameters.merge!(tools: @tools)
@@ -404,6 +404,8 @@ module ::DiscourseChatbot
         -------------------------------
       EOS
       loop do
+        ensure_chain_token_budget!
+
         raise "Chatbot response exceeded the maximum number of iterations" if iteration >
           MAX_RESPONSE_ITERATIONS
 
@@ -426,6 +428,17 @@ module ::DiscourseChatbot
 
         finish_reason = res["choices"][0]["finish_reason"]
         tools_calls = res["choices"][0]["message"]["tool_calls"]
+
+        if finish_reason == "length"
+          content = res["choices"][0]["message"]["content"]
+          if content.present? && tools_calls.blank?
+            Rails.logger.warn("Chatbot: Returning a partial response after reaching its token limit")
+            return res
+          end
+
+          raise TokenBudgetError,
+                "OpenAI response reached its token limit before producing usable content"
+        end
 
         if reasoning_model? && finish_reason.nil? && tools_calls.nil? &&
              res["response_output"].present?
@@ -462,9 +475,8 @@ module ::DiscourseChatbot
           raise "Chatbot response exceeded the maximum number of tool calls" if tool_call_count >
             MAX_TOOL_CALLS
 
+          ensure_chain_token_budget!
           handle_function_call(res, opts)
-        elsif finish_reason == "length"
-          raise "Chatbot response exceeded the maximum response token limit"
         else
           raise "Unexpected finish reason: #{finish_reason}"
         end
@@ -542,6 +554,8 @@ module ::DiscourseChatbot
       @inner_thoughts << tools_thought
 
       tools_called.each do |function_called|
+        ensure_chain_token_budget!
+
         func_name = function_called["function"]["name"]
         args_str = function_called["function"]["arguments"]
         tool_call_id = function_called["id"]
@@ -589,7 +603,7 @@ module ::DiscourseChatbot
         else
           res, token_usage = func.process(args).values_at(:answer, :token_usage)
         end
-        @total_tokens += token_usage
+        @total_tokens += token_usage.to_i
         res
       rescue => e
         Rails.logger.error(

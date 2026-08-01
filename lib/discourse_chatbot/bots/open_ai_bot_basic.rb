@@ -30,12 +30,12 @@ module ::DiscourseChatbot
           parameters = {
             model: @model_name,
             messages: prompt,
-            max_completion_tokens: SiteSetting.chatbot_max_response_tokens,
             temperature: SiteSetting.chatbot_request_temperature / 100.0,
             top_p: SiteSetting.chatbot_request_top_p / 100.0,
             frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
             presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
           }
+          parameters.merge!(completion_token_limit_parameters)
 
           response = @client.chat(parameters: parameters)
           token_usage = response.dig("usage", "total_tokens")

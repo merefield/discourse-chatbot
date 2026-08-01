@@ -125,6 +125,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
         expect(parameters[:model]).to eq("gpt-5.4-mini")
         expect(parameters[:reasoning]).to eq({ effort: "medium", summary: "auto" })
         expect(parameters[:text]).to eq({ verbosity: "high" })
+        expect(parameters[:max_output_tokens]).to eq(25_000)
         expect(parameters[:input]).to eq(
           [{ role: "user", content: [{ type: "input_text", text: "Hello" }] }],
         )
@@ -341,6 +342,123 @@ describe ::DiscourseChatbot::OpenAiBotRag do
       ],
     )
     expect(requests.second[:input].last).to eq(reasoning_item.deep_symbolize_keys)
+  end
+
+  it "returns visible text when a responses api response reaches its output budget" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+
+    responses_api.expects(:create).returns(
+      {
+        "status" => "incomplete",
+        "incomplete_details" => {
+          "reason" => "max_output_tokens",
+        },
+        "output" => [
+          {
+            "type" => "message",
+            "content" => [{ "type" => "output_text", "text" => "Partial answer" }],
+          },
+        ],
+        "usage" => {
+          "total_tokens" => 25_000,
+        },
+      },
+    )
+
+    response = rag.get_response([{ role: "user", content: "Write a long answer" }], opts)
+
+    expect(response[:reply]).to eq("Partial answer")
+  end
+
+  it "stops a reasoning continuation after reaching the aggregate chain budget" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_open_ai_max_chain_tokens = 5
+    responses_api.expects(:create).once.returns(
+      {
+        "status" => "completed",
+        "output" => [
+          {
+            "type" => "reasoning",
+            "summary" => [],
+          },
+        ],
+        "usage" => {
+          "total_tokens" => 5,
+        },
+      },
+    )
+
+    expect do
+      rag.get_response([{ role: "user", content: "Think this through" }], opts)
+    end.to raise_error(
+      ::DiscourseChatbot::OpenAIBotBase::TokenBudgetError,
+      "OpenAI response exceeded the configured chatbot_open_ai_max_chain_tokens budget",
+    )
+  end
+
+  it "returns partial Chat Completions text after reaching the completion budget" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    client
+      .expects(:chat)
+      .with do |args|
+        expect(args[:parameters][:max_completion_tokens]).to eq(200)
+        true
+      end
+      .returns(
+        {
+          "choices" => [
+            {
+              "finish_reason" => "length",
+              "message" => {
+                "content" => "Partial completion",
+              },
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 200,
+          },
+        },
+      )
+
+    response = rag.get_response([{ role: "user", content: "Write a long answer" }], opts)
+
+    expect(response[:reply]).to eq("Partial completion")
+  end
+
+  it "rejects truncated Chat Completions tool calls" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    client.expects(:chat).once.returns(
+      {
+        "choices" => [
+          {
+            "finish_reason" => "length",
+            "message" => {
+              "content" => nil,
+              "tool_calls" => [
+                {
+                  "id" => "call_1",
+                  "type" => "function",
+                  "function" => {
+                    "name" => "calculate",
+                    "arguments" => "{\"input\":",
+                  },
+                },
+              ],
+            },
+          },
+        ],
+        "usage" => {
+          "total_tokens" => 200,
+        },
+      },
+    )
+
+    expect do
+      rag.get_response([{ role: "user", content: "Calculate something" }], opts)
+    end.to raise_error(
+      ::DiscourseChatbot::OpenAIBotBase::TokenBudgetError,
+      "OpenAI response reached its token limit before producing usable content",
+    )
   end
 
   it "can omit reasoning summaries for compatible responses endpoints" do

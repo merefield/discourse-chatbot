@@ -6,6 +6,9 @@ module ::DiscourseChatbot
     class ResponsesApiError < StandardError
     end
 
+    class TokenBudgetError < StandardError
+    end
+
     attr_reader :client, :model_name
 
     def initialize(opts)
@@ -87,8 +90,9 @@ module ::DiscourseChatbot
       parameters = {
         model: @model_name,
         input: responses_input(messages),
-        max_output_tokens: SiteSetting.chatbot_max_response_tokens,
       }
+      reasoning_output_tokens = SiteSetting.chatbot_open_ai_max_reasoning_output_tokens
+      parameters[:max_output_tokens] = reasoning_output_tokens if reasoning_output_tokens.positive?
 
       reasoning = {}
       reasoning[:effort] = @model_reasoning_level if @model_reasoning_level.present?
@@ -100,6 +104,21 @@ module ::DiscourseChatbot
       parameters[:text] = text if text.present?
 
       parameters
+    end
+
+    def completion_token_limit_parameters
+      completion_tokens = SiteSetting.chatbot_max_response_tokens
+      return {} if !completion_tokens.positive?
+
+      { max_completion_tokens: completion_tokens }
+    end
+
+    def ensure_chain_token_budget!
+      chain_tokens = SiteSetting.chatbot_open_ai_max_chain_tokens
+      return if !chain_tokens.positive? || @total_tokens < chain_tokens
+
+      raise TokenBudgetError,
+            "OpenAI response exceeded the configured chatbot_open_ai_max_chain_tokens budget"
     end
 
     def responses_input(messages)
@@ -174,7 +193,9 @@ module ::DiscourseChatbot
             }
           end
 
-      finish_reason = if tool_calls.present?
+      finish_reason = if response["status"] == "incomplete"
+        "length"
+      elsif tool_calls.present?
         "tool_calls"
       elsif message_returned
         "stop"
@@ -197,7 +218,18 @@ module ::DiscourseChatbot
 
     def responses_text(response)
       validate_responses_response!(response)
-      extract_responses_text(response)
+      text = extract_responses_text(response)
+
+      if response["status"] == "incomplete" && text.blank?
+        raise TokenBudgetError,
+              "OpenAI Responses API exhausted chatbot_open_ai_max_reasoning_output_tokens before producing visible output"
+      end
+
+      if response["status"] == "incomplete"
+        Rails.logger.warn("Chatbot: Returning a partial response after reaching its token limit")
+      end
+
+      text
     end
 
     def extract_responses_text(response)
@@ -227,6 +259,8 @@ module ::DiscourseChatbot
 
       if status == "incomplete"
         reason = response.dig("incomplete_details", "reason") || "unknown reason"
+        return if reason == "max_output_tokens"
+
         raise ResponsesApiError, "OpenAI Responses API response was incomplete: #{reason}"
       end
 

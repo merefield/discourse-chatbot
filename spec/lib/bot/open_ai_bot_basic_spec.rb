@@ -25,6 +25,7 @@ describe ::DiscourseChatbot::OpenAiBotBasic do
         expect(parameters[:model]).to eq("gpt-5.4-mini")
         expect(parameters[:reasoning]).to eq({ effort: "high" })
         expect(parameters[:text]).to eq({ verbosity: "low" })
+        expect(parameters[:max_output_tokens]).to eq(25_000)
         expect(parameters[:input].first[:role]).to eq("developer")
         true
       end
@@ -69,7 +70,7 @@ describe ::DiscourseChatbot::OpenAiBotBasic do
     expect(response[:reply]).to eq("I cannot help with that.")
   end
 
-  it "raises when the responses api response is incomplete" do
+  it "raises when the responses api exhausts its budget without visible output" do
     responses_api.expects(:create).returns(
       {
         "status" => "incomplete",
@@ -86,8 +87,77 @@ describe ::DiscourseChatbot::OpenAiBotBasic do
     expect do
       described_class.new(opts).get_response([{ role: "user", content: "Hi" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::OpenAIBotBase::ResponsesApiError,
-      "OpenAI Responses API response was incomplete: max_output_tokens",
+      ::DiscourseChatbot::OpenAIBotBase::TokenBudgetError,
+      "OpenAI Responses API exhausted chatbot_open_ai_max_reasoning_output_tokens before producing visible output",
+    )
+  end
+
+  it "returns visible text from an incomplete responses api response" do
+    responses_api.expects(:create).returns(
+      {
+        "status" => "incomplete",
+        "incomplete_details" => {
+          "reason" => "max_output_tokens",
+        },
+        "output" => [
+          {
+            "type" => "message",
+            "content" => [{ "type" => "output_text", "text" => "Partial answer" }],
+          },
+        ],
+        "usage" => {
+          "total_tokens" => 10,
+        },
+      },
+    )
+
+    response = described_class.new(opts).get_response([{ role: "user", content: "Hi" }], opts)
+
+    expect(response[:reply]).to eq("Partial answer")
+  end
+
+  it "can use provider token defaults for both OpenAI APIs" do
+    SiteSetting.chatbot_open_ai_max_reasoning_output_tokens = 0
+    responses_api
+      .expects(:create)
+      .with { |args| !args[:parameters].key?(:max_output_tokens) }
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "message",
+              "content" => [{ "type" => "output_text", "text" => "Reasoning answer" }],
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+      )
+
+    reasoning_response =
+      described_class.new(opts).get_response([{ role: "user", content: "Hi" }], opts)
+
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_max_response_tokens = 0
+    client
+      .expects(:chat)
+      .with { |args| !args[:parameters].key?(:max_completion_tokens) }
+      .returns(
+        {
+          "choices" => [{ "message" => { "content" => "Completion answer" } }],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+      )
+
+    completion_response =
+      described_class.new(opts).get_response([{ role: "user", content: "Hi" }], opts)
+
+    expect([reasoning_response[:reply], completion_response[:reply]]).to eq(
+      ["Reasoning answer", "Completion answer"],
     )
   end
 
