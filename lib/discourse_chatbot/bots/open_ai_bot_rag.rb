@@ -69,6 +69,7 @@ module ::DiscourseChatbot
       @posts_ids_found = []
       @topic_ids_found = []
       @non_post_urls_found = []
+      @trusted_url_provenance_collected = false
 
       @chat_history += prompt
 
@@ -432,13 +433,8 @@ module ::DiscourseChatbot
         finish_reason = res["choices"][0]["finish_reason"]
         tools_calls = res["choices"][0]["message"]["tool_calls"]
 
-        if finish_reason == "length"
-          content = res["choices"][0]["message"]["content"]
-          if content.present? && tools_calls.blank?
-            Rails.logger.warn("Chatbot: Returning a partial response after reaching its token limit")
-            return res
-          end
-
+        content = res["choices"][0]["message"]["content"]
+        if finish_reason == "length" && (content.blank? || tools_calls.present?)
           raise TokenBudgetError,
                 "OpenAI response reached its token limit before producing usable content"
         end
@@ -449,26 +445,20 @@ module ::DiscourseChatbot
           next
         end
 
-        if finish_reason == "stop" && tools_calls.nil?
-          if iteration > 1 && SiteSetting.chatbot_url_integrity_check
-            if legal_post_urls?(
-                 res["choices"][0]["message"]["content"],
-                 @posts_ids_found,
-                 @topic_ids_found,
-              ) &&
-                 legal_non_post_urls?(res["choices"][0]["message"]["content"], @non_post_urls_found)
-              return res
-            else
-              url_validation_retries += 1
-              if url_validation_retries > max_url_repair_attempts || iteration >= max_iterations
-                raise ChainLimitError, "Chatbot response repeatedly contained unsupported URLs"
-              end
-
-              append_url_validation_feedback
+        if %w[stop length].include?(finish_reason) && tools_calls.nil?
+          if response_urls_valid?(content)
+            if finish_reason == "length"
+              Rails.logger.warn("Chatbot: Returning a partial response after reaching its token limit")
             end
-          else
             return res
           end
+
+          url_validation_retries += 1
+          if url_validation_retries > max_url_repair_attempts || iteration >= max_iterations
+            raise ChainLimitError, "Chatbot response repeatedly contained unsupported URLs"
+          end
+
+          append_url_validation_feedback
         elsif finish_reason == "tool_calls" || !tools_calls.nil?
           if !use_functions
             raise ChainLimitError, "Chatbot requested a tool after tools were disabled"
@@ -568,6 +558,7 @@ module ::DiscourseChatbot
           result_hash = call_function(func_name, args_str, opts)
           result, post_ids_found, topic_ids_found, non_post_urls_found =
             result_hash.values_at(:result, :post_ids_found, :topic_ids_found, :non_post_urls_found)
+          @trusted_url_provenance_collected = true
           @posts_ids_found = (@posts_ids_found.to_set | (post_ids_found&.to_set || Set.new)).to_a
           @topic_ids_found = (@topic_ids_found.to_set | (topic_ids_found&.to_set || Set.new)).to_a
           @non_post_urls_found =
@@ -654,6 +645,13 @@ module ::DiscourseChatbot
 
       urls_in_text.each { |url| return false if !non_post_urls_found.include?(url) }
       true
+    end
+
+    def response_urls_valid?(content)
+      return true if !SiteSetting.chatbot_url_integrity_check || !@trusted_url_provenance_collected
+
+      legal_post_urls?(content, @posts_ids_found, @topic_ids_found) &&
+        legal_non_post_urls?(content, @non_post_urls_found)
     end
 
     private

@@ -546,6 +546,18 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   it "preserves a rejected response while asking the responses api to repair its URLs" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_url_integrity_check = true
+    SiteSetting.chatbot_embeddings_enabled = true
+    ::DiscourseChatbot::ForumSearchFunction.any_instance.stubs(:process).returns(
+      {
+        answer: {
+          result: "No matching forum posts were found.",
+          post_ids_found: [],
+          topic_ids_found: [],
+          non_post_urls_found: [],
+        },
+        token_usage: 0,
+      },
+    )
     invalid_message = {
       "id" => "msg_1",
       "type" => "message",
@@ -573,8 +585,8 @@ describe ::DiscourseChatbot::OpenAiBotRag do
             {
               "type" => "function_call",
               "call_id" => "call_1",
-              "name" => "calculate",
-              "arguments" => "{\"input\":\"2 + 2\"}",
+              "name" => "local_forum_search",
+              "arguments" => "{\"query\":\"details\"}",
             },
           ],
           "usage" => {
@@ -618,6 +630,135 @@ describe ::DiscourseChatbot::OpenAiBotRag do
           ],
         },
       ],
+    )
+  end
+
+  it "does not validate URLs after a tool without trusted URL provenance" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_url_integrity_check = true
+    unsupported_url = "https://unsupported.example"
+
+    responses_api
+      .expects(:create)
+      .times(2)
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "function_call",
+              "call_id" => "call_1",
+              "name" => "calculate",
+              "arguments" => "{\"input\":\"2 + 2\"}",
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "message",
+              "content" => [{ "type" => "output_text", "text" => unsupported_url }],
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+      )
+
+    response = rag.get_response([{ role: "user", content: "What is 2 + 2?" }], opts)
+
+    expect(response[:reply]).to eq(unsupported_url)
+  end
+
+  it "validates partial responses after collecting trusted URL provenance" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_url_integrity_check = true
+    SiteSetting.chatbot_embeddings_enabled = true
+    ::DiscourseChatbot::ForumSearchFunction.any_instance.stubs(:process).returns(
+      {
+        answer: {
+          result: "No matching forum posts were found.",
+          post_ids_found: [],
+          topic_ids_found: [],
+          non_post_urls_found: [],
+        },
+        token_usage: 0,
+      },
+    )
+    requests = []
+
+    client
+      .expects(:chat)
+      .times(3)
+      .with do |args|
+        requests << args[:parameters]
+        true
+      end
+      .returns(
+        {
+          "choices" => [
+            {
+              "finish_reason" => "tool_calls",
+              "message" => {
+                "content" => nil,
+                "tool_calls" => [
+                  {
+                    "id" => "call_1",
+                    "type" => "function",
+                    "function" => {
+                      "name" => "local_forum_search",
+                      "arguments" => "{\"query\":\"details\"}",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+        {
+          "choices" => [
+            {
+              "finish_reason" => "length",
+              "message" => {
+                "content" => "Partial answer with https://unsupported.example",
+              },
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 200,
+          },
+        },
+        {
+          "choices" => [
+            {
+              "finish_reason" => "stop",
+              "message" => {
+                "content" => "Partial answer without the unsupported link.",
+              },
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+      )
+
+    response = rag.get_response([{ role: "user", content: "Find details" }], opts)
+
+    expect(response[:reply]).to eq("Partial answer without the unsupported link.")
+    expect(requests.third[:messages].last).to eq(
+      {
+        role: "developer",
+        content: I18n.t("chatbot.prompt.system.rag.illegal_urls"),
+      },
     )
   end
 
@@ -734,13 +875,32 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_url_integrity_check = true
     SiteSetting.chatbot_chain_of_thought_max_url_repair_attempts = 0
+    SiteSetting.chatbot_embeddings_enabled = true
+    ::DiscourseChatbot::ForumSearchFunction.any_instance.stubs(:process).returns(
+      {
+        answer: {
+          result: "No matching forum posts were found.",
+          post_ids_found: [],
+          topic_ids_found: [],
+          non_post_urls_found: [],
+        },
+        token_usage: 0,
+      },
+    )
     responses_api
       .expects(:create)
       .times(2)
       .returns(
         {
           "status" => "completed",
-          "output" => [{ "type" => "reasoning", "summary" => [] }],
+          "output" => [
+            {
+              "type" => "function_call",
+              "call_id" => "call_1",
+              "name" => "local_forum_search",
+              "arguments" => "{\"query\":\"details\"}",
+            },
+          ],
           "usage" => {
             "total_tokens" => 1,
           },
