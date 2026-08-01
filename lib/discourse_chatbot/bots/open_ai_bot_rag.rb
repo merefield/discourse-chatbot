@@ -643,16 +643,16 @@ module ::DiscourseChatbot
     end
 
     def call_function(func_name, args_str, opts)
-      ::DiscourseChatbot.progress_debug_message <<~EOS
-        +++++++++++++++++++++++++++++++++++++++
-        I used '#{func_name}' to help me
-        args_str was '#{JSON.pretty_generate(JSON.parse(args_str))}'
-        opts was '#{JSON.pretty_generate(opts)}'
-        +++++++++++++++++++++++++++++++++++++++
-      EOS
       begin
         token_usage = 0
         args = JSON.parse(args_str)
+        ::DiscourseChatbot.progress_debug_message <<~EOS
+          +++++++++++++++++++++++++++++++++++++++
+          I used '#{func_name}' to help me
+          args_str was '#{JSON.pretty_generate(args)}'
+          opts was '#{JSON.pretty_generate(opts)}'
+          +++++++++++++++++++++++++++++++++++++++
+        EOS
         func = @func_mapping[func_name]
         if %w[escalate_to_staff remaining_bot_quota].include?(func_name)
           res, token_usage = func.process(args, opts).values_at(:answer, :token_usage)

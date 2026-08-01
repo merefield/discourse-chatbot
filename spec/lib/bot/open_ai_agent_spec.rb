@@ -65,6 +65,58 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     )
   end
 
+  it "returns malformed tool arguments to the model as a tool error" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    requests = []
+
+    responses_api
+      .expects(:create)
+      .times(2)
+      .with do |args|
+        requests << args[:parameters]
+        true
+      end
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "function_call",
+              "call_id" => "call_1",
+              "name" => "calculate",
+              "arguments" => "{",
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "message",
+              "content" => [{ "type" => "output_text", "text" => "I could not calculate it." }],
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+      )
+
+    response = rag.get_response([{ role: "user", content: "Calculate something" }], opts)
+
+    expect(response[:reply]).to eq("I could not calculate it.")
+    expect(requests.second[:input].last).to eq(
+      {
+        type: "function_call_output",
+        call_id: "call_1",
+        output: I18n.t("chatbot.prompt.rag.call_function.error"),
+      },
+    )
+  end
+
   it "returns correct status for a response that includes and illegal topic id" do
     result = rag.legal_post_urls?(res, post_ids_found, topic_ids_found)
 
