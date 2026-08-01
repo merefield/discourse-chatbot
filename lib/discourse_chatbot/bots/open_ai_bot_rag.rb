@@ -32,9 +32,6 @@ module ::DiscourseChatbot
     NOT_FORCED = "not_forced"
     FORCE_A_FUNCTION = "force_a_function"
     FORCE_LOCAL_SEARCH_FUNCTION = "force_local_forum_search"
-    MAX_RESPONSE_ITERATIONS = 8
-    MAX_TOOL_CALLS = 8
-    MAX_URL_VALIDATION_RETRIES = 2
 
     attr_reader :inner_thoughts
 
@@ -400,6 +397,9 @@ module ::DiscourseChatbot
       iteration = 1
       tool_call_count = 0
       url_validation_retries = 0
+      max_iterations = SiteSetting.chatbot_chain_of_thought_max_iterations
+      max_tool_calls = SiteSetting.chatbot_chain_of_thought_max_tool_calls
+      max_url_repair_attempts = SiteSetting.chatbot_chain_of_thought_max_url_repair_attempts
       ::DiscourseChatbot.progress_debug_message <<~EOS
         ===============================
         # New Query
@@ -408,7 +408,7 @@ module ::DiscourseChatbot
       loop do
         ensure_chain_token_budget!
 
-        if iteration > MAX_RESPONSE_ITERATIONS
+        if iteration > max_iterations
           raise ChainLimitError, "Chatbot response exceeded the maximum number of iterations"
         end
 
@@ -417,7 +417,7 @@ module ::DiscourseChatbot
           -------------------------------
         EOS
         messages = @chat_history + (reasoning_model? ? @responses_context : @inner_thoughts)
-        use_functions = iteration < MAX_RESPONSE_ITERATIONS
+        use_functions = iteration < max_iterations
         res = create_chat_completion(messages, use_functions, iteration)
         append_responses_output(res) if reasoning_model?
         append_reasoning_summaries(res) if reasoning_model?
@@ -460,8 +460,7 @@ module ::DiscourseChatbot
               return res
             else
               url_validation_retries += 1
-              if url_validation_retries > MAX_URL_VALIDATION_RETRIES ||
-                   iteration >= MAX_RESPONSE_ITERATIONS
+              if url_validation_retries > max_url_repair_attempts || iteration >= max_iterations
                 raise ChainLimitError, "Chatbot response repeatedly contained unsupported URLs"
               end
 
@@ -477,7 +476,7 @@ module ::DiscourseChatbot
           raise "Chatbot returned a tool finish reason without tool calls" if tools_calls.blank?
 
           tool_call_count += tools_calls.length
-          if tool_call_count > MAX_TOOL_CALLS
+          if tool_call_count > max_tool_calls
             raise ChainLimitError, "Chatbot response exceeded the maximum number of tool calls"
           end
 

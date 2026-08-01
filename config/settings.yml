@@ -360,6 +360,18 @@ plugins:
     client: false
     default: 100000
     min: 0
+  chatbot_chain_of_thought_max_iterations:
+    client: false
+    default: 8
+    min: 1
+  chatbot_chain_of_thought_max_tool_calls:
+    client: false
+    default: 8
+    min: 1
+  chatbot_chain_of_thought_max_url_repair_attempts:
+    client: false
+    default: 2
+    min: 0
   chatbot_bot_user:
     client: true
     type: username

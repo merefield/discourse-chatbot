@@ -623,9 +623,10 @@ describe ::DiscourseChatbot::OpenAiBotRag do
 
   it "disables tools on the final responses api iteration" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_chain_of_thought_max_iterations = 3
     requests = []
     api_responses =
-      (described_class::MAX_RESPONSE_ITERATIONS - 1).times.map do |index|
+      (SiteSetting.chatbot_chain_of_thought_max_iterations - 1).times.map do |index|
         {
           "status" => "completed",
           "output" => [
@@ -656,7 +657,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
 
     responses_api
       .expects(:create)
-      .times(described_class::MAX_RESPONSE_ITERATIONS)
+      .times(SiteSetting.chatbot_chain_of_thought_max_iterations)
       .with do |args|
         requests << args[:parameters]
         true
@@ -672,6 +673,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
 
   it "raises a non-retryable error after exhausting response iterations" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_chain_of_thought_max_iterations = 2
     reasoning_only_response = {
       "status" => "completed",
       "output" => [{ "type" => "reasoning", "summary" => [] }],
@@ -681,14 +683,92 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     }
     responses_api
       .expects(:create)
-      .times(described_class::MAX_RESPONSE_ITERATIONS)
-      .returns(*Array.new(described_class::MAX_RESPONSE_ITERATIONS, reasoning_only_response))
+      .times(SiteSetting.chatbot_chain_of_thought_max_iterations)
+      .returns(
+        *Array.new(SiteSetting.chatbot_chain_of_thought_max_iterations, reasoning_only_response),
+      )
 
     expect do
       rag.get_response([{ role: "user", content: "Keep reasoning" }], opts)
     end.to raise_error(
       ::DiscourseChatbot::OpenAIBotBase::ChainLimitError,
       "Chatbot response exceeded the maximum number of iterations",
+    )
+  end
+
+  it "raises a non-retryable error after exceeding the configured tool-call limit" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_chain_of_thought_max_tool_calls = 1
+    responses_api.expects(:create).returns(
+      {
+        "status" => "completed",
+        "output" => [
+          {
+            "type" => "function_call",
+            "call_id" => "call_1",
+            "name" => "calculate",
+            "arguments" => "{\"input\":\"2 + 2\"}",
+          },
+          {
+            "type" => "function_call",
+            "call_id" => "call_2",
+            "name" => "calculate",
+            "arguments" => "{\"input\":\"3 + 3\"}",
+          },
+        ],
+        "usage" => {
+          "total_tokens" => 2,
+        },
+      },
+    )
+
+    expect do
+      rag.get_response([{ role: "user", content: "Calculate twice" }], opts)
+    end.to raise_error(
+      ::DiscourseChatbot::OpenAIBotBase::ChainLimitError,
+      "Chatbot response exceeded the maximum number of tool calls",
+    )
+  end
+
+  it "raises a non-retryable error when URL repairs are disabled" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_url_integrity_check = true
+    SiteSetting.chatbot_chain_of_thought_max_url_repair_attempts = 0
+    responses_api
+      .expects(:create)
+      .times(2)
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [{ "type" => "reasoning", "summary" => [] }],
+          "usage" => {
+            "total_tokens" => 1,
+          },
+        },
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "message",
+              "content" => [
+                {
+                  "type" => "output_text",
+                  "text" => "See https://unsupported.example for details.",
+                },
+              ],
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 1,
+          },
+        },
+      )
+
+    expect do
+      rag.get_response([{ role: "user", content: "Find details" }], opts)
+    end.to raise_error(
+      ::DiscourseChatbot::OpenAIBotBase::ChainLimitError,
+      "Chatbot response repeatedly contained unsupported URLs",
     )
   end
 end
