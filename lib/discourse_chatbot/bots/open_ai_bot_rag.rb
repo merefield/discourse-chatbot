@@ -319,7 +319,7 @@ module ::DiscourseChatbot
     def create_chat_completion(
       messages,
       use_functions = true,
-      iteration,
+      iteration = 1,
       parameter_overrides: {},
       include_logprobs: nil
     )
