@@ -720,10 +720,12 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     response = rag.get_response([{ role: "user", content: "What is 2 + 2?" }], opts)
 
     expect(response[:reply]).to eq("The answer is four.")
-    expect(response[:inner_thoughts]).to include(
-      { type: "advanced_local_reasoning_review", content: "REVISE: The arithmetic is incorrect." },
-      advanced_outcome.call("strategy_started", strategy: "verify_and_revise"),
-      advanced_outcome.call("revision_adopted"),
+    expect(response[:inner_thoughts]).to eq(
+      [
+        advanced_outcome.call("strategy_started", strategy: "verify_and_revise"),
+        { type: "advanced_local_reasoning_review", content: "REVISE: The arithmetic is incorrect." },
+        advanced_outcome.call("revision_adopted"),
+      ],
     )
     expect(requests.second[:max_completion_tokens]).to eq(96)
     expect(requests.second).not_to have_key(:tools)
@@ -741,10 +743,12 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
 
     expect(response[:reply]).to eq("Initial answer")
-    expect(response[:inner_thoughts]).to contain_exactly(
-      advanced_outcome.call("strategy_started", strategy: "verify_and_revise"),
-      { type: "advanced_local_reasoning_review", content: "PASS" },
-      advanced_outcome.call("review_passed"),
+    expect(response[:inner_thoughts]).to eq(
+      [
+        advanced_outcome.call("strategy_started", strategy: "verify_and_revise"),
+        { type: "advanced_local_reasoning_review", content: "PASS" },
+        advanced_outcome.call("review_passed"),
+      ],
     )
   end
 
@@ -769,13 +773,15 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
 
     expect(response[:reply]).to eq("Candidate B")
-    expect(response[:inner_thoughts]).to include(
-      advanced_outcome.call("strategy_started", strategy: "best_of_two"),
-      {
-        type: "advanced_local_reasoning_selection",
-        content:
-          I18n.t("chatbot.prompt.system.rag.advanced_local_reasoning.selection", candidate: "B"),
-      },
+    expect(response[:inner_thoughts]).to eq(
+      [
+        advanced_outcome.call("strategy_started", strategy: "best_of_two"),
+        {
+          type: "advanced_local_reasoning_selection",
+          content:
+            I18n.t("chatbot.prompt.system.rag.advanced_local_reasoning.selection", candidate: "B"),
+        },
+      ],
     )
     expect(requests.second).not_to have_key(:tools)
     expect(requests.third[:max_completion_tokens]).to eq(8)
@@ -799,9 +805,11 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
 
     expect(response[:reply]).to eq("Candidate A")
-    expect(response[:inner_thoughts]).to contain_exactly(
-      advanced_outcome.call("strategy_started", strategy: "best_of_two"),
-      advanced_outcome.call("judge_unusable"),
+    expect(response[:inner_thoughts]).to eq(
+      [
+        advanced_outcome.call("strategy_started", strategy: "best_of_two"),
+        advanced_outcome.call("judge_unusable"),
+      ],
     )
   end
 
@@ -818,9 +826,11 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
 
     expect(response[:reply]).to eq("Initial answer")
-    expect(response[:inner_thoughts]).to contain_exactly(
-      advanced_outcome.call("strategy_started", strategy: "best_of_two"),
-      advanced_outcome.call("strategy_failed", strategy: "best_of_two"),
+    expect(response[:inner_thoughts]).to eq(
+      [
+        advanced_outcome.call("strategy_started", strategy: "best_of_two"),
+        advanced_outcome.call("strategy_failed", strategy: "best_of_two"),
+      ],
     )
   end
 
@@ -916,9 +926,11 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
 
     expect(response[:reply]).to eq("Initial answer")
-    expect(response[:inner_thoughts]).to contain_exactly(
-      advanced_outcome.call("strategy_started", strategy: "best_of_two"),
-      advanced_outcome.call("comparison_skipped_iteration_limit"),
+    expect(response[:inner_thoughts]).to eq(
+      [
+        advanced_outcome.call("strategy_started", strategy: "best_of_two"),
+        advanced_outcome.call("comparison_skipped_iteration_limit"),
+      ],
     )
   end
 
@@ -939,21 +951,23 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     response = rag.get_response([{ role: "user", content: "Answer this" }], opts)
 
     expect(response[:reply]).to eq("Initial answer")
-    expect(response[:inner_thoughts]).to contain_exactly(
-      advanced_outcome.call("strategy_started", strategy: "uncertainty_guided"),
-      {
-        type: "advanced_local_reasoning_confidence",
-        content:
-          I18n.t(
-            "chatbot.prompt.system.rag.advanced_local_reasoning.confidence",
-            confidence: "13.5%",
-            decision:
-              I18n.t(
-                "chatbot.prompt.system.rag.advanced_local_reasoning.confidence_not_accepted",
-              ),
-          ),
-      },
-      advanced_outcome.call("comparison_skipped_iteration_limit"),
+    expect(response[:inner_thoughts]).to eq(
+      [
+        advanced_outcome.call("strategy_started", strategy: "uncertainty_guided"),
+        {
+          type: "advanced_local_reasoning_confidence",
+          content:
+            I18n.t(
+              "chatbot.prompt.system.rag.advanced_local_reasoning.confidence",
+              confidence: "13.5%",
+              decision:
+                I18n.t(
+                  "chatbot.prompt.system.rag.advanced_local_reasoning.confidence_not_accepted",
+                ),
+            ),
+        },
+        advanced_outcome.call("comparison_skipped_iteration_limit"),
+      ],
     )
   end
 
@@ -1037,18 +1051,30 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(requests.second).to have_key(:tools)
     expect(requests.third).not_to have_key(:tools)
     expect(requests.fourth).not_to have_key(:tools)
-    expect(response[:inner_thoughts]).to include(
-      a_hash_including(
-        role: "assistant",
-        tool_calls: [a_hash_including(id: "call_1", function: a_hash_including(name: "calculate"))],
-      ),
-      { role: "tool", tool_call_id: "call_1", content: "4" },
-      advanced_outcome.call("strategy_started", strategy: "best_of_two"),
-      {
-        type: "advanced_local_reasoning_selection",
-        content:
-          I18n.t("chatbot.prompt.system.rag.advanced_local_reasoning.selection", candidate: "B"),
-      },
+    expect(response[:inner_thoughts]).to eq(
+      [
+        {
+          role: "assistant",
+          content: "",
+          tool_calls: [
+            {
+              id: "call_1",
+              type: "function",
+              function: {
+                name: "calculate",
+                arguments: "{\"input\":\"2 + 2\"}",
+              },
+            },
+          ],
+        },
+        { role: "tool", tool_call_id: "call_1", content: "4" },
+        advanced_outcome.call("strategy_started", strategy: "best_of_two"),
+        {
+          type: "advanced_local_reasoning_selection",
+          content:
+            I18n.t("chatbot.prompt.system.rag.advanced_local_reasoning.selection", candidate: "B"),
+        },
+      ],
     )
   end
 

@@ -27,7 +27,7 @@ en:
     chatbot_support_picture_creation: "Bot 'Paint': support creation of images based on text descriptions.  Currently powered by DALL-E using the same token Open AI token"
     chatbot_support_picture_creation_model: "Model used for image generation. GPT Image models require a verified account on OpenAI and also support image editing when paint is enabled."
     chatbot_reply_job_time_delay: 'Number of seconds before reply job is run. This helps prevent rate limits being hit and discourages spamming.  If you use bot vision, consider making this a higher number >=2 to help ensure Discourse has enough time to process images before the Post data gets sent to the bot, otherwise the bot may not see the image.'
-    chatbot_include_whispers_in_post_history: "Include content of whispers in Post history bot sees (careful!)"
+    chatbot_include_whispers_in_post_history: "Include whisper content in the post history seen by the bot. Bot-generated inner-thought audit posts are always excluded."
     chatbot_max_look_behind: "Maximum number of Posts or Chat Messages bot will consider as prompt for completion, the more the more impressive may be its response, but the more costly the interaction will be."
     chatbot_strip_quotes: "Determine if quotes are stripped and not sent within prompts (doesn't affect OP)"
     chatbot_permitted_in_private_messages: "Allow Chatbot to interact in Private Messages"

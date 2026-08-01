@@ -183,12 +183,13 @@ These strategies have several safeguards:
 
 * They apply only to Chat Completions. Reasoning models using the Responses API retain their native reasoning flow.
 * Tools run only on the shared initial path. They are disabled for alternative, review, revision, and judge calls, preventing repeated side effects.
+* Persisted inner-thought audit posts are excluded from future model context, including when general whispers are included in post history.
 * Additional calls count towards `chatbot_chain_of_thought_max_iterations` and `chatbot_open_ai_max_chain_tokens`.
 * Revised and alternative answers are checked against any trusted URL provenance collected from tools.
 * Usable partial responses produced at the configured completion length limit are returned without additional reasoning.
 * If optional reasoning fails, exceeds its available budget, produces malformed control output, or proposes an invalid answer, the already-valid first answer is returned.
 
-The staff-visible inner-thoughts trace records the selected advanced strategy, compact review, confidence, and selection information, and the final outcome, including safe fallbacks. It does not request or expose a model's hidden chain-of-thought.
+The staff-visible inner-thoughts trace records tool calls, the selected advanced strategy, compact review, confidence, and selection information, and the final outcome in chronological order, including safe fallbacks. It does not request or expose a model's hidden chain-of-thought.
 
 ### References
 

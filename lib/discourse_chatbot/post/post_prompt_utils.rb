@@ -5,9 +5,9 @@ module ::DiscourseChatbot
       current_post = ::Post.find(opts[:reply_to_message_or_post_id])
       current_topic = current_post.topic
       first_post = current_topic.first_post
-      post_collection = collect_past_interactions(current_post.id)
       original_post_number = opts[:original_post_number]
       bot_user_id = opts[:bot_user_id]
+      post_collection = collect_past_interactions(current_post.id, bot_user_id: bot_user_id)
       category_id = opts[:category_id]
       first_post_role =
        first_post.user.id == bot_user_id ? "assistant" : "user"
@@ -134,7 +134,7 @@ module ::DiscourseChatbot
       end
     end
 
-    def self.collect_past_interactions(current_post_id)
+    def self.collect_past_interactions(current_post_id, bot_user_id: nil)
       current_post = ::Post.find(current_post_id)
       current_topic_id = current_post.topic_id
       post_collection = []
@@ -150,7 +150,7 @@ module ::DiscourseChatbot
           end
         )
 
-      post_collection << current_post
+      post_collection << current_post if !inner_thoughts_post?(current_post, bot_user_id)
 
       collect_amount = SiteSetting.chatbot_max_look_behind
 
@@ -192,10 +192,15 @@ module ::DiscourseChatbot
             break
           end
         end
-        post_collection << current_post
+        post_collection << current_post if !inner_thoughts_post?(current_post, bot_user_id)
       end
 
       post_collection
+    end
+
+    def self.inner_thoughts_post?(post, bot_user_id)
+      bot_user_id.present? && post.user_id == bot_user_id &&
+        post.raw.to_s.start_with?(::DiscourseChatbot::INNER_THOUGHTS_POST_PREFIX)
     end
   end
 end
