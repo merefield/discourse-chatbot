@@ -3,6 +3,9 @@ require "openai"
 
 module ::DiscourseChatbot
   class OpenAIBotBase < Bot
+    class ResponsesApiError < StandardError
+    end
+
     attr_reader :client, :model_name
 
     def initialize(opts)
@@ -80,7 +83,7 @@ module ::DiscourseChatbot
       REASONING_MODELS.include?(@model_name)
     end
 
-    def responses_parameters(messages)
+    def responses_parameters(messages, include_reasoning_summary: false)
       parameters = {
         model: @model_name,
         input: responses_input(messages),
@@ -89,6 +92,7 @@ module ::DiscourseChatbot
 
       reasoning = {}
       reasoning[:effort] = @model_reasoning_level if @model_reasoning_level.present?
+      reasoning[:summary] = "auto" if include_reasoning_summary
       parameters[:reasoning] = reasoning if reasoning.present?
 
       text = {}
@@ -106,7 +110,9 @@ module ::DiscourseChatbot
       message = message.with_indifferent_access
       role = message[:role]
 
-      if role == "tool"
+      if message[:type].present?
+        message.deep_symbolize_keys
+      elsif role == "tool"
         {
           type: "function_call_output",
           call_id: message[:tool_call_id],
@@ -151,7 +157,8 @@ module ::DiscourseChatbot
 
     def normalize_responses_response(response)
       output_items = Array(response["output"])
-      message_text = extract_responses_text(response)
+      message_text = responses_text(response)
+      message_returned = output_items.any? { |item| item["type"] == "message" }
 
       tool_calls =
         output_items
@@ -167,27 +174,63 @@ module ::DiscourseChatbot
             }
           end
 
+      finish_reason = if tool_calls.present?
+        "tool_calls"
+      elsif message_returned
+        "stop"
+      end
+
       {
         "choices" => [
           {
-            "finish_reason" => tool_calls.present? ? "tool_calls" : "stop",
+            "finish_reason" => finish_reason,
             "message" => {
               "content" => message_text,
               "tool_calls" => tool_calls.presence,
             },
           },
         ],
+        "response_output" => output_items,
         "usage" => response["usage"],
       }
+    end
+
+    def responses_text(response)
+      validate_responses_response!(response)
+      extract_responses_text(response)
     end
 
     def extract_responses_text(response)
       Array(response["output"])
         .select { |item| item["type"] == "message" }
         .flat_map { |item| Array(item["content"]) }
-        .select { |content| content["type"] == "output_text" }
-        .map { |content| content["text"] }
+        .filter_map do |content|
+          case content["type"]
+          when "output_text"
+            content["text"]
+          when "refusal"
+            content["refusal"]
+          end
+        end
         .join
+    end
+
+    def validate_responses_response!(response)
+      if response["error"].present?
+        error = response["error"]
+        message = error.respond_to?(:[]) ? error["message"] || error[:message] : error.to_s
+        raise ResponsesApiError, "OpenAI Responses API error: #{message}"
+      end
+
+      status = response["status"]
+      return if status.blank? || status == "completed"
+
+      if status == "incomplete"
+        reason = response.dig("incomplete_details", "reason") || "unknown reason"
+        raise ResponsesApiError, "OpenAI Responses API response was incomplete: #{reason}"
+      end
+
+      raise ResponsesApiError, "OpenAI Responses API returned unexpected status: #{status}"
     end
   end
 end

@@ -41,13 +41,13 @@ module ::DiscourseChatbot
           token_usage = response.dig("usage", "total_tokens")
         end
 
-        @total_tokens += token_usage
+        @total_tokens += token_usage.to_i
 
         {
           reply:
             (
               if reasoning_model?
-                extract_responses_text(response)
+                responses_text(response)
               else
                 response.dig("choices", 0, "message", "content")
               end

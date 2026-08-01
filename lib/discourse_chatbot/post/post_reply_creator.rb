@@ -70,7 +70,7 @@ module ::DiscourseChatbot
 
           if bot.reasoning_model?
             res = bot.client.responses.create(parameters: bot.responses_parameters(messages))
-            title = bot.extract_responses_text(res)
+            title = bot.responses_text(res)
           else
             res = bot.client.chat(parameters: { model: bot.model_name, messages: messages })
             title = res.dig("choices", 0, "message", "content")

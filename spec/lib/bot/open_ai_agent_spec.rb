@@ -123,7 +123,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
         parameters = args[:parameters]
 
         expect(parameters[:model]).to eq("gpt-5.4-mini")
-        expect(parameters[:reasoning]).to eq({ effort: "medium" })
+        expect(parameters[:reasoning]).to eq({ effort: "medium", summary: "auto" })
         expect(parameters[:text]).to eq({ verbosity: "high" })
         expect(parameters[:input]).to eq(
           [{ role: "user", content: [{ type: "input_text", text: "Hello" }] }],
@@ -185,6 +185,264 @@ describe ::DiscourseChatbot::OpenAiBotRag do
         },
       ],
     )
+  end
+
+  it "preserves reasoning items across tool calls and returns their summaries" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    encrypted_content = "encrypted-state"
+
+    first_reasoning_item = {
+      "id" => "rs_1",
+      "type" => "reasoning",
+      "encrypted_content" => encrypted_content,
+      "summary" => [
+        {
+          "type" => "summary_text",
+          "text" => "I need to calculate the expression.",
+        },
+      ],
+    }
+    final_reasoning_item = {
+      "id" => "rs_2",
+      "type" => "reasoning",
+      "summary" => [
+        {
+          "type" => "summary_text",
+          "text" => "The calculation result is sufficient to answer.",
+        },
+      ],
+    }
+    requests = []
+
+    responses_api
+      .expects(:create)
+      .twice
+      .with do |args|
+        requests << args[:parameters]
+        true
+      end
+      .returns(
+        {
+          "output" => [
+            first_reasoning_item,
+            {
+              "type" => "function_call",
+              "id" => "fc_1",
+              "call_id" => "call_1",
+              "name" => "calculate",
+              "arguments" => "{\"input\":\"2 + 2\"}",
+              "status" => "completed",
+            },
+          ],
+          "status" => "completed",
+          "usage" => {
+            "total_tokens" => 9,
+          },
+        },
+        {
+          "output" => [
+            final_reasoning_item,
+            {
+              "type" => "message",
+              "role" => "assistant",
+              "content" => [{ "type" => "output_text", "text" => "The answer is 4." }],
+            },
+          ],
+          "status" => "completed",
+          "usage" => {
+            "total_tokens" => 9,
+          },
+        },
+      )
+
+    response = rag.get_response([{ role: "user", content: "What is 2 + 2?" }], opts)
+
+    expect(response[:reply]).to eq("The answer is 4.")
+    expect(
+      response[:inner_thoughts].select { |thought| thought[:type] == "reasoning_summary" },
+    ).to eq(
+      [
+        { type: "reasoning_summary", content: "I need to calculate the expression." },
+        {
+          type: "reasoning_summary",
+          content: "The calculation result is sufficient to answer.",
+        },
+      ],
+    )
+    expect(requests.second[:input].last(3)).to eq(
+      [
+        first_reasoning_item.deep_symbolize_keys,
+        {
+          type: "function_call",
+          id: "fc_1",
+          call_id: "call_1",
+          name: "calculate",
+          arguments: "{\"input\":\"2 + 2\"}",
+          status: "completed",
+        },
+        { type: "function_call_output", call_id: "call_1", output: "4" },
+      ],
+    )
+    expect(JSON.generate(response[:inner_thoughts])).not_to include(encrypted_content)
+  end
+
+  it "can omit reasoning summaries for compatible responses endpoints" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_open_ai_include_reasoning_summaries = false
+
+    responses_api
+      .expects(:create)
+      .with do |args|
+        expect(args[:parameters][:reasoning]).to eq(
+          { effort: SiteSetting.chatbot_open_ai_model_reasoning_level },
+        )
+        true
+      end
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "message",
+              "content" => [{ "type" => "output_text", "text" => "Hello back" }],
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+      )
+
+    response = rag.create_chat_completion([{ role: "user", content: "Hello" }], false, 1)
+
+    expect(response.dig("choices", 0, "message", "content")).to eq("Hello back")
+  end
+
+  it "preserves a rejected response while asking the responses api to repair its URLs" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_url_integrity_check = true
+    invalid_message = {
+      "id" => "msg_1",
+      "type" => "message",
+      "role" => "assistant",
+      "content" => [
+        {
+          "type" => "output_text",
+          "text" => "See https://unsupported.example for details.",
+        },
+      ],
+    }
+    requests = []
+
+    responses_api
+      .expects(:create)
+      .times(3)
+      .with do |args|
+        requests << args[:parameters]
+        true
+      end
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "function_call",
+              "call_id" => "call_1",
+              "name" => "calculate",
+              "arguments" => "{\"input\":\"2 + 2\"}",
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+        {
+          "status" => "completed",
+          "output" => [invalid_message],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "message",
+              "content" => [{ "type" => "output_text", "text" => "The answer is 4." }],
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+      )
+
+    response = rag.get_response([{ role: "user", content: "What is 2 + 2?" }], opts)
+
+    expect(response[:reply]).to eq("The answer is 4.")
+    expect(requests.third[:input].last(2)).to eq(
+      [
+        invalid_message.deep_symbolize_keys,
+        {
+          role: "developer",
+          content: [
+            {
+              type: "input_text",
+              text: I18n.t("chatbot.prompt.system.rag.illegal_urls"),
+            },
+          ],
+        },
+      ],
+    )
+  end
+
+  it "disables tools on the final responses api iteration" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    requests = []
+    api_responses =
+      (described_class::MAX_RESPONSE_ITERATIONS - 1).times.map do |index|
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "function_call",
+              "call_id" => "call_#{index}",
+              "name" => "calculate",
+              "arguments" => "{\"input\":\"2 + 2\"}",
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 1,
+          },
+        }
+      end
+    api_responses << {
+      "status" => "completed",
+      "output" => [
+        {
+          "type" => "message",
+          "content" => [{ "type" => "output_text", "text" => "The answer is 4." }],
+        },
+      ],
+      "usage" => {
+        "total_tokens" => 1,
+      },
+    }
+
+    responses_api
+      .expects(:create)
+      .times(described_class::MAX_RESPONSE_ITERATIONS)
+      .with do |args|
+        requests << args[:parameters]
+        true
+      end
+      .returns(*api_responses)
+
+    response = rag.get_response([{ role: "user", content: "Keep calculating" }], opts)
+
+    expect(response[:reply]).to eq("The answer is 4.")
+    expect(requests.first).to have_key(:tools)
+    expect(requests.last).not_to have_key(:tools)
   end
 end
 

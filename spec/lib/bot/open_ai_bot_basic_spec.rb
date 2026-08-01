@@ -30,6 +30,7 @@ describe ::DiscourseChatbot::OpenAiBotBasic do
       end
       .returns(
         {
+          "status" => "completed",
           "output" => [
             {
               "type" => "message",
@@ -45,5 +46,66 @@ describe ::DiscourseChatbot::OpenAiBotBasic do
     response = described_class.new(opts).get_response([{ role: "user", content: "Hi" }], opts)
 
     expect(response[:reply]).to eq("hello world")
+  end
+
+  it "returns a responses api refusal as the reply" do
+    responses_api.expects(:create).returns(
+      {
+        "status" => "completed",
+        "output" => [
+          {
+            "type" => "message",
+            "content" => [{ "type" => "refusal", "refusal" => "I cannot help with that." }],
+          },
+        ],
+        "usage" => {
+          "total_tokens" => 3,
+        },
+      },
+    )
+
+    response = described_class.new(opts).get_response([{ role: "user", content: "Hi" }], opts)
+
+    expect(response[:reply]).to eq("I cannot help with that.")
+  end
+
+  it "raises when the responses api response is incomplete" do
+    responses_api.expects(:create).returns(
+      {
+        "status" => "incomplete",
+        "incomplete_details" => {
+          "reason" => "max_output_tokens",
+        },
+        "output" => [],
+        "usage" => {
+          "total_tokens" => 10,
+        },
+      },
+    )
+
+    expect do
+      described_class.new(opts).get_response([{ role: "user", content: "Hi" }], opts)
+    end.to raise_error(
+      ::DiscourseChatbot::OpenAIBotBase::ResponsesApiError,
+      "OpenAI Responses API response was incomplete: max_output_tokens",
+    )
+  end
+
+  it "raises errors returned in a responses api payload" do
+    responses_api.expects(:create).returns(
+      {
+        "status" => "failed",
+        "error" => {
+          "message" => "The request failed",
+        },
+      },
+    )
+
+    expect do
+      described_class.new(opts).get_response([{ role: "user", content: "Hi" }], opts)
+    end.to raise_error(
+      ::DiscourseChatbot::OpenAIBotBase::ResponsesApiError,
+      "OpenAI Responses API error: The request failed",
+    )
   end
 end

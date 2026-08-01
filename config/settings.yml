@@ -142,6 +142,9 @@ plugins:
       - medium
       - high
       - xhigh
+  chatbot_open_ai_include_reasoning_summaries:
+    client: false
+    default: true
   chatbot_open_ai_model_verbosity:
     client: false
     type: enum

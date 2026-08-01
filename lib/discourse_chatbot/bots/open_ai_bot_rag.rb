@@ -32,6 +32,9 @@ module ::DiscourseChatbot
     NOT_FORCED = "not_forced"
     FORCE_A_FUNCTION = "force_a_function"
     FORCE_LOCAL_SEARCH_FUNCTION = "force_local_forum_search"
+    MAX_RESPONSE_ITERATIONS = 8
+    MAX_TOOL_CALLS = 8
+    MAX_URL_VALIDATION_RETRIES = 2
 
     def initialize(opts, tools = true)
       super(opts)
@@ -63,6 +66,7 @@ module ::DiscourseChatbot
       end
 
       @inner_thoughts = []
+      @responses_context = []
       @posts_ids_found = []
       @topic_ids_found = []
       @non_post_urls_found = []
@@ -316,7 +320,11 @@ module ::DiscourseChatbot
         EOS
 
         if reasoning_model?
-          parameters = responses_parameters(messages)
+          parameters =
+            responses_parameters(
+              messages,
+              include_reasoning_summary: SiteSetting.chatbot_open_ai_include_reasoning_summaries,
+            )
 
           if use_functions && @tools
             parameters[:tools] = responses_tools
@@ -365,7 +373,7 @@ module ::DiscourseChatbot
           token_usage = res.dig("usage", "total_tokens")
         end
 
-        @total_tokens += token_usage
+        @total_tokens += token_usage.to_i
 
         ::DiscourseChatbot.progress_debug_message <<~EOS
           +++++++++++++++++++++++++++++++++++++++
@@ -388,17 +396,26 @@ module ::DiscourseChatbot
 
     def generate_response(opts)
       iteration = 1
+      tool_call_count = 0
+      url_validation_retries = 0
       ::DiscourseChatbot.progress_debug_message <<~EOS
         ===============================
         # New Query
         -------------------------------
       EOS
       loop do
+        raise "Chatbot response exceeded the maximum number of iterations" if iteration >
+          MAX_RESPONSE_ITERATIONS
+
         ::DiscourseChatbot.progress_debug_message <<~EOS
           # Iteration: #{iteration}
           -------------------------------
         EOS
-        res = create_chat_completion(@chat_history + @inner_thoughts, true, iteration)
+        messages = @chat_history + (reasoning_model? ? @responses_context : @inner_thoughts)
+        use_functions = iteration < MAX_RESPONSE_ITERATIONS
+        res = create_chat_completion(messages, use_functions, iteration)
+        append_responses_output(res) if reasoning_model?
+        append_reasoning_summaries(res) if reasoning_model?
 
         if res.dig("error")
           error_text =
@@ -410,45 +427,88 @@ module ::DiscourseChatbot
         finish_reason = res["choices"][0]["finish_reason"]
         tools_calls = res["choices"][0]["message"]["tool_calls"]
 
-        # the tools calls check is a workaround and is required because sending a query with tools: required leads to an apparently incorrect finish reason.
-
-        if (
-             %w[stop length].include?(finish_reason) && tools_calls.nil? ||
-               @inner_thoughts.length > 7
-           )
+        if finish_reason == "stop" && tools_calls.nil?
           if iteration > 1 && SiteSetting.chatbot_url_integrity_check
             if legal_post_urls?(
                  res["choices"][0]["message"]["content"],
                  @posts_ids_found,
                  @topic_ids_found,
-               ) &&
+              ) &&
                  legal_non_post_urls?(res["choices"][0]["message"]["content"], @non_post_urls_found)
               return res
             else
-              @inner_thoughts << {
-                role: "user",
-                content: I18n.t("chatbot.prompt.system.rag.illegal_urls"),
-              }
+              url_validation_retries += 1
+              if url_validation_retries > MAX_URL_VALIDATION_RETRIES ||
+                   iteration >= MAX_RESPONSE_ITERATIONS
+                raise "Chatbot response repeatedly contained unsupported URLs"
+              end
+
+              append_url_validation_feedback
             end
           else
             return res
           end
         elsif finish_reason == "tool_calls" || !tools_calls.nil?
+          raise "Chatbot requested a tool after tools were disabled" if !use_functions
+          raise "Chatbot returned a tool finish reason without tool calls" if tools_calls.blank?
+
+          tool_call_count += tools_calls.length
+          raise "Chatbot response exceeded the maximum number of tool calls" if tool_call_count >
+            MAX_TOOL_CALLS
+
           handle_function_call(res, opts)
+        elsif finish_reason == "length"
+          raise "Chatbot response exceeded the maximum response token limit"
         else
           raise "Unexpected finish reason: #{finish_reason}"
         end
 
-        # If the response is an image, we don't want to continue the loop of thought
-        content = @inner_thoughts.last[:content]
-
-        if content[0] == "!" && content[content.length - 1] == ")" &&
-             (content =~ %r{(upload://)?([a-zA-Z0-9]+)(\..*)?}) > 0
+        if image_tool_result?(@inner_thoughts.last)
+          content = @inner_thoughts.last[:content]
           return({ "choices" => [{ "message" => { "content" => "#{content}" } }] })
         end
 
         iteration += 1
       end
+    end
+
+    def append_responses_output(res)
+      @responses_context.concat(
+        Array(res["response_output"]).map { |output_item| output_item.deep_symbolize_keys },
+      )
+    end
+
+    def append_reasoning_summaries(res)
+      Array(res["response_output"]).each do |output_item|
+        next if output_item["type"] != "reasoning"
+
+        Array(output_item["summary"]).each do |summary|
+          next if summary["text"].blank?
+
+          @inner_thoughts << { type: "reasoning_summary", content: summary["text"] }
+        end
+      end
+    end
+
+    def append_url_validation_feedback
+      feedback = {
+        role: "developer",
+        content: I18n.t("chatbot.prompt.system.rag.illegal_urls"),
+      }
+
+      if reasoning_model?
+        @responses_context << feedback
+      else
+        @inner_thoughts << feedback
+      end
+    end
+
+    def image_tool_result?(thought)
+      return false if thought&.dig(:role) != "tool"
+
+      content = thought[:content]
+      content.start_with?("!") && content.end_with?(")") &&
+        content.match?(%r{(upload://)?([a-zA-Z0-9]+)(\..*)?})
     end
 
     def handle_function_call(res, opts)
@@ -490,7 +550,15 @@ module ::DiscourseChatbot
         else
           result = call_function(func_name, args_str, opts)
         end
-        @inner_thoughts << { role: "tool", tool_call_id: tool_call_id, content: result.to_s }
+        result = result.to_s
+        @inner_thoughts << { role: "tool", tool_call_id: tool_call_id, content: result }
+        if reasoning_model?
+          @responses_context << {
+            type: "function_call_output",
+            call_id: tool_call_id,
+            output: result,
+          }
+        end
       end
     end
 
