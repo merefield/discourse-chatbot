@@ -693,6 +693,66 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(response[:reply]).to eq(unsupported_url)
   end
 
+  it "collects trusted URL provenance from tools that return URLs" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
+    SiteSetting.chatbot_url_integrity_check = true
+    SiteSetting.chatbot_wikipedia_function = true
+    wikipedia_url = "https://en.wikipedia.org/wiki/Discourse"
+    ::DiscourseChatbot::WikipediaFunction.any_instance.stubs(:process).returns(
+      { answer: "Discourse is described at #{wikipedia_url}", token_usage: 0 },
+    )
+
+    responses_api
+      .expects(:create)
+      .times(3)
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "function_call",
+              "call_id" => "call_1",
+              "name" => "wikipedia",
+              "arguments" => "{\"query\":\"Discourse\"}",
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "message",
+              "content" => [
+                { "type" => "output_text", "text" => "https://unsupported.example" },
+              ],
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "message",
+              "content" => [{ "type" => "output_text", "text" => wikipedia_url }],
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+      )
+
+    response = rag.get_response([{ role: "user", content: "What is Discourse?" }], opts)
+
+    expect(response[:reply]).to eq(wikipedia_url)
+  end
+
   it "validates partial responses after collecting trusted URL provenance" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
     SiteSetting.chatbot_url_integrity_check = true

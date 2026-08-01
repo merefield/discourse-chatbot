@@ -554,19 +554,9 @@ module ::DiscourseChatbot
         func_name = function_called["function"]["name"]
         args_str = function_called["function"]["arguments"]
         tool_call_id = function_called["id"]
-        if func_name == "local_forum_search" || func_name == "escalate_to_staff"
-          result_hash = call_function(func_name, args_str, opts)
-          result, post_ids_found, topic_ids_found, non_post_urls_found =
-            result_hash.values_at(:result, :post_ids_found, :topic_ids_found, :non_post_urls_found)
-          @trusted_url_provenance_collected = true
-          @posts_ids_found = (@posts_ids_found.to_set | (post_ids_found&.to_set || Set.new)).to_a
-          @topic_ids_found = (@topic_ids_found.to_set | (topic_ids_found&.to_set || Set.new)).to_a
-          @non_post_urls_found =
-            (@non_post_urls_found.to_set | (non_post_urls_found&.to_set || Set.new)).to_a
-        else
-          result = call_function(func_name, args_str, opts)
-        end
-        result = result.to_s
+        tool_result = normalize_tool_result(call_function(func_name, args_str, opts))
+        collect_trusted_url_provenance(tool_result)
+        result = tool_result[:content].to_s
         @inner_thoughts << { role: "tool", tool_call_id: tool_call_id, content: result }
         if reasoning_model?
           @responses_context << {
@@ -575,6 +565,80 @@ module ::DiscourseChatbot
             output: result,
           }
         end
+      end
+    end
+
+    def normalize_tool_result(result)
+      result_hash = result.with_indifferent_access if result.is_a?(Hash)
+      result_hash = nil if result_hash && !result_hash.key?(:result)
+
+      if result_hash
+        {
+          content: result_hash[:result],
+          post_ids_found: Array(result_hash[:post_ids_found]),
+          topic_ids_found: Array(result_hash[:topic_ids_found]),
+          non_post_urls_found: Array(result_hash[:non_post_urls_found]),
+          provenance_declared: true,
+        }
+      else
+        {
+          content: result,
+          post_ids_found: [],
+          topic_ids_found: [],
+          non_post_urls_found: [],
+          provenance_declared: false,
+        }
+      end
+    end
+
+    def collect_trusted_url_provenance(tool_result)
+      content = tool_result[:content].to_s
+      absolute_urls = content.scan(::DiscourseChatbot::NON_POST_URL_REGEX)
+      relative_forum_paths = content.scan(%r{(?<![[:alnum:]])(/t/[^\s)]+)}).flatten
+
+      post_ids_found = tool_result[:post_ids_found]
+      topic_ids_found = tool_result[:topic_ids_found]
+      non_post_urls_found = tool_result[:non_post_urls_found]
+
+      absolute_urls.each do |url|
+        uri = URI.parse(url)
+        if uri.host&.casecmp?(Discourse.current_hostname) && legal_forum_path?(uri.path)
+          collect_forum_path_provenance(uri.path, post_ids_found, topic_ids_found)
+        else
+          non_post_urls_found << url
+        end
+      rescue URI::InvalidURIError
+        next
+      end
+
+      relative_forum_paths.each do |path|
+        uri = URI.parse(path)
+        collect_forum_path_provenance(uri.path, post_ids_found, topic_ids_found) if legal_forum_path?(uri.path)
+      rescue URI::InvalidURIError
+        next
+      end
+
+      @trusted_url_provenance_collected ||=
+        tool_result[:provenance_declared] || absolute_urls.present? || relative_forum_paths.present?
+      @posts_ids_found = (@posts_ids_found.to_set | post_ids_found.to_set).to_a
+      @topic_ids_found = (@topic_ids_found.to_set | topic_ids_found.to_set).to_a
+      @non_post_urls_found = (@non_post_urls_found.to_set | non_post_urls_found.to_set).to_a
+    end
+
+    def collect_forum_path_provenance(path, post_ids_found, topic_ids_found)
+      match = path.match(%r{\A/t/[^/]+/(\d+)(?:/(\d+))?/?\z})
+      return if !match
+
+      topic_id = match[1].to_i
+      post_number = match[2]
+      if post_number
+        post = ::Post.find_by(topic_id: topic_id, post_number: post_number.to_i)
+        if post
+          post_ids_found << post.id
+          topic_ids_found << post.topic_id
+        end
+      else
+        topic_ids_found << topic_id
       end
     end
 
