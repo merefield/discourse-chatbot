@@ -129,6 +129,11 @@ module ::DiscourseChatbot
       )
   end
 
+  def embedding_model_name
+    custom_name = SiteSetting.chatbot_open_ai_embeddings_model_custom_name.to_s.strip
+    custom_name.presence || SiteSetting.chatbot_open_ai_embeddings_model
+  end
+
   def progress_debug_message(message)
     if SiteSetting.chatbot_enable_verbose_console_logging
       puts "Chatbot: #{message}"
@@ -148,6 +153,7 @@ module ::DiscourseChatbot
   module_function :latest_chatbot_escalation_topic_id
   module_function :latest_chatbot_escalation_at
   module_function :chatbot_escalation_cooldown_elapsed?
+  module_function :embedding_model_name
   module_function :progress_debug_message
 end
 

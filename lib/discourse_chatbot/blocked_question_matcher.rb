@@ -14,7 +14,7 @@ module ::DiscourseChatbot
       evaluation = {
         blocked: false,
         threshold: SiteSetting.chatbot_blocked_questions_similarity_threshold,
-        embedding_model: SiteSetting.chatbot_open_ai_embeddings_model,
+        embedding_model: ::DiscourseChatbot.embedding_model_name,
       }
       return evaluation.merge(outcome: "empty_question") if question.blank?
 
@@ -42,7 +42,7 @@ module ::DiscourseChatbot
         outcome: "error",
         error: error.message,
         threshold: SiteSetting.chatbot_blocked_questions_similarity_threshold,
-        embedding_model: SiteSetting.chatbot_open_ai_embeddings_model,
+        embedding_model: ::DiscourseChatbot.embedding_model_name,
       }
     end
 
@@ -76,7 +76,7 @@ module ::DiscourseChatbot
     def cache_key(examples)
       configuration = {
         version: CACHE_VERSION,
-        model: SiteSetting.chatbot_open_ai_embeddings_model,
+        model: ::DiscourseChatbot.embedding_model_name,
         char_limit: SiteSetting.chatbot_open_ai_embeddings_char_limit,
         custom_url: SiteSetting.chatbot_open_ai_embeddings_model_custom_url,
         api_type: SiteSetting.chatbot_open_ai_model_custom_api_type,
@@ -94,7 +94,7 @@ module ::DiscourseChatbot
           response =
             client.embeddings(
               parameters: {
-                model: SiteSetting.chatbot_open_ai_embeddings_model,
+                model: ::DiscourseChatbot.embedding_model_name,
                 input: batch,
               },
             )

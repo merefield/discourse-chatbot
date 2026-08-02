@@ -200,6 +200,9 @@ plugins:
     choices:
       - text-embedding-ada-002
       - text-embedding-3-small
+  chatbot_open_ai_embeddings_model_custom_name:
+    client: false
+    default: ''
   chatbot_embeddings_strategy:
     default: benchmark_user
     client: false

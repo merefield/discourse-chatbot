@@ -94,6 +94,24 @@ RSpec.describe ::DiscourseChatbot::BlockedQuestionMatcher do
     )
   end
 
+  it "uses a custom embedding model name in preference to the model selector" do
+    SiteSetting.chatbot_open_ai_embeddings_model = "text-embedding-ada-002"
+    SiteSetting.chatbot_open_ai_embeddings_model_custom_name = " provider-embedding-model "
+    client
+      .expects(:embeddings)
+      .with { |request| request.dig(:parameters, :model) == "provider-embedding-model" }
+      .times(2)
+      .returns(
+        embedding_response([1.0, 0.0], [0.9, 0.1], [0.0, 1.0]),
+        embedding_response([1.0, 0.0]),
+      )
+
+    expect(described_class.new.evaluate("Who should I vote for?")).to include(
+      blocked: true,
+      embedding_model: "provider-embedding-model",
+    )
+  end
+
   it "allows a question below the configured similarity threshold" do
     SiteSetting.chatbot_blocked_questions_similarity_threshold = 0.9
     client.stubs(:embeddings).returns(
