@@ -6,16 +6,6 @@ module DiscourseChatbot
     class OpenAiBotRag < OpenAiBotBase
       BUILT_IN_FUNCTIONS = %w[
         DiscourseChatbot::Functions::StockDataFunction
-        DiscourseChatbot::Functions::GetCoordsOfLocationDescriptionFunction
-        DiscourseChatbot::Functions::GetDistanceBetweenLocationsFunction
-        DiscourseChatbot::Functions::ForumTopicSearchFromTopicLocationFunction
-        DiscourseChatbot::Functions::ForumTopicSearchFromUserLocationFunction
-        DiscourseChatbot::Functions::ForumTopicSearchFromLocationFunction
-        DiscourseChatbot::Functions::ForumGetUserAddressFunction
-        DiscourseChatbot::Functions::ForumUserSearchFromTopicLocationFunction
-        DiscourseChatbot::Functions::ForumUserSearchFromUserLocationFunction
-        DiscourseChatbot::Functions::ForumUserSearchFromLocationFunction
-        DiscourseChatbot::Functions::ForumUserDistanceFromLocationFunction
         DiscourseChatbot::Functions::ForumSearchFunction
         DiscourseChatbot::Functions::PaintFunction
         DiscourseChatbot::Functions::PaintEditFunction
@@ -204,12 +194,6 @@ module DiscourseChatbot
         paint_function = ::DiscourseChatbot::Functions::PaintFunction.new
         paint_edit_function = ::DiscourseChatbot::Functions::PaintEditFunction.new
         forum_search_function = nil
-        user_search_from_user_location_function = nil
-        user_search_from_location_function = nil
-        user_distance_from_location_function = nil
-        get_coords_of_location_function = nil
-        get_distance_between_locations = nil
-        get_user_address = nil
 
         if SiteSetting.chatbot_embeddings_enabled
           forum_search_function = ::DiscourseChatbot::Functions::ForumSearchFunction.new
@@ -217,22 +201,6 @@ module DiscourseChatbot
 
         if SiteSetting.chatbot_support_vision == "via_function"
           vision_function = ::DiscourseChatbot::Functions::VisionFunction.new
-        end
-
-        if SiteSetting.chatbot_locations_plugin_support && defined?(Locations) == "constant" &&
-             Locations.class == Module && defined?(::Locations::UserLocation) == "constant" &&
-             ::Locations::UserLocation.class == Class && ::Locations::UserLocation.count > 0
-          user_search_from_location_function =
-            ::DiscourseChatbot::Functions::ForumUserSearchFromLocationFunction.new
-          user_search_from_user_location_function =
-            ::DiscourseChatbot::Functions::ForumUserSearchFromUserLocationFunction.new
-          get_coords_of_location_function =
-            ::DiscourseChatbot::Functions::GetCoordsOfLocationDescriptionFunction.new
-          user_distance_from_location_function =
-            ::DiscourseChatbot::Functions::ForumUserDistanceFromLocationFunction.new
-          get_distance_between_locations =
-            ::DiscourseChatbot::Functions::GetDistanceBetweenLocationsFunction.new
-          get_user_address = ::DiscourseChatbot::Functions::ForumGetUserAddressFunction.new
         end
 
         functions = [calculator_function]
@@ -276,14 +244,6 @@ module DiscourseChatbot
           functions << paint_edit_function
         end
 
-        functions << user_search_from_location_function if user_search_from_location_function
-        if user_search_from_user_location_function
-          functions << user_search_from_user_location_function
-        end
-        functions << get_coords_of_location_function if get_coords_of_location_function
-        functions << user_distance_from_location_function if user_distance_from_location_function
-        functions << get_distance_between_locations if get_distance_between_locations
-        functions << get_user_address if get_user_address
         if SiteSetting.chatbot_escalate_to_staff_function && opts[:private] &&
              opts[:type] == ::DiscourseChatbot::MESSAGE
           functions << escalate_to_staff_function
@@ -300,9 +260,17 @@ module DiscourseChatbot
         end
         functions << stock_data_function if SiteSetting.chatbot_marketstack_key.present?
 
-        if ::DiscourseChatbot::Function.descendants.count > BUILT_IN_FUNCTIONS.count
-          ::DiscourseChatbot::Function.descendants.each do |func|
-            functions << func.new if !BUILT_IN_FUNCTIONS.include?(func.to_s)
+        ::DiscourseChatbot::Function.descendants.each do |function_class|
+          next if BUILT_IN_FUNCTIONS.include?(function_class.to_s)
+
+          begin
+            next if function_class.respond_to?(:available?) && !function_class.available?(opts)
+
+            functions << function_class.new
+          rescue StandardError => error
+            Rails.logger.warn(
+              "Chatbot: unable to load extension function #{function_class}: #{error.class}: #{error.message}",
+            )
           end
         end
 
