@@ -18,7 +18,7 @@ module DiscourseChatbot
             type: Integer,
             description:
               I18n.t(
-                "chatbot.prompt.function.forum_topic_search_from_topic_location.parameters.username",
+                "chatbot.prompt.function.forum_topic_search_from_topic_location.parameters.topic_id",
               ),
           },
           {
@@ -34,7 +34,7 @@ module DiscourseChatbot
             type: Integer,
             description:
               I18n.t(
-                "chatbot.prompt.function.forum_topic_search_from_topic_location.parameters.number_of_users",
+                "chatbot.prompt.function.forum_topic_search_from_topic_location.parameters.number_of_topics",
               ),
           },
         ]
@@ -47,46 +47,47 @@ module DiscourseChatbot
       def process(args)
         begin
           super(args)
-          query = args[parameters[0][:name]]
+          topic_id = args[parameters[0][:name]]
 
           distance = args[parameters[1][:name]].presence || 500
           number_of_topics = args[parameters[2][:name]].presence || 3
-          number_of_topics = number_of_topics > 16 ? 16 : number_of_users
+          number_of_topics = number_of_topics > 16 ? 16 : number_of_topics
 
-          results = []
-
-          target_topic_location = TopicLocation.find_by(topic_id: topic.id)
-          results = ::Locations::TopicLocationProcess.search_from_topic_location(topic_id, distance)
+          target_topic_location = ::Locations::TopicLocation.find_by(topic_id: topic_id)
+          topic_ids =
+            ::Locations::TopicLocationProcess.search_topics_from_topic_location(topic_id, distance)
 
           response =
             I18n.t(
               "chatbot.prompt.function.forum_topic_search_from_topic_location.answer_summary",
               distance: distance,
-              query: query,
+              query: topic_id,
             )
 
-          results.each_with_index do |result, index|
-            topic = Topic.find(result.topic_id)
-            url = "https://#{Discourse.current_hostname}/t/slug/#{topic.topic_id}"
-            topic_location = ::Locations::TopicLocation.find_by(topic_id: topic.id)
-            distance = result.distance_from(target_topic_location.to_coordinates, :km)
-            response +=
-              I18n.t(
-                "chatbot.prompt.function.forum_topic_search_from_topic_location.answer",
-                title: topic.title,
-                address: topic_location.address,
-                url: url,
-                distance: distance,
-                rank: index + 1,
-              )
-            break if index == number_of_topics
-          end
+          topic_ids
+            .first(number_of_topics)
+            .each_with_index do |nearby_topic_id, index|
+              topic = ::Topic.find(nearby_topic_id)
+              url = "https://#{Discourse.current_hostname}/t/slug/#{topic.id}"
+              topic_location = ::Locations::TopicLocation.find_by(topic_id: topic.id)
+              result_distance =
+                topic_location.distance_from(target_topic_location.to_coordinates, :km)
+              response +=
+                I18n.t(
+                  "chatbot.prompt.function.forum_topic_search_from_topic_location.answer",
+                  title: topic.title,
+                  address: topic_location.address,
+                  url: url,
+                  distance: result_distance,
+                  rank: index + 1,
+                )
+            end
           { answer: response, token_usage: 0 }
         rescue StandardError
           {
             answer:
               I18n.t(
-                "chatbot.prompt.function.forum_user_location_search_from_user.error",
+                "chatbot.prompt.function.forum_topic_search_from_topic_location.error",
                 query: args[parameters[0][:name]],
               ),
             token_usage: 0,

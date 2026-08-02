@@ -364,7 +364,7 @@ en:
           parameters:
             topic_id: "target topic id"
             distance: "maximum distance from target in kilometres (km)"
-            number_of_posts: "specify the maximum number of users you want returned from your query"
+            number_of_users: "specify the maximum number of users you want returned from your query"
           answer_summary: "The users within %{distance} kilometres of %{query} are: "
           answer: "Number %{rank}: user: @%{username} distance: %{distance} km.  "
           error:  "'%{query}': my search for users in proximity to this target failed."
