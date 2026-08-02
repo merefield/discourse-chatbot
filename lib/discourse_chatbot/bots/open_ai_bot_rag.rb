@@ -262,9 +262,16 @@ module DiscourseChatbot
 
         ::DiscourseChatbot::Function.descendants.each do |function_class|
           next if BUILT_IN_FUNCTIONS.include?(function_class.to_s)
-          next if function_class.respond_to?(:available?) && !function_class.available?(opts)
 
-          functions << function_class.new
+          begin
+            next if function_class.respond_to?(:available?) && !function_class.available?(opts)
+
+            functions << function_class.new
+          rescue StandardError => error
+            Rails.logger.warn(
+              "Chatbot: unable to load extension function #{function_class}: #{error.class}: #{error.message}",
+            )
+          end
         end
 
         @functions = parse_functions(functions)

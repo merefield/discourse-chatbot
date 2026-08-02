@@ -173,7 +173,8 @@ Other plugins can add RAG tools by loading zero-argument subclasses of
 list. An extension class may define `self.available?(opts)` to decide at request time whether it
 should be exposed; classes without this method remain available by default. This lets an optional
 integration honor its own settings and data prerequisites without introducing a hard plugin
-dependency.
+dependency. If an extension raises while checking availability or initializing, Chatbot logs the
+error and omits that extension without affecting the remaining tools.
 
 ## Local chain-of-thought strategies
 

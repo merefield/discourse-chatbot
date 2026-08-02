@@ -1673,6 +1673,21 @@ end
 describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#merge_functions" do
   fab!(:user)
 
+  after { GC.start }
+
+  let(:build_extension_function) do
+    lambda do |name, availability: nil, &initializer|
+      Class.new(::DiscourseChatbot::Function) do
+        define_singleton_method(:available?) { |opts| availability.call(opts) } if availability
+        define_method(:name) { name }
+        define_method(:description) { "An extension function used by this spec" }
+        define_method(:parameters) { [] }
+        define_method(:required) { [] }
+        define_method(:initialize, &initializer) if initializer
+      end
+    end
+  end
+
   it "includes wikipedia by default" do
     rag = described_class.new({})
     func_mapping = rag.instance_variable_get(:@func_mapping)
@@ -1757,6 +1772,33 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#merge_functions" do
     func_mapping = rag.instance_variable_get(:@func_mapping)
 
     expect(func_mapping).not_to have_key("paint_edit_picture")
+  end
+
+  it "discovers external functions and honors their availability" do
+    build_extension_function.call(
+      "conditional_extension",
+      availability: ->(opts) { opts[:enable_test_extension] },
+    )
+
+    enabled_mapping =
+      described_class.new({ enable_test_extension: true }).instance_variable_get(:@func_mapping)
+    disabled_mapping = described_class.new({}).instance_variable_get(:@func_mapping)
+
+    expect(enabled_mapping).to have_key("conditional_extension")
+    expect(disabled_mapping).not_to have_key("conditional_extension")
+  end
+
+  it "isolates errors raised by individual external functions" do
+    build_extension_function.call(
+      "unavailable_extension",
+      availability: ->(_opts) { raise "availability failed" },
+    )
+    build_extension_function.call("invalid_extension") { |_required_argument| }
+    build_extension_function.call("healthy_extension")
+
+    func_mapping = described_class.new({}).instance_variable_get(:@func_mapping)
+
+    expect(func_mapping).to have_key("healthy_extension")
   end
 end
 
