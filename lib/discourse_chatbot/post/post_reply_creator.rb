@@ -37,7 +37,8 @@ module ::DiscourseChatbot
              )
           default_opts.merge!(
             raw:
-              "[details='Inner Thoughts']\n```json\n" + JSON.pretty_generate(@inner_thoughts) +
+              ::DiscourseChatbot::INNER_THOUGHTS_POST_PREFIX +
+                JSON.pretty_generate(@inner_thoughts) +
                 "\n```\n[/details]",
           )
           if SiteSetting.chatbot_include_inner_thoughts_in_topics_as_whisper && !@is_private_msg

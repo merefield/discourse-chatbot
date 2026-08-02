@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Chat, Topics and Private Messages
-# version: 1.8.0
+# version: 2.0.0
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -33,6 +33,7 @@ module ::DiscourseChatbot
     "chatbot_last_escalation_topic_id"
   POST_TYPES_REGULAR_ONLY = [1]
   POST_TYPES_INC_WHISPERS = [1, 4]
+  INNER_THOUGHTS_POST_PREFIX = "[details='Inner Thoughts']\n```json\n"
 
   TRUST_LEVELS = %w[low medium high]
   HIGH_TRUST_LEVEL = 3
