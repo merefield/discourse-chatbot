@@ -7,8 +7,8 @@ describe ::DiscourseChatbot::OpenAiBotBasic do
   let(:responses_api) { mock }
 
   before do
-    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
-    SiteSetting.chatbot_open_ai_model_reasoning_level = "high"
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.6-sol"
+    SiteSetting.chatbot_open_ai_model_reasoning_level = "max"
     SiteSetting.chatbot_open_ai_model_verbosity = "low"
 
     OpenAI::Client.stubs(:new).returns(client)
@@ -22,8 +22,8 @@ describe ::DiscourseChatbot::OpenAiBotBasic do
       .with do |args|
         parameters = args[:parameters]
 
-        expect(parameters[:model]).to eq("gpt-5.4-mini")
-        expect(parameters[:reasoning]).to eq({ effort: "high" })
+        expect(parameters[:model]).to eq("gpt-5.6-sol")
+        expect(parameters[:reasoning]).to eq({ effort: "max" })
         expect(parameters[:text]).to eq({ verbosity: "low" })
         expect(parameters[:max_output_tokens]).to eq(25_000)
         expect(parameters[:input].first[:role]).to eq("developer")
