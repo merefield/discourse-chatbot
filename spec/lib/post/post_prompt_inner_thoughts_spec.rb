@@ -42,5 +42,8 @@ describe ::DiscourseChatbot::PostPromptUtils do
       inner_thoughts_whisper.raw,
       inner_thoughts_regular.raw,
     )
+
+    history_without_bot_id = described_class.collect_past_interactions(current_post.id)
+    expect(history_without_bot_id).to eq([current_post, bot_response, staff_whisper])
   end
 end

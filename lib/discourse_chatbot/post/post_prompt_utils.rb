@@ -199,8 +199,9 @@ module ::DiscourseChatbot
     end
 
     def self.inner_thoughts_post?(post, bot_user_id)
-      bot_user_id.present? && post.user_id == bot_user_id &&
-        post.raw.to_s.start_with?(::DiscourseChatbot::INNER_THOUGHTS_POST_PREFIX)
+      return false if !post.raw.to_s.start_with?(::DiscourseChatbot::INNER_THOUGHTS_POST_PREFIX)
+
+      bot_user_id.blank? || post.user_id == bot_user_id
     end
   end
 end
