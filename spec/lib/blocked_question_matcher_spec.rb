@@ -162,11 +162,4 @@ RSpec.describe ::DiscourseChatbot::BlockedQuestionMatcher do
 
     expect(described_class.new.evaluate("Who should I vote for?")).to be_nil
   end
-
-  def embedding_response(*vectors)
-    {
-      "data" =>
-        vectors.each_with_index.map { |vector, index| { "index" => index, "embedding" => vector } },
-    }
-  end
 end

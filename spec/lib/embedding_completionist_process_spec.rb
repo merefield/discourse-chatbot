@@ -1,17 +1,15 @@
 # frozen_string_literal: true
-require_relative '../plugin_helper'
+require_relative "../plugin_helper"
 
 RSpec.describe DiscourseChatbot::EmbeddingCompletionist do
-  describe 'bookmark' do
-
+  describe "bookmark" do
     let(:post_1) { Fabricate(:post) }
     let(:post_2) { Fabricate(:post) }
     let(:post_3) { Fabricate(:post) }
     let(:post_4) { Fabricate(:post) }
     let(:post_5) { Fabricate(:post) }
 
-    it 'should process a chunk each time its called and reset to start once it gets to end' do
-
+    it "should process a chunk each time its called and reset to start once it gets to end" do
       expect(post_1).to be_present
       expect(post_2).to be_present
       expect(post_3).to be_present

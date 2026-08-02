@@ -188,29 +188,32 @@ en:
           error: "I couldn't save any information about %{user_field} for answer '%{answer}'"
         calculator:
           description: |
-            Evaluate a single mathematical expression using supported Ruby syntax. Use this tool for arithmetic, Ruby Math module operations, and calculations involving the current date or time.
+            Evaluate one expression using Dentaku formula syntax, not Ruby syntax. Use this tool for arithmetic, comparisons, mathematical functions, and calculations involving the current date or time.
 
-            Ruby syntax requirements:
-            - Use `Math.method(...)` for mathematical functions, such as `Math.sqrt(8)` or `Math.cbrt(13)`.
-            - Use `Math::CONSTANT` for mathematical constants, such as `Math::PI` or `Math::E`. Never use forms such as `Math.PI`.
-            - Use a decimal operand when a fractional result is required; Ruby divides two integers using integer division.
-            - Use `Time.now` for the current date and time.
+            Formula syntax requirements:
+            - Syntax is case-insensitive. Use operators such as `+`, `-`, `*`, `/`, `%`, `=`, `!=`, `<`, `<=`, `>`, and `>=`.
+            - Use functions such as `ABS`, `ROUND`, `MIN`, `MAX`, `SUM`, `SQRT`, `CBRT`, and `IF(condition, true_value, false_value)`.
+            - Use the predefined variables `PI`, `E`, and `NOW`. Other variables are not available.
+            - Use `DURATION(number, unit)` for calendar offsets. The unit must be `day`, `days`, `month`, `months`, `year`, or `years` without quotes.
+            - Ruby code, method calls, assignments, exponentiation, and bit shifting are not supported.
             - Submit only the expression to evaluate.
 
-            If the tool reports that an expression is invalid, inspect the error and retry once with corrected Ruby syntax. Do not repeat the same invalid expression unchanged. If it cannot be corrected, continue without the calculation and do not treat the error as a result.
+            If the expression is rejected, retry once using the supported syntax. Do not repeat the same invalid expression unchanged. If it cannot be corrected, continue without the calculation and do not treat the error as a result.
 
             Usage:
               Action Input: 1 + 1
               Action Input: 3.0 * 2 / 4
               Action Input: 9 - 7
-              Action Input: Math::PI / 3
-              Action Input: Math.cbrt(13) + Math.cbrt(12)
-              Action Input: Math.sqrt(8)
+              Action Input: PI / 3
+              Action Input: ROUND(SQRT(8), 4)
+              Action Input: IF(12 >= 10, 1, 0)
+              Action Input: CBRT(13) + CBRT(12)
+              Action Input: SQRT(8)
               Action Input: (4.1 + 2.3) / (2.0 - 5.6) * 3
-              Action Input: Time.now - 2 * 24 * 60 * 60
+              Action Input: NOW - DURATION(2, days)
           parameters:
-            input: the mathematical expression you need to process and get the answer to. Make sure it is Ruby compatible.
-          error: "'%{parameter}' is an invalid mathematical expression, make sure if you are trying to calculate dates use Ruby Time class"
+            input: the mathematical expression to evaluate using the supported formula syntax.
+          error: "'%{parameter}' is not a valid supported mathematical expression"
         paint:
           description: |
             creates a picture based on the provided description
@@ -361,7 +364,7 @@ en:
           parameters:
             topic_id: "target topic id"
             distance: "maximum distance from target in kilometres (km)"
-            number_of_posts: "specify the maximum number of users you want returned from your query"
+            number_of_users: "specify the maximum number of users you want returned from your query"
           answer_summary: "The users within %{distance} kilometres of %{query} are: "
           answer: "Number %{rank}: user: @%{username} distance: %{distance} km.  "
           error:  "'%{query}': my search for users in proximity to this target failed."

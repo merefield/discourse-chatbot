@@ -10,9 +10,9 @@ class ::Jobs::ChatbotReply < Jobs::Base
     opts.merge!(reply_and_thoughts)
     type = opts[:type]
     if type == ::DiscourseChatbot::POST
-      reply_creator = ::DiscourseChatbot::PostReplyCreator.new(opts)
+      reply_creator = ::DiscourseChatbot::Post::PostReplyCreator.new(opts)
     else
-      reply_creator = ::DiscourseChatbot::MessageReplyCreator.new(opts)
+      reply_creator = ::DiscourseChatbot::Message::MessageReplyCreator.new(opts)
     end
     reply_creator.create
   end
@@ -131,11 +131,10 @@ class ::Jobs::ChatbotReply < Jobs::Base
         end
 
         if blocked_question_evaluation&.dig(:blocked)
-          reply_and_thoughts[:reply] =
-            I18n.t(
-              "chatbot.errors.blocked_question",
-              category: blocked_question_evaluation[:category],
-            )
+          reply_and_thoughts[:reply] = I18n.t(
+            "chatbot.errors.blocked_question",
+            category: blocked_question_evaluation[:category],
+          )
           reply_and_thoughts[:inner_thoughts] = opts[:initial_inner_thoughts]
           opts[:blocked_question] = true
           create_bot_reply = false
@@ -151,24 +150,22 @@ class ::Jobs::ChatbotReply < Jobs::Base
       begin
         if opts[:chatbot_bot_type] == "RAG"
           ::DiscourseChatbot.progress_debug_message("4a. Using RAG bot...")
-          bot = ::DiscourseChatbot::OpenAiBotRag.new(opts)
+          bot = ::DiscourseChatbot::Bots::OpenAiBotRag.new(opts)
         else
           ::DiscourseChatbot.progress_debug_message("4a. Using basic bot...")
-          bot = ::DiscourseChatbot::OpenAiBotBasic.new(opts)
+          bot = ::DiscourseChatbot::Bots::OpenAiBotBasic.new(opts)
         end
         reply_and_thoughts = bot.ask(opts)
-      rescue ::DiscourseChatbot::OpenAIBotBase::NonRetryableError => e
+      rescue ::DiscourseChatbot::Bots::OpenAiBotBase::NonRetryableError => e
         Rails.logger.warn("Chatbot: Reply stopped without retrying: #{e}")
         error_key =
-          if e.is_a?(::DiscourseChatbot::OpenAIBotBase::TokenBudgetError)
+          if e.is_a?(::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError)
             "chatbot.errors.token_budget"
           else
             "chatbot.errors.chain_limit"
           end
         reply_and_thoughts[:reply] = I18n.t(error_key)
-        if bot.respond_to?(:inner_thoughts)
-          reply_and_thoughts[:inner_thoughts] = bot.inner_thoughts
-        end
+        reply_and_thoughts[:inner_thoughts] = bot.inner_thoughts if bot.respond_to?(:inner_thoughts)
       rescue => e
         Rails.logger.error("Chatbot: There was a problem, but will retry til limit: #{e}")
         fail e
@@ -176,9 +173,9 @@ class ::Jobs::ChatbotReply < Jobs::Base
     end
     opts.merge!(reply_and_thoughts)
     if type == ::DiscourseChatbot::POST
-      reply_creator = ::DiscourseChatbot::PostReplyCreator.new(opts)
+      reply_creator = ::DiscourseChatbot::Post::PostReplyCreator.new(opts)
     else
-      reply_creator = ::DiscourseChatbot::MessageReplyCreator.new(opts)
+      reply_creator = ::DiscourseChatbot::Message::MessageReplyCreator.new(opts)
     end
     reply_creator.create
   end

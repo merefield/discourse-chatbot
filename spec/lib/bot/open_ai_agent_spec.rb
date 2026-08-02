@@ -7,9 +7,9 @@ RSpec.configure do |config|
   end
 end
 
-describe ::DiscourseChatbot::OpenAiBotRag do
+describe ::DiscourseChatbot::Bots::OpenAiBotRag do
   let(:opts) { {} }
-  let(:rag) { ::DiscourseChatbot::OpenAiBotRag.new(opts) }
+  let(:rag) { ::DiscourseChatbot::Bots::OpenAiBotRag.new(opts) }
   let(:llm_function_response) { get_chatbot_output_fixture("llm_function_response") }
   let(:llm_final_response) { get_chatbot_output_fixture("llm_final_response") }
   let(:post_ids_found) { [] }
@@ -48,10 +48,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
       {
         type: "advanced_local_reasoning_outcome",
         content:
-          I18n.t(
-            "chatbot.prompt.system.rag.advanced_local_reasoning.outcomes.#{key}",
-            **options,
-          ),
+          I18n.t("chatbot.prompt.system.rag.advanced_local_reasoning.outcomes.#{key}", **options),
       }
     end
   end
@@ -142,26 +139,30 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_support_picture_creation = true
     image_markdown = "![generated image](upload://image.png)"
-    ::DiscourseChatbot::PaintFunction.any_instance.stubs(:process).returns(
-      { answer: image_markdown, token_usage: 10 },
-    )
+    ::DiscourseChatbot::Functions::PaintFunction
+      .any_instance
+      .stubs(:process)
+      .returns({ answer: image_markdown, token_usage: 10 })
 
-    responses_api.expects(:create).once.returns(
-      {
-        "status" => "completed",
-        "output" => [
-          {
-            "type" => "function_call",
-            "call_id" => "call_1",
-            "name" => "paint_picture",
-            "arguments" => "{\"description\":\"an image\"}",
+    responses_api
+      .expects(:create)
+      .once
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [
+            {
+              "type" => "function_call",
+              "call_id" => "call_1",
+              "name" => "paint_picture",
+              "arguments" => "{\"description\":\"an image\"}",
+            },
+          ],
+          "usage" => {
+            "total_tokens" => 2,
           },
-        ],
-        "usage" => {
-          "total_tokens" => 2,
         },
-      },
-    )
+      )
 
     response = rag.get_response([{ role: "user", content: "Paint an image" }], opts)
 
@@ -172,9 +173,10 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_support_picture_creation = true
     image_markdown = "![generated image](upload://image.png)"
-    ::DiscourseChatbot::PaintFunction.any_instance.stubs(:process).returns(
-      { answer: image_markdown, token_usage: 10 },
-    )
+    ::DiscourseChatbot::Functions::PaintFunction
+      .any_instance
+      .stubs(:process)
+      .returns({ answer: image_markdown, token_usage: 10 })
     requests = []
 
     responses_api
@@ -210,9 +212,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
           "output" => [
             {
               "type" => "message",
-              "content" => [
-                { "type" => "output_text", "text" => "The result is 4, shown below." },
-              ],
+              "content" => [{ "type" => "output_text", "text" => "The result is 4, shown below." }],
             },
           ],
           "usage" => {
@@ -300,9 +300,9 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   it "normalizes trusted non-post URLs before comparing them" do
     response = "See [the documentation](https://EXAMPLE.com/docs/#install)."
 
-    expect(described_class.new({}).legal_non_post_urls?(response, ["https://example.com/docs"])).to eq(
-      true,
-    )
+    expect(
+      described_class.new({}).legal_non_post_urls?(response, ["https://example.com/docs"]),
+    ).to eq(true)
   end
 
   it "requires query strings to match trusted non-post URLs" do
@@ -320,9 +320,9 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     response = "See https://meta.example.com/t/slug/123"
 
     expect(described_class.new({}).legal_post_urls?(response, [], [])).to eq(true)
-    expect(described_class.new({}).legal_non_post_urls?(response, [response.delete_prefix("See ")])).to eq(
-      true,
-    )
+    expect(
+      described_class.new({}).legal_non_post_urls?(response, [response.delete_prefix("See ")]),
+    ).to eq(true)
   end
 
   it "uses the responses api for reasoning models" do
@@ -410,21 +410,13 @@ describe ::DiscourseChatbot::OpenAiBotRag do
       "id" => "rs_1",
       "type" => "reasoning",
       "encrypted_content" => encrypted_content,
-      "summary" => [
-        {
-          "type" => "summary_text",
-          "text" => "I need to calculate the expression.",
-        },
-      ],
+      "summary" => [{ "type" => "summary_text", "text" => "I need to calculate the expression." }],
     }
     final_reasoning_item = {
       "id" => "rs_2",
       "type" => "reasoning",
       "summary" => [
-        {
-          "type" => "summary_text",
-          "text" => "The calculation result is sufficient to answer.",
-        },
+        { "type" => "summary_text", "text" => "The calculation result is sufficient to answer." },
       ],
     }
     requests = []
@@ -478,10 +470,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     ).to eq(
       [
         { type: "reasoning_summary", content: "I need to calculate the expression." },
-        {
-          type: "reasoning_summary",
-          content: "The calculation result is sufficient to answer.",
-        },
+        { type: "reasoning_summary", content: "The calculation result is sufficient to answer." },
       ],
     )
     expect(requests.second[:input].last(3)).to eq(
@@ -507,10 +496,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
       "id" => "rs_1",
       "type" => "reasoning",
       "summary" => [
-        {
-          "type" => "summary_text",
-          "text" => "I need another step before answering.",
-        },
+        { "type" => "summary_text", "text" => "I need another step before answering." },
       ],
     }
     requests = []
@@ -548,12 +534,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
 
     expect(response[:reply]).to eq("Final answer")
     expect(response[:inner_thoughts]).to eq(
-      [
-        {
-          type: "reasoning_summary",
-          content: "I need another step before answering.",
-        },
-      ],
+      [{ type: "reasoning_summary", content: "I need another step before answering." }],
     )
     expect(requests.second[:input].last).to eq(reasoning_item.deep_symbolize_keys)
   end
@@ -570,10 +551,8 @@ describe ::DiscourseChatbot::OpenAiBotRag do
       },
     )
 
-    expect do
-      rag.get_response([{ role: "user", content: "Answer me" }], opts)
-    end.to raise_error(
-      ::DiscourseChatbot::OpenAIBotBase::ResponsesApiError,
+    expect do rag.get_response([{ role: "user", content: "Answer me" }], opts) end.to raise_error(
+      ::DiscourseChatbot::Bots::OpenAiBotBase::ResponsesApiError,
       "OpenAI Responses API completed without visible message content",
     )
   end
@@ -621,7 +600,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
 
     expect do
       rag.get_response([{ role: "user", content: "Think this through" }], opts)
-    end.to raise_error(::DiscourseChatbot::OpenAIBotBase::TokenBudgetError)
+    end.to raise_error(::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError)
 
     expect(rag.total_tokens).to eq(10)
   end
@@ -649,7 +628,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
 
     expect do
       rag.get_response([{ role: "user", content: "Think this through" }], opts)
-    end.to raise_error(::DiscourseChatbot::OpenAIBotBase::TokenBudgetError)
+    end.to raise_error(::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError)
 
     expect(rag.inner_thoughts).to eq([{ type: "reasoning_summary", content: summary_text }])
   end
@@ -657,25 +636,23 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   it "stops a reasoning continuation after reaching the aggregate chain budget" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_open_ai_max_chain_tokens = 5
-    responses_api.expects(:create).once.returns(
-      {
-        "status" => "completed",
-        "output" => [
-          {
-            "type" => "reasoning",
-            "summary" => [],
+    responses_api
+      .expects(:create)
+      .once
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [{ "type" => "reasoning", "summary" => [] }],
+          "usage" => {
+            "total_tokens" => 5,
           },
-        ],
-        "usage" => {
-          "total_tokens" => 5,
         },
-      },
-    )
+      )
 
     expect do
       rag.get_response([{ role: "user", content: "Think this through" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::OpenAIBotBase::TokenBudgetError,
+      ::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError,
       "OpenAI response exceeded the configured chatbot_open_ai_max_chain_tokens budget",
     )
   end
@@ -723,7 +700,10 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect(response[:inner_thoughts]).to eq(
       [
         advanced_outcome.call("strategy_started", strategy: "verify_and_revise"),
-        { type: "advanced_local_reasoning_review", content: "REVISE: The arithmetic is incorrect." },
+        {
+          type: "advanced_local_reasoning_review",
+          content: "REVISE: The arithmetic is incorrect.",
+        },
         advanced_outcome.call("revision_adopted"),
       ],
     )
@@ -1001,7 +981,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
   it "executes tools only on the shared path before comparing answers" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
     SiteSetting.chatbot_advanced_local_reasoning = "best_of_two"
-    ::DiscourseChatbot::CalculatorFunction
+    ::DiscourseChatbot::Functions::CalculatorFunction
       .any_instance
       .expects(:process)
       .once
@@ -1089,12 +1069,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
       .returns(
         {
           "choices" => [
-            {
-              "finish_reason" => "length",
-              "message" => {
-                "content" => "Partial completion",
-              },
-            },
+            { "finish_reason" => "length", "message" => { "content" => "Partial completion" } },
           ],
           "usage" => {
             "total_tokens" => 200,
@@ -1109,36 +1084,39 @@ describe ::DiscourseChatbot::OpenAiBotRag do
 
   it "rejects truncated Chat Completions tool calls" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
-    client.expects(:chat).once.returns(
-      {
-        "choices" => [
-          {
-            "finish_reason" => "length",
-            "message" => {
-              "content" => nil,
-              "tool_calls" => [
-                {
-                  "id" => "call_1",
-                  "type" => "function",
-                  "function" => {
-                    "name" => "calculate",
-                    "arguments" => "{\"input\":",
+    client
+      .expects(:chat)
+      .once
+      .returns(
+        {
+          "choices" => [
+            {
+              "finish_reason" => "length",
+              "message" => {
+                "content" => nil,
+                "tool_calls" => [
+                  {
+                    "id" => "call_1",
+                    "type" => "function",
+                    "function" => {
+                      "name" => "calculate",
+                      "arguments" => "{\"input\":",
+                    },
                   },
-                },
-              ],
+                ],
+              },
             },
+          ],
+          "usage" => {
+            "total_tokens" => 200,
           },
-        ],
-        "usage" => {
-          "total_tokens" => 200,
         },
-      },
-    )
+      )
 
     expect do
       rag.get_response([{ role: "user", content: "Calculate something" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::OpenAIBotBase::TokenBudgetError,
+      ::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError,
       "OpenAI response reached its token limit before producing usable content",
     )
   end
@@ -1179,26 +1157,26 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_url_integrity_check = true
     SiteSetting.chatbot_embeddings_enabled = true
-    ::DiscourseChatbot::ForumSearchFunction.any_instance.stubs(:process).returns(
-      {
-        answer: {
-          result: "No matching forum posts were found.",
-          post_ids_found: [],
-          topic_ids_found: [],
-          non_post_urls_found: [],
+    ::DiscourseChatbot::Functions::ForumSearchFunction
+      .any_instance
+      .stubs(:process)
+      .returns(
+        {
+          answer: {
+            result: "No matching forum posts were found.",
+            post_ids_found: [],
+            topic_ids_found: [],
+            non_post_urls_found: [],
+          },
+          token_usage: 0,
         },
-        token_usage: 0,
-      },
-    )
+      )
     invalid_message = {
       "id" => "msg_1",
       "type" => "message",
       "role" => "assistant",
       "content" => [
-        {
-          "type" => "output_text",
-          "text" => "See https://unsupported.example for details.",
-        },
+        { "type" => "output_text", "text" => "See https://unsupported.example for details." },
       ],
     }
     requests = []
@@ -1254,12 +1232,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
         invalid_message.deep_symbolize_keys,
         {
           role: "developer",
-          content: [
-            {
-              type: "input_text",
-              text: I18n.t("chatbot.prompt.system.rag.illegal_urls"),
-            },
-          ],
+          content: [{ type: "input_text", text: I18n.t("chatbot.prompt.system.rag.illegal_urls") }],
         },
       ],
     )
@@ -1312,9 +1285,10 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     SiteSetting.chatbot_url_integrity_check = true
     SiteSetting.chatbot_wikipedia_function = true
     wikipedia_url = "https://en.wikipedia.org/wiki/Discourse"
-    ::DiscourseChatbot::WikipediaFunction.any_instance.stubs(:process).returns(
-      { answer: "Discourse is described at #{wikipedia_url}", token_usage: 0 },
-    )
+    ::DiscourseChatbot::Functions::WikipediaFunction
+      .any_instance
+      .stubs(:process)
+      .returns({ answer: "Discourse is described at #{wikipedia_url}", token_usage: 0 })
 
     responses_api
       .expects(:create)
@@ -1339,9 +1313,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
           "output" => [
             {
               "type" => "message",
-              "content" => [
-                { "type" => "output_text", "text" => "https://unsupported.example" },
-              ],
+              "content" => [{ "type" => "output_text", "text" => "https://unsupported.example" }],
             },
           ],
           "usage" => {
@@ -1371,17 +1343,20 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
     SiteSetting.chatbot_url_integrity_check = true
     SiteSetting.chatbot_embeddings_enabled = true
-    ::DiscourseChatbot::ForumSearchFunction.any_instance.stubs(:process).returns(
-      {
-        answer: {
-          result: "No matching forum posts were found.",
-          post_ids_found: [],
-          topic_ids_found: [],
-          non_post_urls_found: [],
+    ::DiscourseChatbot::Functions::ForumSearchFunction
+      .any_instance
+      .stubs(:process)
+      .returns(
+        {
+          answer: {
+            result: "No matching forum posts were found.",
+            post_ids_found: [],
+            topic_ids_found: [],
+            non_post_urls_found: [],
+          },
+          token_usage: 0,
         },
-        token_usage: 0,
-      },
-    )
+      )
     requests = []
 
     client
@@ -1447,10 +1422,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
 
     expect(response[:reply]).to eq("Partial answer without the unsupported link.")
     expect(requests.third[:messages].last).to eq(
-      {
-        role: "developer",
-        content: I18n.t("chatbot.prompt.system.rag.illegal_urls"),
-      },
+      { role: "developer", content: I18n.t("chatbot.prompt.system.rag.illegal_urls") },
     )
   end
 
@@ -1524,7 +1496,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect do
       rag.get_response([{ role: "user", content: "Keep reasoning" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::OpenAIBotBase::ChainLimitError,
+      ::DiscourseChatbot::Bots::OpenAiBotBase::ChainLimitError,
       "Chatbot response exceeded the maximum number of iterations",
     )
   end
@@ -1558,7 +1530,7 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect do
       rag.get_response([{ role: "user", content: "Calculate twice" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::OpenAIBotBase::ChainLimitError,
+      ::DiscourseChatbot::Bots::OpenAiBotBase::ChainLimitError,
       "Chatbot response exceeded the maximum number of tool calls",
     )
   end
@@ -1568,17 +1540,20 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     SiteSetting.chatbot_url_integrity_check = true
     SiteSetting.chatbot_chain_of_thought_max_url_repair_attempts = 0
     SiteSetting.chatbot_embeddings_enabled = true
-    ::DiscourseChatbot::ForumSearchFunction.any_instance.stubs(:process).returns(
-      {
-        answer: {
-          result: "No matching forum posts were found.",
-          post_ids_found: [],
-          topic_ids_found: [],
-          non_post_urls_found: [],
+    ::DiscourseChatbot::Functions::ForumSearchFunction
+      .any_instance
+      .stubs(:process)
+      .returns(
+        {
+          answer: {
+            result: "No matching forum posts were found.",
+            post_ids_found: [],
+            topic_ids_found: [],
+            non_post_urls_found: [],
+          },
+          token_usage: 0,
         },
-        token_usage: 0,
-      },
-    )
+      )
     responses_api
       .expects(:create)
       .times(2)
@@ -1619,16 +1594,16 @@ describe ::DiscourseChatbot::OpenAiBotRag do
     expect do
       rag.get_response([{ role: "user", content: "Find details" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::OpenAIBotBase::ChainLimitError,
+      ::DiscourseChatbot::Bots::OpenAiBotBase::ChainLimitError,
       "Chatbot response repeatedly contained unsupported URLs",
     )
   end
 end
 
-describe ::DiscourseChatbot::OpenAiBotRag, "#get_system_message_suffix" do
+describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#get_system_message_suffix" do
   fab!(:user)
   let(:opts) { { user_id: user.id } }
-  let(:rag) { ::DiscourseChatbot::OpenAiBotRag.new(opts) }
+  let(:rag) { ::DiscourseChatbot::Bots::OpenAiBotRag.new(opts) }
 
   before { SiteSetting.discourse_local_dates_enabled = false }
 
@@ -1659,12 +1634,14 @@ describe ::DiscourseChatbot::OpenAiBotRag, "#get_system_message_suffix" do
   end
 end
 
-describe ::DiscourseChatbot::OpenAiBotRag, "#get_system_message_suffix via api", type: :request do
+describe ::DiscourseChatbot::Bots::OpenAiBotRag,
+         "#get_system_message_suffix via api",
+         type: :request do
   fab!(:user)
   fab!(:admin)
   let(:api_key) { Fabricate(:api_key, user: admin) }
   let(:opts) { { user_id: user.id } }
-  let(:rag) { ::DiscourseChatbot::OpenAiBotRag.new(opts) }
+  let(:rag) { ::DiscourseChatbot::Bots::OpenAiBotRag.new(opts) }
 
   before do
     SiteSetting.discourse_local_dates_enabled = false
@@ -1693,7 +1670,7 @@ describe ::DiscourseChatbot::OpenAiBotRag, "#get_system_message_suffix via api",
   end
 end
 
-describe ::DiscourseChatbot::OpenAiBotRag, "#merge_functions" do
+describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#merge_functions" do
   fab!(:user)
 
   it "includes wikipedia by default" do

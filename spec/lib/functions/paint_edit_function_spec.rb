@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require_relative "../../plugin_helper"
 
-describe ::DiscourseChatbot::PaintEditFunction do
+describe ::DiscourseChatbot::Functions::PaintEditFunction do
   subject(:paint_edit_function) { described_class.new }
 
   describe "#parameters" do

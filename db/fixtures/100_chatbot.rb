@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-chatbot_name = 'Chatbot'
+chatbot_name = "Chatbot"
 group_name = "ai_bot_group"
 group_full_name = "AI Bots"
 
@@ -27,7 +27,6 @@ if !user
     u.trust_level = TrustLevel[4]
     u.admin = true
   end
-
 end
 
 if !group
@@ -47,13 +46,10 @@ end
 
 bot = User.find(-4)
 
-bot.user_option.update!(
-  email_messages_level: 0,
-  email_level: 2
-)
+bot.user_option.update!(email_messages_level: 0, email_level: 2)
 
 if !bot.user_profile.bio_raw
   bot.user_profile.update!(
-    bio_raw: I18n.t('chatbot.bio', site_title: SiteSetting.title, chatbot_username: bot.username)
+    bio_raw: I18n.t("chatbot.bio", site_title: SiteSetting.title, chatbot_username: bot.username),
   )
 end

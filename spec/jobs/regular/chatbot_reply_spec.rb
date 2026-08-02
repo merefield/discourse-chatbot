@@ -17,17 +17,16 @@ RSpec.describe Jobs::ChatbotReply do
 
   it "replies immediately when the token budget is reached" do
     SiteSetting.chatbot_include_inner_thoughts_in_private_messages = true
-    post =
-      PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
-    opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
+    post = PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
+    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
     opts[:trust_level] = "low"
     summary_text = "I used the available budget to investigate the question."
 
-    ::DiscourseChatbot::OpenAiBotRag
+    ::DiscourseChatbot::Bots::OpenAiBotRag
       .any_instance
       .stubs(:ask)
-      .raises(::DiscourseChatbot::OpenAIBotBase::TokenBudgetError, "budget reached")
-    ::DiscourseChatbot::OpenAiBotRag
+      .raises(::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError, "budget reached")
+    ::DiscourseChatbot::Bots::OpenAiBotRag
       .any_instance
       .stubs(:inner_thoughts)
       .returns([{ type: "reasoning_summary", content: summary_text }])
@@ -40,49 +39,41 @@ RSpec.describe Jobs::ChatbotReply do
   end
 
   it "replies immediately when a chain limit is reached" do
-    post =
-      PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
-    opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
+    post = PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
+    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
     opts[:trust_level] = "low"
 
-    ::DiscourseChatbot::OpenAiBotRag
+    ::DiscourseChatbot::Bots::OpenAiBotRag
       .any_instance
       .stubs(:ask)
-      .raises(::DiscourseChatbot::OpenAIBotBase::ChainLimitError, "iteration limit reached")
+      .raises(::DiscourseChatbot::Bots::OpenAiBotBase::ChainLimitError, "iteration limit reached")
 
     described_class.new.execute(opts)
 
-    expect(pm_topic.posts.order(:post_number).last.raw).to eq(
-      I18n.t("chatbot.errors.chain_limit"),
-    )
+    expect(pm_topic.posts.order(:post_number).last.raw).to eq(I18n.t("chatbot.errors.chain_limit"))
   end
 
   it "retries provider errors" do
-    post =
-      PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
-    opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
+    post = PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
+    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
     opts[:trust_level] = "low"
 
-    ::DiscourseChatbot::OpenAiBotRag
+    ::DiscourseChatbot::Bots::OpenAiBotRag
       .any_instance
       .stubs(:ask)
-      .raises(::DiscourseChatbot::OpenAIBotBase::ResponsesApiError, "provider failed")
+      .raises(::DiscourseChatbot::Bots::OpenAiBotBase::ResponsesApiError, "provider failed")
 
     expect { described_class.new.execute(opts) }.to raise_error(
-      ::DiscourseChatbot::OpenAIBotBase::ResponsesApiError,
+      ::DiscourseChatbot::Bots::OpenAiBotBase::ResponsesApiError,
       "provider failed",
     )
   end
 
   it "returns a blocked-question response with RAG inner thoughts and no quota or title cost" do
     SiteSetting.chatbot_blocked_questions_enabled = true
-    SiteSetting.chatbot_blocked_question_examples =
-      [
-        {
-          category: "Politics",
-          example_question: "Who should I vote for in the next election?",
-        },
-      ].to_json
+    SiteSetting.chatbot_blocked_question_examples = [
+      { category: "Politics", example_question: "Who should I vote for in the next election?" },
+    ].to_json
     SiteSetting.chatbot_private_message_auto_title = true
     SiteSetting.chatbot_include_inner_thoughts_in_private_messages = true
 
@@ -106,7 +97,7 @@ RSpec.describe Jobs::ChatbotReply do
         topic_id: pm_topic.id,
         raw: "Who should I vote for, @#{bot_user.username}?",
       )
-    opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
+    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
     opts[:trust_level] = "low"
 
     described_class.new.execute(opts)
@@ -121,22 +112,16 @@ RSpec.describe Jobs::ChatbotReply do
       '"threshold": 0.8',
       '"embedding_model": "text-embedding-ada-002"',
     )
-    expect(replies.last.raw).to eq(
-      I18n.t("chatbot.errors.blocked_question", category: "Politics"),
-    )
+    expect(replies.last.raw).to eq(I18n.t("chatbot.errors.blocked_question", category: "Politics"))
     expect(pm_topic.reload.title).to eq(original_title)
     expect(quota.reload.value).to eq("10")
   end
 
   it "records an insufficient blocked-question match before the RAG response" do
     SiteSetting.chatbot_blocked_questions_enabled = true
-    SiteSetting.chatbot_blocked_question_examples =
-      [
-        {
-          category: "Politics",
-          example_question: "Who should I vote for in the next election?",
-        },
-      ].to_json
+    SiteSetting.chatbot_blocked_question_examples = [
+      { category: "Politics", example_question: "Who should I vote for in the next election?" },
+    ].to_json
     SiteSetting.chatbot_blocked_questions_similarity_threshold = 0.9
     SiteSetting.chatbot_include_inner_thoughts_in_private_messages = true
 
@@ -146,7 +131,7 @@ RSpec.describe Jobs::ChatbotReply do
       .times(2)
       .returns(embedding_response([1.0, 0.0]), embedding_response([0.7, 0.7]))
     OpenAI::Client.stubs(:new).returns(client)
-    ::DiscourseChatbot::OpenAiBotRag
+    ::DiscourseChatbot::Bots::OpenAiBotRag
       .any_instance
       .expects(:create_chat_completion)
       .with do |messages, _use_functions, _iteration|
@@ -158,7 +143,9 @@ RSpec.describe Jobs::ChatbotReply do
           "choices" => [
             { "finish_reason" => "stop", "message" => { "content" => "A normal RAG answer" } },
           ],
-          "usage" => { "total_tokens" => 2 },
+          "usage" => {
+            "total_tokens" => 2,
+          },
         },
       )
 
@@ -168,7 +155,7 @@ RSpec.describe Jobs::ChatbotReply do
         topic_id: pm_topic.id,
         raw: "Tell me how to bake bread, @#{bot_user.username}",
       )
-    opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
+    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
     opts[:trust_level] = "low"
 
     described_class.new.execute(opts)
@@ -189,7 +176,7 @@ RSpec.describe Jobs::ChatbotReply do
     SiteSetting.chatbot_blocked_questions_enabled = true
     SiteSetting.chatbot_bot_type_low_trust = "basic"
     ::DiscourseChatbot::BlockedQuestionMatcher.any_instance.expects(:evaluate).never
-    ::DiscourseChatbot::OpenAiBotBasic
+    ::DiscourseChatbot::Bots::OpenAiBotBasic
       .any_instance
       .expects(:ask)
       .returns(reply: "A normal basic answer", inner_thoughts: nil, total_tokens: 2)
@@ -200,20 +187,11 @@ RSpec.describe Jobs::ChatbotReply do
         topic_id: pm_topic.id,
         raw: "Who should I vote for, @#{bot_user.username}?",
       )
-    opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
+    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
     opts[:trust_level] = "low"
 
     described_class.new.execute(opts)
 
     expect(pm_topic.posts.order(:post_number).last.raw).to eq("A normal basic answer")
-  end
-
-  def embedding_response(*vectors)
-    {
-      "data" =>
-        vectors.each_with_index.map do |vector, index|
-          { "index" => index, "embedding" => vector }
-        end,
-    }
   end
 end

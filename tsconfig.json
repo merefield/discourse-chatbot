@@ -1,0 +1,26 @@
+{
+  "extends": "discourse/tsconfig-plugin",
+  "include": [
+    "admin/assets/javascripts/**/*",
+    "assets/javascripts/**/*",
+    "test/javascripts/**/*",
+    "node_modules/discourse/declarations/**/*"
+  ],
+  "compilerOptions": {
+    "paths": {
+      "discourse/plugins/discourse-chatbot/*": ["./assets/javascripts/*"],
+      "discourse/plugins/discourse-chatbot/admin/*": [
+        "./admin/assets/javascripts/admin/*"
+      ],
+      "admin/*": ["./node_modules/discourse/declarations/admin/*"],
+      "float-kit/*": ["./node_modules/discourse/declarations/float-kit/*"],
+      "select-kit/*": ["./node_modules/discourse/declarations/select-kit/*"],
+      "truth-helpers": [
+        "./node_modules/discourse/declarations/truth-helpers/index.d.ts"
+      ],
+      "truth-helpers/*": [
+        "./node_modules/discourse/declarations/truth-helpers/*"
+      ]
+    }
+  }
+}

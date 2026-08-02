@@ -1,5 +1,3 @@
 import ComposerRaiser from "../../components/composer-raiser";
 
-<template>
-  <ComposerRaiser @model={{@model}} />
-</template>
+export default <template><ComposerRaiser @model={{@model}} /></template>

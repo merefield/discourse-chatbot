@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require_relative '../../plugin_helper'
+require_relative "../../plugin_helper"
 
 describe ::DiscourseChatbot::Bot do
   it "consumes some tokens" do
@@ -57,9 +57,9 @@ describe ::DiscourseChatbot::Bot do
       Class.new(described_class) do
         attr_reader :total_tokens
 
-        def get_response(*)
+        define_method(:get_response) do |*|
           @total_tokens = 10
-          raise ::DiscourseChatbot::OpenAIBotBase::TokenBudgetError, "budget reached"
+          raise ::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError, "budget reached"
         end
       end
     opts = {
@@ -72,7 +72,7 @@ describe ::DiscourseChatbot::Bot do
     }
 
     expect { failed_bot_class.new.ask(opts) }.to raise_error(
-      ::DiscourseChatbot::OpenAIBotBase::TokenBudgetError,
+      ::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError,
       "budget reached",
     )
 

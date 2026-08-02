@@ -1,45 +1,50 @@
 # frozen_string_literal: true
 
-require_relative '../function'
-require 'wikipedia-client'
+require "wikipedia-client"
 
 module DiscourseChatbot
+  module Functions
+    class WikipediaFunction < ::DiscourseChatbot::Function
+      def name
+        "wikipedia"
+      end
 
-  class WikipediaFunction < Function
+      def description
+        I18n.t("chatbot.prompt.function.wikipedia.description")
+      end
 
-    def name
-      'wikipedia'
-    end
+      def parameters
+        [
+          {
+            name: "query",
+            type: String,
+            description: I18n.t("chatbot.prompt.function.wikipedia.parameters.query"),
+          },
+        ]
+      end
 
-    def description
-      I18n.t("chatbot.prompt.function.wikipedia.description")
-    end
+      def required
+        ["query"]
+      end
 
-    def parameters
-      [
-       { name: 'query', type: String, description: I18n.t("chatbot.prompt.function.wikipedia.parameters.query") }
-      ]
-    end
+      def process(args)
+        begin
+          super(args)
 
-    def required
-      ['query']
-    end
+          page = ::Wikipedia.find(args[parameters[0][:name]])
 
-    def process(args)
-      begin
-        super(args)
-
-        page = ::Wikipedia.find(args[parameters[0][:name]])
-
-        {
-          answer: I18n.t("chatbot.prompt.function.wikipedia.answer", summary: page.summary, url: page.fullurl),
-          token_usage: 0
-        }
-      rescue
-        {
-          answer: I18n.t("chatbot.prompt.function.wikipedia.error"),
-          token_usage: 0
-        }
+          {
+            answer:
+              I18n.t(
+                "chatbot.prompt.function.wikipedia.answer",
+                summary: page.summary,
+                url: page.fullurl,
+              ),
+            token_usage: 0,
+          }
+        rescue StandardError
+          { answer: I18n.t("chatbot.prompt.function.wikipedia.error"), token_usage: 0 }
+        end
       end
     end
   end
