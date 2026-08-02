@@ -87,4 +87,14 @@ RSpec.describe SiteSetting do
       dependent_setting_display: "inline",
     )
   end
+
+  it "selects the core tools by default at every trust level" do
+    expected_tools = %w[calculate remaining_bot_quota local_forum_search]
+
+    ::DiscourseChatbot::TRUST_LEVELS.each do |trust_level|
+      default_tools = SiteSetting.defaults["chatbot_tools_#{trust_level}_trust"].split("|")
+
+      expect(default_tools).to include(*expected_tools)
+    end
+  end
 end
