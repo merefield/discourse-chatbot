@@ -186,6 +186,7 @@ after_initialize do
     ../app/models/discourse_chatbot/topic_title_embedding.rb
     ../app/models/discourse_chatbot/topic_embeddings_bookmark.rb
     ../lib/discourse_chatbot/embedding_process.rb
+    ../lib/discourse_chatbot/blocked_question_matcher.rb
     ../lib/discourse_chatbot/post/post_embedding_process.rb
     ../lib/discourse_chatbot/topic/topic_title_embedding_process.rb
     ../lib/discourse_chatbot/embedding_completionist_process.rb

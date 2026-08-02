@@ -73,4 +73,147 @@ RSpec.describe Jobs::ChatbotReply do
       "provider failed",
     )
   end
+
+  it "returns a blocked-question response with RAG inner thoughts and no quota or title cost" do
+    SiteSetting.chatbot_blocked_questions_enabled = true
+    SiteSetting.chatbot_blocked_question_examples =
+      [
+        {
+          category: "Politics",
+          example_question: "Who should I vote for in the next election?",
+        },
+      ].to_json
+    SiteSetting.chatbot_private_message_auto_title = true
+    SiteSetting.chatbot_include_inner_thoughts_in_private_messages = true
+
+    client = mock
+    client
+      .expects(:embeddings)
+      .times(2)
+      .returns(embedding_response([1.0, 0.0]), embedding_response([0.99, 0.01]))
+    OpenAI::Client.stubs(:new).returns(client)
+
+    original_title = pm_topic.title
+    quota =
+      UserCustomField.create!(
+        user_id: requester.id,
+        name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD,
+        value: "10",
+      )
+    post =
+      PostCreator.create!(
+        requester,
+        topic_id: pm_topic.id,
+        raw: "Who should I vote for, @#{bot_user.username}?",
+      )
+    opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
+    opts[:trust_level] = "low"
+
+    described_class.new.execute(opts)
+
+    replies = pm_topic.posts.order(:post_number).last(2)
+    expect(replies.first.raw).to include(
+      '"type": "blocked_question_evaluation"',
+      '"outcome": "blocked"',
+      '"category": "Politics"',
+      '"example_question": "Who should I vote for in the next election?"',
+      '"similarity": 0.9999',
+      '"threshold": 0.8',
+      '"embedding_model": "text-embedding-ada-002"',
+    )
+    expect(replies.last.raw).to eq(
+      I18n.t("chatbot.errors.blocked_question", category: "Politics"),
+    )
+    expect(pm_topic.reload.title).to eq(original_title)
+    expect(quota.reload.value).to eq("10")
+  end
+
+  it "records an insufficient blocked-question match before the RAG response" do
+    SiteSetting.chatbot_blocked_questions_enabled = true
+    SiteSetting.chatbot_blocked_question_examples =
+      [
+        {
+          category: "Politics",
+          example_question: "Who should I vote for in the next election?",
+        },
+      ].to_json
+    SiteSetting.chatbot_blocked_questions_similarity_threshold = 0.9
+    SiteSetting.chatbot_include_inner_thoughts_in_private_messages = true
+
+    client = mock
+    client
+      .expects(:embeddings)
+      .times(2)
+      .returns(embedding_response([1.0, 0.0]), embedding_response([0.7, 0.7]))
+    OpenAI::Client.stubs(:new).returns(client)
+    ::DiscourseChatbot::OpenAiBotRag
+      .any_instance
+      .expects(:create_chat_completion)
+      .with do |messages, _use_functions, _iteration|
+        expect(JSON.generate(messages)).not_to include("blocked_question_evaluation")
+        true
+      end
+      .returns(
+        {
+          "choices" => [
+            { "finish_reason" => "stop", "message" => { "content" => "A normal RAG answer" } },
+          ],
+          "usage" => { "total_tokens" => 2 },
+        },
+      )
+
+    post =
+      PostCreator.create!(
+        requester,
+        topic_id: pm_topic.id,
+        raw: "Tell me how to bake bread, @#{bot_user.username}",
+      )
+    opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
+    opts[:trust_level] = "low"
+
+    described_class.new.execute(opts)
+
+    replies = pm_topic.posts.order(:post_number).last(2)
+    expect(replies.first.raw).to include(
+      '"type": "blocked_question_evaluation"',
+      '"outcome": "below_threshold"',
+      '"category": "Politics"',
+      '"similarity": 0.7071',
+      '"threshold": 0.9',
+      "Allowed the request to continue",
+    )
+    expect(replies.last.raw).to eq("A normal RAG answer")
+  end
+
+  it "does not evaluate blocked-question examples for a basic bot" do
+    SiteSetting.chatbot_blocked_questions_enabled = true
+    SiteSetting.chatbot_bot_type_low_trust = "basic"
+    ::DiscourseChatbot::BlockedQuestionMatcher.any_instance.expects(:evaluate).never
+    ::DiscourseChatbot::OpenAiBotBasic
+      .any_instance
+      .expects(:ask)
+      .returns(reply: "A normal basic answer", inner_thoughts: nil, total_tokens: 2)
+
+    post =
+      PostCreator.create!(
+        requester,
+        topic_id: pm_topic.id,
+        raw: "Who should I vote for, @#{bot_user.username}?",
+      )
+    opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
+    opts[:trust_level] = "low"
+
+    described_class.new.execute(opts)
+
+    expect(pm_topic.posts.order(:post_number).last.raw).to eq("A normal basic answer")
+  end
+
+  def embedding_response(*vectors)
+    {
+      "data" =>
+        vectors.each_with_index.map do |vector, index|
+          { "index" => index, "embedding" => vector }
+        end,
+    }
+  end
 end

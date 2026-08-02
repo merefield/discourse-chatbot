@@ -77,6 +77,9 @@ en:
     chatbot_open_ai_embeddings_model: "For Embeddings only.  Open AI model used to capture embeddings for search.  Use latest model for highest performance.  If you change this setting the system will gradually update the post embeddings to the new model in the background.  You may wish to disable the plugin until this process is complete.  See supported models at <a target='_blank' rel='noopener' href='https://platform.openai.com/docs/models/embeddings'>OpenAI: Embedding Models</a>"
     chatbot_open_ai_embeddings_char_limit: "Maximum number of Post characters sent to Open AI to calculate embedding.  Keep as high as possible without experiencing an error"
     chatbot_open_ai_embeddings_model_custom_url: "For Embeddings only.  Populate it if you want to use proxy to Open AI or Azure OpenAI, e.g. https://custom-domain.openai.azure.com/openai/deployments/embeddings-custom-name."
+    chatbot_blocked_questions_enabled: "For RAG bots, use embeddings to answer questions matching configured examples without sending them to the full language model. Matching failures allow normal bot processing."
+    chatbot_blocked_question_examples: "Questions the chatbot should decline. Defaults provide examples for Politics and Video Games. Add one subject category and example question per row; a category may be used by multiple questions and is included in the canned response. Uses the configured OpenAI embedding model and endpoint."
+    chatbot_blocked_questions_similarity_threshold: "Cosine similarity that a user question must exceed against a configured example to return the canned response. As with forum search, this is calculated as 1 minus cosine distance. Higher values reduce false positive matches."
     chatbot_forum_search_function_max_results: "Maximum number of Posts shown to bot from a forum search"
     chatbot_forum_search_function_similarity_threshold: "Fraction of 1.  The point at which a Post is included in the results is defined by how similar it is to the query with 1 being identical and zero being nothing like the query"
     chatbot_forum_search_function_reranking_strategy: "The strategy used to determine how Posts are reranked in the search results.  Choose 'none' for no reranking, 'group_promotion' to promote Posts from certain Groups, 'tag_promotion' to promote Posts within Topics with certain Tags, or 'both' to promote Posts from certain Groups and with certain Tags"
@@ -438,6 +441,14 @@ en:
       rag:
         call_function:
           error: "There was something wrong with your function arguments"
+    inner_thoughts:
+      blocked_question_evaluation:
+        blocked: "Blocked the request as %{category}. The closest configured example was “%{example_question}” with cosine similarity %{similarity}, exceeding the %{threshold} threshold using %{embedding_model}."
+        below_threshold: "Allowed the request to continue. The closest blocked-question area was %{category}, represented by “%{example_question}”, but its cosine similarity of %{similarity} did not exceed the %{threshold} threshold using %{embedding_model}."
+        no_examples: "Allowed the request to continue because no blocked-question examples were configured."
+        empty_question: "Allowed the request to continue because there was no question text to compare with the blocked-question examples."
+        no_comparable_embedding: "Allowed the request to continue because no configured blocked-question embedding could be compared with it."
+        error: "Allowed the request to continue because blocked-question evaluation failed: %{error}"
     errors:
       general: "Sorry, I'm not well right now. Lets talk some other time. Meanwhile, please ask the admin to check the logs, thank you!"
       retries: "I've tried working out a response for you several times, but ultimately failed.  Please contact the admin if this persists, thank you!"
@@ -448,3 +459,4 @@ en:
       forbiddenoutsidethesecategories: "Public use of Chatbot has only been permitted in these Categories: "
       forbiddenanycategory: "Public use of Chatbot has not been enabled in any Category, please contact your admin"
       overquota: "I'm afraid you've reached this week's quota for bot interactions"
+      blocked_question: "I'm afraid I can't talk about %{category}. Please ask me something else."

@@ -39,11 +39,13 @@ module ::DiscourseChatbot
     REVIEW_TOKEN_LIMIT = 96
     JUDGE_TOKEN_LIMIT = 8
 
-    attr_reader :inner_thoughts
-
     def initialize(opts, tools = true)
       super(opts)
       merge_functions(opts) if tools
+    end
+
+    def inner_thoughts
+      Array(@initial_inner_thoughts) + Array(@inner_thoughts)
     end
 
     def get_response(prompt, opts)
@@ -70,6 +72,7 @@ module ::DiscourseChatbot
         prompt.unshift(system_message)
       end
 
+      @initial_inner_thoughts = Array(opts[:initial_inner_thoughts]).deep_dup
       @inner_thoughts = []
       @responses_context = []
       @posts_ids_found = []
@@ -83,7 +86,7 @@ module ::DiscourseChatbot
 
       {
         reply: res["choices"][0]["message"]["content"],
-        inner_thoughts: @inner_thoughts,
+        inner_thoughts: inner_thoughts,
         total_tokens: @total_tokens,
       }
     end

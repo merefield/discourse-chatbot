@@ -55,7 +55,7 @@ module ::DiscourseChatbot
 
         new_post = PostCreator.create!(@author, default_opts)
 
-        if @is_private_msg && SiteSetting.chatbot_private_message_auto_title &&
+        if @is_private_msg && !@blocked_question && SiteSetting.chatbot_private_message_auto_title &&
              new_post.topic.posts_count < 10
           escalation_prefix = I18n.t("chatbot.prompt.function.escalate_to_staff.title")
           return if new_post.topic.title.start_with?("#{escalation_prefix}:")

@@ -17,6 +17,7 @@ module ::DiscourseChatbot
       @inner_thoughts = options[:inner_thoughts]
       @trust_level = options[:trust_level]
       @chatbot_bot_type = options[:chatbot_bot_type]
+      @blocked_question = options[:blocked_question]
       if @message_body.blank?
         @message_body = I18n.t('chatbot.errors.retries')
       end
