@@ -195,7 +195,7 @@ module DiscourseChatbot
       def generate_escalation_title(opts)
         prior_messages = ::DiscourseChatbot::Message::MessagePromptUtils.create_prompt(opts)
 
-        bot = ::DiscourseChatbot::Bots::OpenAiBotBasic.new(opts)
+        bot = ::DiscourseChatbot::Bots::OpenAiBotRag.new(opts, false)
         messages =
           prior_messages << {
             role: "user",

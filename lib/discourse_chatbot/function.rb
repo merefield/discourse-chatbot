@@ -2,6 +2,26 @@
 
 module ::DiscourseChatbot
   class Function
+    BUILT_IN_TOOL_NAMES = %w[
+      calculate
+      escalate_to_staff
+      local_forum_search
+      news
+      paint_edit_picture
+      paint_picture
+      remaining_bot_quota
+      stock_data
+      user_information
+      vision
+      web_crawler
+      web_search
+      wikipedia
+    ]
+
+    def self.choices
+      BUILT_IN_TOOL_NAMES.sort
+    end
+
     def name
       raise "Overwrite me!"
     end

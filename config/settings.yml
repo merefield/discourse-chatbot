@@ -5,9 +5,20 @@ plugins:
   chatbot_open_ai_token:
     client: false
     default: ''
+  chatbot_bot_user:
+    client: true
+    type: username
+    default: Chatbot
   chatbot_permitted_in_private_messages:
     default: true
     client: true
+  chatbot_include_inner_thoughts_in_private_messages:
+    default: false
+    client: false
+    depends_on:
+      - chatbot_permitted_in_private_messages
+    depends_behavior: hidden
+    dependent_setting_display: inline
   chatbot_private_message_auto_title:
     client: false
     default: true
@@ -17,6 +28,67 @@ plugins:
   chatbot_permitted_in_chat:
     default: true
     client: true
+  chatbot_permitted_all_categories:
+    default: true
+    client: false
+  chatbot_permitted_categories:
+    client: false
+    default: ''
+    type: category_list
+    list_type: "compact"
+    depends_on:
+      - chatbot_permitted_all_categories
+    depends_on_values:
+      chatbot_permitted_all_categories:
+        - false
+    depends_behavior: hidden
+    dependent_setting_display: inline
+  chatbot_auto_respond_categories:
+    client: false
+    default: ''
+    type: category_list
+    list_type: "compact"
+  chatbot_quick_access_talk_button:
+    client: true
+    default: chat
+    type: enum
+    choices:
+      - "off"
+      - chat
+      - personal message
+  chatbot_quick_access_bot_kicks_off:
+    default: true
+    client: true
+    depends_on:
+      - chatbot_quick_access_talk_button
+    depends_on_values:
+      chatbot_quick_access_talk_button:
+        - chat
+        - personal message
+    depends_behavior: hidden
+    dependent_setting_display: inline
+  chatbot_quick_access_talk_button_bot_icon:
+    client: true
+    default: robot
+    depends_on:
+      - chatbot_quick_access_talk_button
+    depends_on_values:
+      chatbot_quick_access_talk_button:
+        - chat
+        - personal message
+    depends_behavior: hidden
+    dependent_setting_display: inline
+  chatbot_quick_access_bot_post_kicks_off:
+    default: false
+    client: true
+    depends_on:
+      - chatbot_quick_access_talk_button
+    depends_on_values:
+      chatbot_quick_access_talk_button:
+        - chat
+        - personal message
+    depends_behavior: hidden
+    dependent_setting_display: inline
   chatbot_high_trust_groups:
     client: false
     default: ''
@@ -32,13 +104,13 @@ plugins:
     default: ''
     type: group_list
     list_type: compact
-  chatbot_bot_type_high_trust:
-    default: RAG
+  chatbot_tools_high_trust:
+    default: "calculate|wikipedia|remaining_bot_quota|local_forum_search|news|web_crawler|web_search|stock_data"
     client: false
-    type: enum
-    choices:
-      - basic
-      - RAG
+    type: list
+    list_type: compact
+    allow_any: false
+    choices: "DiscourseChatbot::Function.choices"
   chatbot_open_ai_model_high_trust:
     client: false
     type: enum
@@ -70,16 +142,20 @@ plugins:
   chatbot_open_ai_model_custom_name_high_trust:
     default: ''
     client: false
+    depends_on:
+      - chatbot_open_ai_model_custom_high_trust
+    depends_behavior: hidden
+    dependent_setting_display: inline
   chatbot_open_ai_model_custom_url_high_trust:
     client: false
     default: ''
-  chatbot_bot_type_medium_trust:
-    default: basic
+  chatbot_tools_medium_trust:
+    default: ""
     client: false
-    type: enum
-    choices:
-      - basic
-      - RAG
+    type: list
+    list_type: compact
+    allow_any: false
+    choices: "DiscourseChatbot::Function.choices"
   chatbot_open_ai_model_medium_trust:
     client: false
     type: enum
@@ -111,16 +187,20 @@ plugins:
   chatbot_open_ai_model_custom_name_medium_trust:
     default: ''
     client: false
+    depends_on:
+      - chatbot_open_ai_model_custom_medium_trust
+    depends_behavior: hidden
+    dependent_setting_display: inline
   chatbot_open_ai_model_custom_url_medium_trust:
     client: false
     default: ''
-  chatbot_bot_type_low_trust:
-    default: basic
+  chatbot_tools_low_trust:
+    default: ""
     client: false
-    type: enum
-    choices:
-      - basic
-      - RAG
+    type: list
+    list_type: compact
+    allow_any: false
+    choices: "DiscourseChatbot::Function.choices"
   chatbot_open_ai_model_low_trust:
     client: false
     type: enum
@@ -152,9 +232,21 @@ plugins:
   chatbot_open_ai_model_custom_name_low_trust:
     default: ''
     client: false
+    depends_on:
+      - chatbot_open_ai_model_custom_low_trust
+    depends_behavior: hidden
+    dependent_setting_display: inline
   chatbot_open_ai_model_custom_url_low_trust:
     client: false
     default: ''
+  chatbot_tool_choice_first_iteration:
+    client: false
+    type: enum
+    default: not_forced
+    choices:
+      - not_forced
+      - force_a_tool
+      - force_local_forum_search
   chatbot_open_ai_model_reasoning_level:
     client: false
     type: enum
@@ -184,239 +276,16 @@ plugins:
   chatbot_open_ai_model_custom_api_version:
     client: false
     default: '2023-09-01-preview'
+    depends_on:
+      - chatbot_open_ai_model_custom_api_type
+    depends_on_values:
+      chatbot_open_ai_model_custom_api_type:
+        - azure
+    depends_behavior: hidden
+    dependent_setting_display: inline
   chatbot_api_supports_name_attribute:
     client: false
     default: false
-  chatbot_wikipedia_function:
-    client: false
-    default: true
-  chatbot_embeddings_enabled:
-    default: false
-    client: false
-  chatbot_open_ai_embeddings_model:
-    client: false
-    type: enum
-    default: text-embedding-ada-002
-    choices:
-      - text-embedding-ada-002
-      - text-embedding-3-small
-  chatbot_open_ai_embeddings_model_custom_name:
-    client: false
-    default: ''
-  chatbot_embeddings_strategy:
-    default: benchmark_user
-    client: false
-    type: enum
-    choices:
-      - benchmark_user
-      - categories
-  chatbot_embeddings_benchmark_user_trust_level:
-    client: false
-    default: 1
-    min: 0
-    max: 4
-  chatbot_embeddings_categories:
-    client: false
-    default: ''
-    type: category_list
-    list_type: "compact"
-  chatbot_open_ai_embeddings_char_limit:
-    client: false
-    default: 11500
-  chatbot_open_ai_embeddings_model_custom_url:
-    client: false
-    default: ''
-  chatbot_blocked_questions_enabled:
-    client: false
-    default: false
-  chatbot_blocked_question_examples:
-    client: false
-    type: objects
-    default:
-      - category: Politics
-        example_question: "Who should I vote for in the next election?"
-      - category: Politics
-        example_question: "Which political party has the best policies?"
-      - category: Politics
-        example_question: "What do you think of the current government?"
-      - category: Politics
-        example_question: "Do you support the current president or prime minister?"
-      - category: Politics
-        example_question: "Will the opposition win the next election?"
-      - category: Politics
-        example_question: "Which political candidate do you prefer?"
-      - category: Video Games
-        example_question: "What video game should I play next?"
-      - category: Video Games
-        example_question: "Which games console should I buy?"
-      - category: Video Games
-        example_question: "Is PlayStation better than Xbox?"
-      - category: Video Games
-        example_question: "How do I beat this boss in a video game?"
-      - category: Video Games
-        example_question: "What is the best character build for this game?"
-      - category: Video Games
-        example_question: "What do you think of the latest video game release?"
-    depends_on:
-      - chatbot_blocked_questions_enabled
-    depends_behavior: hidden
-    dependent_setting_display: inline
-    schema:
-      name: blocked_question_example
-      properties:
-        category:
-          type: string
-          required: true
-          validations:
-            max_length: 100
-        example_question:
-          type: string
-          required: true
-          validations:
-            max_length: 2000
-  chatbot_blocked_questions_similarity_threshold:
-    client: false
-    type: float
-    default: 0.8
-    min: 0.0
-    max: 1.0
-    depends_on:
-      - chatbot_blocked_questions_enabled
-    depends_behavior: hidden
-    dependent_setting_display: inline
-  chatbot_quick_access_talk_button:
-    client: true
-    default: chat
-    type: enum
-    choices:
-      - "off"
-      - chat
-      - personal message
-  chatbot_quick_access_bot_kicks_off:
-    default: true
-    client: true
-  chatbot_quick_access_talk_button_bot_icon:
-      client: true
-      default: robot
-  chatbot_quick_access_talk_button_bot_use_avatar:
-      client: true
-      default: false
-  chatbot_quick_access_bot_post_kicks_off:
-    default: false
-    client: true
-  chatbot_include_inner_thoughts_in_private_messages:
-    default: false
-    client: false
-  chatbot_include_inner_thoughts_in_topics:
-    default: false
-    client: false
-  chatbot_include_inner_thoughts_in_topics_as_whisper:
-    default: true
-    client: false
-  chatbot_can_trigger_from_whisper:
-    default: false
-    client: false
-  chatbot_permitted_all_categories:
-    default: true
-    client: false
-  chatbot_permitted_categories:
-    client: false
-    default: ''
-    type: category_list
-    list_type: "compact"
-  chatbot_auto_respond_categories:
-    client: false
-    default: ''
-    type: category_list
-    list_type: "compact"
-  chatbot_quota_basis:
-    client: false
-    default: 'queries'
-    type: enum
-    choices:
-      - 'queries'
-      - 'tokens'
-  chatbot_quota_high_trust:
-    default: 100
-    client: false
-  chatbot_quota_medium_trust:
-    default: 50
-    client: false
-  chatbot_quota_low_trust:
-    default: 10
-    client: false
-  chatbot_quota_reach_escalation_groups:
-    client: false
-    type: group_list
-    list_type: compact
-    default: ""
-    allow_any: false
-    refresh: true
-  chatbot_quota_reach_escalation_cool_down_period:
-    client: false
-    default: 1
-    min: 0
-    max: 7
-  chatbot_max_look_behind:
-    default: 5
-    max: 160
-    min: 1
-    client: false
-  chatbot_include_whispers_in_post_history:
-    default: false
-    client: false
-  chatbot_strip_quotes:
-    default: true
-    client: false
-  chatbot_support_vision:
-    client: false
-    type: enum
-    default: turned_off
-    choices:
-      - turned_off
-      - directly
-      - via_function
-  chatbot_open_ai_vision_model:
-    client: false
-    type: enum
-    default: gpt-4.1
-    choices:
-      - gpt-5.6
-      - gpt-5.6-sol
-      - gpt-5.6-terra
-      - gpt-5.6-luna
-      - gpt-5.5
-      - gpt-5.5-pro
-      - gpt-5.4
-      - gpt-5.4-pro
-      - gpt-5.4-mini
-      - gpt-5.4-nano
-      - gpt-5.2
-      - gpt-5.2-pro
-      - gpt-5.1
-      - gpt-5
-      - gpt-5-pro
-      - gpt-5-mini
-      - gpt-5-nano
-      - gpt-4.1
-      - gpt-4.1-mini
-      - gpt-4.1-nano
-  chatbot_support_pdf:
-    client: false
-    default: false
-  chatbot_support_picture_creation:
-    client: false
-    default: false
-  chatbot_support_picture_creation_model:
-    client: false
-    type: enum
-    default: dall-e-3
-    choices:
-      - dall-e-3
-      - gpt-image-1
-      - gpt-image-1-mini
-      - gpt-image-1.5
-      - gpt-image-2
   chatbot_reply_job_time_delay:
     client: false
     default: 2
@@ -483,25 +352,88 @@ plugins:
     client: false
     default: 8
     min: 1
+  chatbot_url_integrity_check:
+    client: false
+    default: false
   chatbot_chain_of_thought_max_url_repair_attempts:
     client: false
     default: 2
     min: 0
-  chatbot_bot_user:
-    client: true
-    type: username
-    default: Chatbot
-  chatbot_forum_search_function_max_results:
+    depends_on:
+      - chatbot_url_integrity_check
+    depends_behavior: hidden
+    dependent_setting_display: inline
+  chatbot_embeddings_enabled:
+    default: false
+    client: false
+  chatbot_embeddings_strategy:
+    default: benchmark_user
+    client: false
+    type: enum
+    choices:
+      - benchmark_user
+      - categories
+    depends_on:
+      - chatbot_embeddings_enabled
+    depends_behavior: hidden
+    dependent_setting_display: inline
+  chatbot_embeddings_benchmark_user_trust_level:
+    client: false
+    default: 1
+    min: 0
+    max: 4
+    depends_on:
+      - chatbot_embeddings_enabled
+      - chatbot_embeddings_strategy
+    depends_on_values:
+      chatbot_embeddings_strategy:
+        - benchmark_user
+    depends_behavior: hidden
+  chatbot_embeddings_categories:
+    client: false
+    default: ''
+    type: category_list
+    list_type: "compact"
+    depends_on:
+      - chatbot_embeddings_enabled
+      - chatbot_embeddings_strategy
+    depends_on_values:
+      chatbot_embeddings_strategy:
+        - categories
+    depends_behavior: hidden
+  chatbot_open_ai_embeddings_model:
+    client: false
+    type: enum
+    default: text-embedding-ada-002
+    choices:
+      - text-embedding-ada-002
+      - text-embedding-3-small
+  chatbot_open_ai_embeddings_model_custom_name:
+    client: false
+    default: ''
+  chatbot_open_ai_embeddings_char_limit:
+    client: false
+    default: 11500
+  chatbot_open_ai_embeddings_model_custom_url:
+    client: false
+    default: ''
+  chatbot_forum_search_tool_max_results:
     client: false
     default: 10
     max: 100
     min: 10
-  chatbot_forum_search_function_similarity_threshold:
+    depends_on:
+      - chatbot_embeddings_enabled
+    depends_behavior: hidden
+  chatbot_forum_search_tool_similarity_threshold:
     client: false
     default: 0.8
     max: 1
     min: 0
-  chatbot_forum_search_function_reranking_strategy:
+    depends_on:
+      - chatbot_embeddings_enabled
+    depends_behavior: hidden
+  chatbot_forum_search_tool_reranking_strategy:
     client: false
     default: "none"
     type: enum
@@ -510,31 +442,56 @@ plugins:
       - "group_promotion"
       - "tag_promotion"
       - "both"
-  chatbot_forum_search_function_reranking_groups:
+    depends_on:
+      - chatbot_embeddings_enabled
+    depends_behavior: hidden
+  chatbot_forum_search_tool_reranking_groups:
     client: false
     type: group_list
     list_type: compact
     default: ""
     allow_any: false
     refresh: true
-  chatbot_forum_search_function_reranking_tags:
+    depends_on:
+      - chatbot_embeddings_enabled
+      - chatbot_forum_search_tool_reranking_strategy
+    depends_on_values:
+      chatbot_forum_search_tool_reranking_strategy:
+        - group_promotion
+        - both
+    depends_behavior: hidden
+  chatbot_forum_search_tool_reranking_tags:
     client: false
     type: tag_list
     list_type: compact
     default: ""
     allow_any: false
     refresh: true
-  chatbot_forum_search_function_include_topic_titles:
+    depends_on:
+      - chatbot_embeddings_enabled
+      - chatbot_forum_search_tool_reranking_strategy
+    depends_on_values:
+      chatbot_forum_search_tool_reranking_strategy:
+        - tag_promotion
+        - both
+    depends_behavior: hidden
+  chatbot_forum_search_tool_include_topic_titles:
     client: false
     default: false
-  chatbot_forum_search_function_results_content_type:
+    depends_on:
+      - chatbot_embeddings_enabled
+    depends_behavior: hidden
+  chatbot_forum_search_tool_results_content_type:
     client: false
     default: "post"
     type: enum
     choices:
       - "post"
       - "topic"
-  chatbot_forum_search_function_results_topic_max_posts_count_strategy:
+    depends_on:
+      - chatbot_embeddings_enabled
+    depends_behavior: hidden
+  chatbot_forum_search_tool_results_topic_max_posts_count_strategy:
     client: false
     default: "just_enough"
     type: "enum"
@@ -543,28 +500,184 @@ plugins:
       - "just_enough"
       - "stretch_if_required"
       - "exact"
-  chatbot_forum_search_function_results_topic_max_posts_count:
+    depends_on:
+      - chatbot_embeddings_enabled
+      - chatbot_forum_search_tool_results_content_type
+    depends_on_values:
+      chatbot_forum_search_tool_results_content_type:
+        - topic
+    depends_behavior: hidden
+  chatbot_forum_search_tool_results_topic_max_posts_count:
     client: false
     default: 3
     min: 1
     max: 20
-  chatbot_tool_choice_first_iteration:
+    depends_on:
+      - chatbot_embeddings_enabled
+      - chatbot_forum_search_tool_results_content_type
+      - chatbot_forum_search_tool_results_topic_max_posts_count_strategy
+    depends_on_values:
+      chatbot_forum_search_tool_results_content_type:
+        - topic
+      chatbot_forum_search_tool_results_topic_max_posts_count_strategy:
+        - just_enough
+        - stretch_if_required
+        - exact
+    depends_behavior: hidden
+  chatbot_forum_search_tool_hybrid_search:
+    client: false
+    default: false
+    depends_on:
+      - chatbot_embeddings_enabled
+    depends_behavior: hidden
+  chatbot_blocked_questions_enabled:
+    client: false
+    default: false
+  chatbot_blocked_question_examples:
+    client: false
+    type: objects
+    default:
+      - category: Politics
+        example_question: "Who should I vote for in the next election?"
+      - category: Politics
+        example_question: "Which political party has the best policies?"
+      - category: Politics
+        example_question: "What do you think of the current government?"
+      - category: Politics
+        example_question: "Do you support the current president or prime minister?"
+      - category: Politics
+        example_question: "Will the opposition win the next election?"
+      - category: Politics
+        example_question: "Which political candidate do you prefer?"
+      - category: Video Games
+        example_question: "What video game should I play next?"
+      - category: Video Games
+        example_question: "Which games console should I buy?"
+      - category: Video Games
+        example_question: "Is PlayStation better than Xbox?"
+      - category: Video Games
+        example_question: "How do I beat this boss in a video game?"
+      - category: Video Games
+        example_question: "What is the best character build for this game?"
+      - category: Video Games
+        example_question: "What do you think of the latest video game release?"
+    depends_on:
+      - chatbot_blocked_questions_enabled
+    depends_behavior: hidden
+    dependent_setting_display: inline
+    schema:
+      name: blocked_question_example
+      properties:
+        category:
+          type: string
+          required: true
+          validations:
+            max_length: 100
+        example_question:
+          type: string
+          required: true
+          validations:
+            max_length: 2000
+  chatbot_blocked_questions_similarity_threshold:
+    client: false
+    type: float
+    default: 0.8
+    min: 0.0
+    max: 1.0
+    depends_on:
+      - chatbot_blocked_questions_enabled
+    depends_behavior: hidden
+    dependent_setting_display: inline
+  chatbot_include_inner_thoughts_in_topics:
+    default: false
+    client: false
+  chatbot_include_inner_thoughts_in_topics_as_whisper:
+    default: true
+    client: false
+    depends_on:
+      - chatbot_include_inner_thoughts_in_topics
+    depends_behavior: hidden
+    dependent_setting_display: inline
+  chatbot_can_trigger_from_whisper:
+    default: false
+    client: false
+  chatbot_quota_basis:
+    client: false
+    default: 'queries'
+    type: enum
+    choices:
+      - 'queries'
+      - 'tokens'
+  chatbot_quota_high_trust:
+    default: 100
+    client: false
+  chatbot_quota_medium_trust:
+    default: 50
+    client: false
+  chatbot_quota_low_trust:
+    default: 10
+    client: false
+  chatbot_quota_reach_escalation_groups:
+    client: false
+    type: group_list
+    list_type: compact
+    default: ""
+    allow_any: false
+    refresh: true
+  chatbot_quota_reach_escalation_cool_down_period:
+    client: false
+    default: 1
+    min: 0
+    max: 7
+  chatbot_max_look_behind:
+    default: 5
+    max: 160
+    min: 1
+    client: false
+  chatbot_include_whispers_in_post_history:
+    default: false
+    client: false
+  chatbot_strip_quotes:
+    default: true
+    client: false
+  chatbot_open_ai_vision_model:
     client: false
     type: enum
-    default: not_forced
+    default: gpt-4.1
     choices:
-      - not_forced
-      - force_a_function
-      - force_local_forum_search
-  chatbot_forum_search_function_hybrid_search:
+      - gpt-5.6
+      - gpt-5.6-sol
+      - gpt-5.6-terra
+      - gpt-5.6-luna
+      - gpt-5.5
+      - gpt-5.5-pro
+      - gpt-5.4
+      - gpt-5.4-pro
+      - gpt-5.4-mini
+      - gpt-5.4-nano
+      - gpt-5.2
+      - gpt-5.2-pro
+      - gpt-5.1
+      - gpt-5
+      - gpt-5-pro
+      - gpt-5-mini
+      - gpt-5-nano
+      - gpt-4.1
+      - gpt-4.1-mini
+      - gpt-4.1-nano
+  chatbot_support_pdf:
     client: false
     default: false
-  chatbot_url_integrity_check:
+  chatbot_support_picture_creation_model:
     client: false
-    default: false
-  chatbot_escalate_to_staff_function:
-    client: false
-    default: false
+    type: enum
+    default: dall-e-3
+    choices:
+      - dall-e-3
+      - gpt-image-1
+      - gpt-image-1-mini
+      - gpt-image-1.5
+      - gpt-image-2
   chatbot_escalate_to_staff_groups:
     client: false
     type: group_list
@@ -580,9 +693,6 @@ plugins:
     default: 1
     min: 0
     max: 28
-  chatbot_user_fields_collection:
-    client: false
-    default: false
   chatbot_news_api_token:
     client: false
     default: ''
@@ -601,7 +711,7 @@ plugins:
   chatbot_jina_api_token_cost_multiplier:
     client: false
     default: 10000
-  chatbot_function_response_char_limit:
+  chatbot_tool_response_char_limit:
     client: false
     default: 350000
   chatbot_serp_api_key:
@@ -634,3 +744,11 @@ plugins:
     choices:
       - 'info'
       - 'warn'
+    depends_on:
+      - chatbot_enable_verbose_rails_logging
+    depends_on_values:
+      chatbot_enable_verbose_rails_logging:
+        - api_calls_only
+        - all
+    depends_behavior: hidden
+    dependent_setting_display: inline

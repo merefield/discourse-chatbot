@@ -21,7 +21,7 @@ module DiscourseChatbot
       ]
 
       NOT_FORCED = "not_forced"
-      FORCE_A_FUNCTION = "force_a_function"
+      FORCE_A_TOOL_VALUES = %w[force_a_tool force_a_function].freeze
       FORCE_LOCAL_SEARCH_FUNCTION = "force_local_forum_search"
       SIMPLE_LOCAL_REASONING = "simple"
       VERIFY_AND_REVISE = "verify_and_revise"
@@ -32,7 +32,19 @@ module DiscourseChatbot
 
       def initialize(opts, tools = true)
         super(opts)
-        merge_functions(opts) if tools
+        @enabled_tool_names = configured_tool_names(opts[:trust_level])
+        if tools
+          merge_functions(opts)
+        else
+          @functions = []
+          @tools = nil
+          @func_mapping = {}
+          @chat_history = []
+        end
+      end
+
+      def tool_enabled?(tool_name)
+        @enabled_tool_names.include?(tool_name)
       end
 
       def inner_thoughts
@@ -58,7 +70,7 @@ module DiscourseChatbot
           }
         end
 
-        if SiteSetting.chatbot_user_fields_collection
+        if tool_enabled?("user_information")
           prompt << system_message
         else
           prompt.unshift(system_message)
@@ -111,7 +123,7 @@ module DiscourseChatbot
       def get_system_message_suffix(opts)
         system_message_suffixes = []
 
-        if SiteSetting.chatbot_user_fields_collection && has_empty_user_fields?(opts)
+        if tool_enabled?("user_information") && has_empty_user_fields?(opts)
           user_field_suffixes = []
           UserField
             .where(editable: true)
@@ -183,30 +195,15 @@ module DiscourseChatbot
       end
 
       def merge_functions(opts)
-        quota_function = ::DiscourseChatbot::Functions::RemainingQuotaFunction.new
-        calculator_function = ::DiscourseChatbot::Functions::CalculatorFunction.new
-        wikipedia_function = ::DiscourseChatbot::Functions::WikipediaFunction.new
-        news_function = ::DiscourseChatbot::Functions::NewsFunction.new
-        web_crawler_function = ::DiscourseChatbot::Functions::WebCrawlerFunction.new
-        web_search_function = ::DiscourseChatbot::Functions::WebSearchFunction.new
-        stock_data_function = ::DiscourseChatbot::Functions::StockDataFunction.new
-        escalate_to_staff_function = ::DiscourseChatbot::Functions::EscalateToStaffFunction.new
-        paint_function = ::DiscourseChatbot::Functions::PaintFunction.new
-        paint_edit_function = ::DiscourseChatbot::Functions::PaintEditFunction.new
-        forum_search_function = nil
-
-        if SiteSetting.chatbot_embeddings_enabled
-          forum_search_function = ::DiscourseChatbot::Functions::ForumSearchFunction.new
+        functions = []
+        if tool_enabled?("calculate")
+          functions << ::DiscourseChatbot::Functions::CalculatorFunction.new
+        end
+        if tool_enabled?("wikipedia")
+          functions << ::DiscourseChatbot::Functions::WikipediaFunction.new
         end
 
-        if SiteSetting.chatbot_support_vision == "via_function"
-          vision_function = ::DiscourseChatbot::Functions::VisionFunction.new
-        end
-
-        functions = [calculator_function]
-        functions << wikipedia_function if SiteSetting.chatbot_wikipedia_function
-
-        if opts[:private] && SiteSetting.chatbot_user_fields_collection
+        if opts[:private] && tool_enabled?("user_information")
           start_length = functions.length
           UserField
             .where(editable: true)
@@ -235,30 +232,42 @@ module DiscourseChatbot
             end
         end
 
-        functions << quota_function
-        functions << forum_search_function if forum_search_function
-        functions << vision_function if vision_function
-        functions << paint_function if SiteSetting.chatbot_support_picture_creation
-        if SiteSetting.chatbot_support_picture_creation &&
+        if tool_enabled?("remaining_bot_quota")
+          functions << ::DiscourseChatbot::Functions::RemainingQuotaFunction.new
+        end
+        if tool_enabled?("local_forum_search") && SiteSetting.chatbot_embeddings_enabled
+          functions << ::DiscourseChatbot::Functions::ForumSearchFunction.new
+        end
+        functions << ::DiscourseChatbot::Functions::VisionFunction.new if tool_enabled?("vision")
+        if tool_enabled?("paint_picture")
+          functions << ::DiscourseChatbot::Functions::PaintFunction.new
+        end
+        if tool_enabled?("paint_edit_picture") &&
              SiteSetting.chatbot_support_picture_creation_model.start_with?("gpt-image-")
-          functions << paint_edit_function
+          functions << ::DiscourseChatbot::Functions::PaintEditFunction.new
         end
 
-        if SiteSetting.chatbot_escalate_to_staff_function && opts[:private] &&
+        if tool_enabled?("escalate_to_staff") && opts[:private] &&
              opts[:type] == ::DiscourseChatbot::MESSAGE
-          functions << escalate_to_staff_function
+          functions << ::DiscourseChatbot::Functions::EscalateToStaffFunction.new
         end
-        functions << news_function if SiteSetting.chatbot_news_api_token.present?
-        if !(
-             SiteSetting.chatbot_firecrawl_api_token.blank? &&
-               SiteSetting.chatbot_jina_api_token.blank?
-           )
-          functions << web_crawler_function
+        if tool_enabled?("news") && SiteSetting.chatbot_news_api_token.present?
+          functions << ::DiscourseChatbot::Functions::NewsFunction.new
         end
-        if !(SiteSetting.chatbot_serp_api_key.blank? && SiteSetting.chatbot_jina_api_token.blank?)
-          functions << web_search_function
+        if tool_enabled?("web_crawler") &&
+             !(
+               SiteSetting.chatbot_firecrawl_api_token.blank? &&
+                 SiteSetting.chatbot_jina_api_token.blank?
+             )
+          functions << ::DiscourseChatbot::Functions::WebCrawlerFunction.new
         end
-        functions << stock_data_function if SiteSetting.chatbot_marketstack_key.present?
+        if tool_enabled?("web_search") &&
+             !(SiteSetting.chatbot_serp_api_key.blank? && SiteSetting.chatbot_jina_api_token.blank?)
+          functions << ::DiscourseChatbot::Functions::WebSearchFunction.new
+        end
+        if tool_enabled?("stock_data") && SiteSetting.chatbot_marketstack_key.present?
+          functions << ::DiscourseChatbot::Functions::StockDataFunction.new
+        end
 
         ::DiscourseChatbot::Function.descendants.each do |function_class|
           next if BUILT_IN_FUNCTIONS.include?(function_class.to_s)
@@ -275,9 +284,14 @@ module DiscourseChatbot
         end
 
         @functions = parse_functions(functions)
-        @tools = @functions.map { |func| { type: "function", function: func } }
+        @tools = @functions.map { |func| { type: "function", function: func } }.presence
         @func_mapping = create_func_mapping(functions)
         @chat_history = []
+      end
+
+      def configured_tool_names(trust_level)
+        trust_level = TRUST_LEVELS.first if TRUST_LEVELS.exclude?(trust_level)
+        SiteSetting.send("chatbot_tools_#{trust_level}_trust").split("|")
       end
 
       def parse_functions(functions)
@@ -315,7 +329,7 @@ module DiscourseChatbot
             if use_functions && @tools
               parameters[:tools] = responses_tools
               if iteration == 1
-                if SiteSetting.chatbot_tool_choice_first_iteration == FORCE_A_FUNCTION
+                if FORCE_A_TOOL_VALUES.include?(SiteSetting.chatbot_tool_choice_first_iteration)
                   parameters[:tool_choice] = "required"
                 elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_FUNCTION
                   parameters[:tool_choice] = { type: "function", name: "local_forum_search" }
@@ -344,7 +358,7 @@ module DiscourseChatbot
             if use_functions && @tools
               parameters.merge!(tools: @tools)
               if iteration == 1
-                if SiteSetting.chatbot_tool_choice_first_iteration == FORCE_A_FUNCTION
+                if FORCE_A_TOOL_VALUES.include?(SiteSetting.chatbot_tool_choice_first_iteration)
                   parameters.merge!(tool_choice: "required")
                 elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_FUNCTION
                   parameters.merge!(

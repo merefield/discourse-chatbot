@@ -45,8 +45,8 @@ module DiscourseChatbot
           number_of_posts = args[parameters[1][:name]].presence || 3
           number_of_posts =
             (
-              if number_of_posts > SiteSetting.chatbot_forum_search_function_max_results
-                SiteSetting.chatbot_forum_search_function_max_results
+              if number_of_posts > SiteSetting.chatbot_forum_search_tool_max_results
+                SiteSetting.chatbot_forum_search_tool_max_results
               else
                 number_of_posts
               end
@@ -56,14 +56,14 @@ module DiscourseChatbot
           results = process_post_embedding.semantic_search(query)
           top_results = results[0..(number_of_posts - 1)]
 
-          if SiteSetting.chatbot_forum_search_function_include_topic_titles
+          if SiteSetting.chatbot_forum_search_tool_include_topic_titles
             process_topic_title_embedding =
               ::DiscourseChatbot::Topic::TopicTitleEmbeddingProcess.new
             topic_title_results = process_topic_title_embedding.semantic_search(query)
             top_topic_title_results = topic_title_results[0..(number_of_posts - 1)]
           end
 
-          if SiteSetting.chatbot_forum_search_function_results_content_type == "topic" ||
+          if SiteSetting.chatbot_forum_search_tool_results_content_type == "topic" ||
                top_topic_title_results.length > 0
             top_topics_from_post_results =
               top_results.map { |result| ::Post.find(result[:post_id].to_i).topic_id }.uniq
@@ -122,21 +122,21 @@ module DiscourseChatbot
               post_number = 1
 
               max_post_number =
-                case SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count_strategy
+                case SiteSetting.chatbot_forum_search_tool_results_topic_max_posts_count_strategy
                 when "all"
                   Topic.find(topic_id).highest_post_number
                 when "just_enough"
                   original_post_number ||
-                    SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count
+                    SiteSetting.chatbot_forum_search_tool_results_topic_max_posts_count
                 when "stretch_if_required"
                   if (original_post_number || 0) >
-                       SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count
+                       SiteSetting.chatbot_forum_search_tool_results_topic_max_posts_count
                     original_post_number
                   else
-                    SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count
+                    SiteSetting.chatbot_forum_search_tool_results_topic_max_posts_count
                   end
                 else
-                  SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count
+                  SiteSetting.chatbot_forum_search_tool_results_topic_max_posts_count
                 end
 
               while post_number <= max_post_number

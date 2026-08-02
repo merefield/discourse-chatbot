@@ -7,6 +7,10 @@ describe ::DiscourseChatbot::Function do
   let(:search) { ::DiscourseChatbot::Functions::WikipediaFunction.new }
   let(:paint) { ::DiscourseChatbot::Functions::PaintFunction.new }
 
+  it "lists every built-in tool for trust-level settings" do
+    expect(described_class.choices).to include(*described_class::BUILT_IN_TOOL_NAMES)
+  end
+
   it "validates legal arguments" do
     args = { "input" => "3 + 4" }
 

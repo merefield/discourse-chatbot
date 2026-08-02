@@ -24,6 +24,8 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
 
   before do
     SiteSetting.discourse_local_dates_enabled = false
+    SiteSetting.chatbot_tools_low_trust =
+      (::DiscourseChatbot::Function::BUILT_IN_TOOL_NAMES - ["user_information"]).join("|")
     OpenAI::Client.stubs(:new).returns(client)
     client.stubs(:responses).returns(responses_api)
   end
@@ -61,7 +63,7 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
     system_entry = {
       role: "developer",
       content:
-        "You are a helpful assistant.  You have great tools in the form of functions that give you the power to get newer information. Only use the functions you have been provided with.  The current date and time is 2023-08-18T10:11:44+00:00.  When referring to users by name, include an @ symbol directly in front of their username.  Only respond to the last question, using the prior information as context, if appropriate.",
+        "You are a helpful assistant. You have tools that give you the power to get newer information. Only use the tools you have been provided with. The current date and time is 2023-08-18T10:11:44+00:00. When referring to users by name, include an @ symbol directly in front of their username. Only respond to the last question, using the prior information as context, if appropriate.",
     }
 
     first_query = get_chatbot_input_fixture("llm_first_query").unshift(system_entry)
@@ -81,6 +83,20 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
     expect(rag.get_response(query, opts)[:reply]).to eq(
       llm_final_response["choices"][0]["message"]["content"],
     )
+  end
+
+  it "requires a tool during the first iteration when configured" do
+    SiteSetting.chatbot_tool_choice_first_iteration = "force_a_tool"
+
+    client
+      .expects(:chat)
+      .with do |args|
+        parameters = args[:parameters]
+        parameters[:tool_choice] == "required" && parameters[:tools].present?
+      end
+      .returns(completion_response.call("Done"))
+
+    expect(rag.get_response([{ role: "user", content: "Help me" }], opts)[:reply]).to eq("Done")
   end
 
   it "returns malformed tool arguments to the model as a tool error" do
@@ -137,7 +153,6 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
 
   it "returns a single successful image tool result directly" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
-    SiteSetting.chatbot_support_picture_creation = true
     image_markdown = "![generated image](upload://image.png)"
     ::DiscourseChatbot::Functions::PaintFunction
       .any_instance
@@ -171,7 +186,6 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
 
   it "continues mixed tool batches when the image result is last" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
-    SiteSetting.chatbot_support_picture_creation = true
     image_markdown = "![generated image](upload://image.png)"
     ::DiscourseChatbot::Functions::PaintFunction
       .any_instance
@@ -1283,7 +1297,6 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
   it "collects trusted URL provenance from tools that return URLs" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_url_integrity_check = true
-    SiteSetting.chatbot_wikipedia_function = true
     wikipedia_url = "https://en.wikipedia.org/wiki/Discourse"
     ::DiscourseChatbot::Functions::WikipediaFunction
       .any_instance
@@ -1609,7 +1622,6 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#get_system_message_suffix" do
 
   it "returns custom field prompts when enabled" do
     SiteSetting.chatbot_include_custom_field_prompts = true
-    SiteSetting.chatbot_user_fields_collection = false
 
     ::UserCustomField.create!(
       user_id: user.id,
@@ -1622,7 +1634,6 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#get_system_message_suffix" do
 
   it "returns empty when custom field prompts are disabled" do
     SiteSetting.chatbot_include_custom_field_prompts = false
-    SiteSetting.chatbot_user_fields_collection = false
 
     ::UserCustomField.create!(
       user_id: user.id,
@@ -1646,7 +1657,6 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag,
   before do
     SiteSetting.discourse_local_dates_enabled = false
     SiteSetting.chatbot_include_custom_field_prompts = true
-    SiteSetting.chatbot_user_fields_collection = false
   end
 
   after do
@@ -1673,39 +1683,78 @@ end
 describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#merge_functions" do
   fab!(:user)
 
-  after { GC.start }
+  let(:extension_function_classes) { [] }
+
+  before { ::DiscourseChatbot::Function.stubs(:descendants).returns(extension_function_classes) }
+
+  let(:enable_tools) do
+    ->(*tool_names) { SiteSetting.chatbot_tools_low_trust = tool_names.join("|") }
+  end
 
   let(:build_extension_function) do
     lambda do |name, availability: nil, &initializer|
-      Class.new(::DiscourseChatbot::Function) do
-        define_singleton_method(:available?) { |opts| availability.call(opts) } if availability
-        define_method(:name) { name }
-        define_method(:description) { "An extension function used by this spec" }
-        define_method(:parameters) { [] }
-        define_method(:required) { [] }
-        define_method(:initialize, &initializer) if initializer
-      end
+      function_class =
+        Class.new(::DiscourseChatbot::Function) do
+          define_singleton_method(:available?) { |opts| availability.call(opts) } if availability
+          define_method(:name) { name }
+          define_method(:description) { "An extension tool used by this spec" }
+          define_method(:parameters) { [] }
+          define_method(:required) { [] }
+          define_method(:initialize, &initializer) if initializer
+        end
+      extension_function_classes << function_class
+      function_class
     end
   end
 
-  it "includes wikipedia by default" do
-    rag = described_class.new({})
+  it "includes the default high-trust tools" do
+    rag = described_class.new({ trust_level: "high" })
     func_mapping = rag.instance_variable_get(:@func_mapping)
 
     expect(func_mapping).to have_key("wikipedia")
   end
 
-  it "excludes wikipedia when disabled" do
-    SiteSetting.chatbot_wikipedia_function = false
-
+  it "excludes tools that are not selected" do
     rag = described_class.new({})
     func_mapping = rag.instance_variable_get(:@func_mapping)
 
     expect(func_mapping).not_to have_key("wikipedia")
   end
 
+  it "does not send a tools parameter when no built-in or extension tools are available" do
+    SiteSetting.chatbot_tools_low_trust = ""
+    client = mock
+    OpenAI::Client.stubs(:new).returns(client)
+    bot = described_class.new({})
+
+    client
+      .expects(:chat)
+      .with { |args| !args[:parameters].key?(:tools) }
+      .returns(
+        {
+          "choices" => [{ "finish_reason" => "stop", "message" => { "content" => "Hello" } }],
+          "usage" => {
+            "total_tokens" => 2,
+          },
+        },
+      )
+
+    expect(bot.get_response([{ role: "user", content: "Hi" }], {})).to include(reply: "Hello")
+  end
+
+  it "requires both selection and a configured credential for token-gated tools" do
+    enable_tools.call("news")
+    without_token = described_class.new({}).instance_variable_get(:@func_mapping)
+
+    SiteSetting.chatbot_news_api_token = "token"
+    with_token = described_class.new({}).instance_variable_get(:@func_mapping)
+
+    expect(without_token).not_to have_key("news")
+    expect(with_token).to have_key("news")
+  end
+
   it "always includes escalate_to_staff even when inside cooldown" do
-    SiteSetting.chatbot_escalate_to_staff_function = true
+    enable_tools.call("escalate_to_staff")
     SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
 
     Fabricate(
@@ -1729,7 +1778,7 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#merge_functions" do
   end
 
   it "includes escalate_to_staff even when latest cooldown date is invalid" do
-    SiteSetting.chatbot_escalate_to_staff_function = true
+    enable_tools.call("escalate_to_staff")
     SiteSetting.chatbot_escalate_to_staff_cool_down_period = 1
 
     Fabricate(
@@ -1754,7 +1803,7 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#merge_functions" do
 
   %w[gpt-image-1 gpt-image-1-mini gpt-image-1.5 gpt-image-2].each do |model_name|
     it "includes paint_edit_picture for #{model_name}" do
-      SiteSetting.chatbot_support_picture_creation = true
+      enable_tools.call("paint_edit_picture")
       SiteSetting.chatbot_support_picture_creation_model = model_name
 
       rag = described_class.new({})
@@ -1765,7 +1814,7 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#merge_functions" do
   end
 
   it "does not include paint_edit_picture for dall-e-3" do
-    SiteSetting.chatbot_support_picture_creation = true
+    enable_tools.call("paint_edit_picture")
     SiteSetting.chatbot_support_picture_creation_model = "dall-e-3"
 
     rag = described_class.new({})
@@ -1775,8 +1824,9 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#merge_functions" do
   end
 
   it "discovers external functions and honors their availability" do
+    extension_name = "conditional_extension"
     build_extension_function.call(
-      "conditional_extension",
+      extension_name,
       availability: ->(opts) { opts[:enable_test_extension] },
     )
 
@@ -1784,8 +1834,9 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#merge_functions" do
       described_class.new({ enable_test_extension: true }).instance_variable_get(:@func_mapping)
     disabled_mapping = described_class.new({}).instance_variable_get(:@func_mapping)
 
-    expect(enabled_mapping).to have_key("conditional_extension")
-    expect(disabled_mapping).not_to have_key("conditional_extension")
+    expect(enabled_mapping).to have_key(extension_name)
+    expect(disabled_mapping).not_to have_key(extension_name)
+    expect(::DiscourseChatbot::Function.choices).not_to include(extension_name)
   end
 
   it "isolates errors raised by individual external functions" do

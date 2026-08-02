@@ -31,7 +31,7 @@ describe ::DiscourseChatbot::Functions::ForumSearchFunction do
   end
 
   it "returns contents of a high ranking Post" do
-    SiteSetting.chatbot_forum_search_function_results_content_type = "post"
+    SiteSetting.chatbot_forum_search_tool_results_content_type = "post"
     args = { "query" => "rain" }
     # TODO if we don't inspect the posts, they will not be instantiated properly
     expect(post_1).not_to be_nil
@@ -54,8 +54,8 @@ describe ::DiscourseChatbot::Functions::ForumSearchFunction do
   end
 
   it "returns contents of a high ranking Topic" do
-    SiteSetting.chatbot_forum_search_function_results_content_type = "topic"
-    SiteSetting.chatbot_forum_search_function_results_topic_max_posts_count_strategy = "just_enough"
+    SiteSetting.chatbot_forum_search_tool_results_content_type = "topic"
+    SiteSetting.chatbot_forum_search_tool_results_topic_max_posts_count_strategy = "just_enough"
     args = { "query" => "rain" }
     # TODO if we don't inspect the posts, they will not be instantiated properly
     expect(post_1).not_to be_nil

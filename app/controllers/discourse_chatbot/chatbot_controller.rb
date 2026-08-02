@@ -25,7 +25,7 @@ module ::DiscourseChatbot
 
       start_bot = ::DiscourseChatbot::Bots::OpenAiBotRag.new(opts, false)
 
-      if !post_id && SiteSetting.chatbot_user_fields_collection &&
+      if !post_id && start_bot.tool_enabled?("user_information") &&
            start_bot.has_empty_user_fields?(opts)
         system_message = {
           role: "system",

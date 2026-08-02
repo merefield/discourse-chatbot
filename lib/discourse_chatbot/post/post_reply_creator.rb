@@ -31,12 +31,10 @@ module DiscourseChatbot
             end
           end
 
-          if @chatbot_bot_type == "RAG" &&
-               (
-                 SiteSetting.chatbot_include_inner_thoughts_in_private_messages &&
-                   @is_private_msg ||
-                   SiteSetting.chatbot_include_inner_thoughts_in_topics && !@is_private_msg
-               )
+          if (
+               SiteSetting.chatbot_include_inner_thoughts_in_private_messages && @is_private_msg ||
+                 SiteSetting.chatbot_include_inner_thoughts_in_topics && !@is_private_msg
+             )
             default_opts.merge!(
               raw:
                 ::DiscourseChatbot::INNER_THOUGHTS_POST_PREFIX +
@@ -63,7 +61,7 @@ module DiscourseChatbot
 
             prior_messages = PostPromptUtils.create_prompt(@options)
 
-            bot = ::DiscourseChatbot::Bots::OpenAiBotBasic.new(@options)
+            bot = ::DiscourseChatbot::Bots::OpenAiBotRag.new(@options, false)
             messages =
               prior_messages << {
                 role: "user",

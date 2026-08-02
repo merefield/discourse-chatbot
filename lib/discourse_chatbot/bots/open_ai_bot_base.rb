@@ -71,22 +71,18 @@ module DiscourseChatbot
       end
 
       def get_model(opts)
-        if SiteSetting.chatbot_support_vision == "directly"
-          SiteSetting.chatbot_open_ai_vision_model
-        else
-          case opts[:trust_level]
-          when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
-            if SiteSetting.send("chatbot_open_ai_model_custom_" + opts[:trust_level] + "_trust")
-              SiteSetting.send("chatbot_open_ai_model_custom_name_" + opts[:trust_level] + "_trust")
-            else
-              SiteSetting.send("chatbot_open_ai_model_" + opts[:trust_level] + "_trust")
-            end
+        case opts[:trust_level]
+        when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
+          if SiteSetting.send("chatbot_open_ai_model_custom_" + opts[:trust_level] + "_trust")
+            SiteSetting.send("chatbot_open_ai_model_custom_name_" + opts[:trust_level] + "_trust")
           else
-            if SiteSetting.chatbot_open_ai_model_custom_low_trust
-              SiteSetting.chatbot_open_ai_model_custom_name_low_trust
-            else
-              SiteSetting.chatbot_open_ai_model_low_trust
-            end
+            SiteSetting.send("chatbot_open_ai_model_" + opts[:trust_level] + "_trust")
+          end
+        else
+          if SiteSetting.chatbot_open_ai_model_custom_low_trust
+            SiteSetting.chatbot_open_ai_model_custom_name_low_trust
+          else
+            SiteSetting.chatbot_open_ai_model_low_trust
           end
         end
       end

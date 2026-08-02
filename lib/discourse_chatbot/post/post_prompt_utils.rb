@@ -104,29 +104,18 @@ module DiscourseChatbot
         upload_refs = UploadReference.where(target_id: p.id, target_type: "Post")
         upload_refs.each do |uf|
           upload = Upload.find(uf.upload_id)
-          if %w[png webp jpg jpeg gif ico avif].include?(upload.extension) &&
-               SiteSetting.chatbot_support_vision == "directly" ||
-               upload.extension == "pdf" && SiteSetting.chatbot_support_pdf == true
+          if upload.extension == "pdf" && SiteSetting.chatbot_support_pdf
             role = "user"
             file_path = Discourse.store.path_for(upload)
             base64_encoded_data = Base64.strict_encode64(File.read(file_path))
 
-            if upload.extension == "pdf"
-              content << {
-                type: "file",
-                file: {
-                  filename: upload.original_filename,
-                  file_data: "data:application/pdf;base64," + base64_encoded_data,
-                },
-              }
-            else
-              content << {
-                type: "image_url",
-                image_url: {
-                  url: "data:image/#{upload.extension};base64," + base64_encoded_data,
-                },
-              }
-            end
+            content << {
+              type: "file",
+              file: {
+                filename: upload.original_filename,
+                file_data: "data:application/pdf;base64," + base64_encoded_data,
+              },
+            }
           end
         end
 

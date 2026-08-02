@@ -11,7 +11,6 @@ RSpec.describe Jobs::ChatbotReply do
     SiteSetting.chatbot_enabled = true
     SiteSetting.chatbot_permitted_in_private_messages = true
     SiteSetting.chatbot_bot_user = bot_user.username
-    SiteSetting.chatbot_bot_type_low_trust = "RAG"
     SiteSetting.chatbot_private_message_auto_title = false
   end
 
@@ -170,28 +169,5 @@ RSpec.describe Jobs::ChatbotReply do
       "Allowed the request to continue",
     )
     expect(replies.last.raw).to eq("A normal RAG answer")
-  end
-
-  it "does not evaluate blocked-question examples for a basic bot" do
-    SiteSetting.chatbot_blocked_questions_enabled = true
-    SiteSetting.chatbot_bot_type_low_trust = "basic"
-    ::DiscourseChatbot::BlockedQuestionMatcher.any_instance.expects(:evaluate).never
-    ::DiscourseChatbot::Bots::OpenAiBotBasic
-      .any_instance
-      .expects(:ask)
-      .returns(reply: "A normal basic answer", inner_thoughts: nil, total_tokens: 2)
-
-    post =
-      PostCreator.create!(
-        requester,
-        topic_id: pm_topic.id,
-        raw: "Who should I vote for, @#{bot_user.username}?",
-      )
-    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
-    opts[:trust_level] = "low"
-
-    described_class.new.execute(opts)
-
-    expect(pm_topic.posts.order(:post_number).last.raw).to eq("A normal basic answer")
   end
 end
