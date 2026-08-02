@@ -2,7 +2,6 @@
 
 module ::DiscourseChatbot
   class Function
-
     def name
       raise "Overwrite me!"
     end
@@ -34,28 +33,29 @@ module ::DiscourseChatbot
 
     def validate_parameters(args)
       if args.count < @required.length
-        raise ArgumentError, "Expected at least #{@required.length} arguments, but got #{args.length}"
+        raise ArgumentError,
+              "Expected at least #{@required.length} arguments, but got #{args.length}"
       end
 
       @required.each do |required|
         if !args.has_key?(required)
-          raise ArgumentError, "Expected '#{required}' to be included in the arguments because it is required, but is missing"
+          raise ArgumentError,
+                "Expected '#{required}' to be included in the arguments because it is required, but is missing"
         end
       end
 
       args.each do |arg|
         parameter = @parameters.find { |param| param[:name] == arg[0] }
 
-        if parameter.nil?
-          raise ArgumentError, "Unexpected argument '#{arg[0]}'"
-        end
+        raise ArgumentError, "Unexpected argument '#{arg[0]}'" if parameter.nil?
 
         unless arg[1].is_a?(parameter[:type])
           raise ArgumentError, "Argument '#{arg[0]}' should be of type #{parameter[:type]}"
         end
 
         if parameter[:enum].present? && !parameter[:enum].include?(arg[1])
-          raise ArgumentError, "Argument '#{arg[0]}' should be one of #{parameter[:enum].join(", ")}"
+          raise ArgumentError,
+                "Argument '#{arg[0]}' should be one of #{parameter[:enum].join(", ")}"
         end
       end
 

@@ -13,9 +13,7 @@ gem "ruby-openai", "8.1.0", { require: false }
 gem "google_search_results", "2.2.0"
 # wikipedia
 gem "wikipedia-client", "1.17.0"
-# safe ruby for calculations and date functions
-gem "childprocess", "5.0.0"
-# gem "safe_ruby", "1.0.4" TODO add this back in if gem returns to being maintained
+gem "dentaku", "3.5.7", { require: false }
 
 module ::DiscourseChatbot
   PLUGIN_NAME = "discourse-chatbot"
@@ -23,14 +21,12 @@ module ::DiscourseChatbot
   MESSAGE = "message"
 
   CHATBOT_QUERIES_CUSTOM_FIELD = "chatbot_queries"
-  CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD =
-    "chatbot_remanining_quota_queries"
+  CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD = "chatbot_remanining_quota_queries"
   CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD = "chatbot_remaining_quota_tokens"
   CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD =
     "chatbot_queries_quota_reach_escalation_date"
   CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD = "chatbot_last_escalation_date"
-  CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD =
-    "chatbot_last_escalation_topic_id"
+  CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD = "chatbot_last_escalation_topic_id"
   POST_TYPES_REGULAR_ONLY = [1]
   POST_TYPES_INC_WHISPERS = [1, 4]
   INNER_THOUGHTS_POST_PREFIX = "[details='Inner Thoughts']\n```json\n"
@@ -72,10 +68,7 @@ module ::DiscourseChatbot
   ]
 
   def latest_chatbot_custom_field_values(user_id, name)
-    UserCustomField
-      .where(user_id: user_id, name: name)
-      .order(id: :desc)
-      .pluck(:value)
+    UserCustomField.where(user_id: user_id, name: name).order(id: :desc).pluck(:value)
   end
 
   def latest_chatbot_custom_field_value(user_id, name)
@@ -84,10 +77,7 @@ module ::DiscourseChatbot
 
   def latest_chatbot_escalation_topic_id(user_id)
     values =
-      latest_chatbot_custom_field_values(
-        user_id,
-        CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD
-      )
+      latest_chatbot_custom_field_values(user_id, CHATBOT_LAST_ESCALATION_TOPIC_ID_CUSTOM_FIELD)
 
     values.each do |value|
       next if value.blank?
@@ -100,11 +90,7 @@ module ::DiscourseChatbot
   end
 
   def latest_chatbot_escalation_at(user_id)
-    values =
-      latest_chatbot_custom_field_values(
-        user_id,
-        CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD
-      )
+    values = latest_chatbot_custom_field_values(user_id, CHATBOT_LAST_ESCALATION_DATE_CUSTOM_FIELD)
 
     values.each do |value|
       next if value.blank?
@@ -122,11 +108,7 @@ module ::DiscourseChatbot
     last_escalation_at = latest_chatbot_escalation_at(user_id)
     return true if last_escalation_at.nil?
 
-    now >=
-      (
-        last_escalation_at +
-          SiteSetting.chatbot_escalate_to_staff_cool_down_period.days
-      )
+    now >= (last_escalation_at + SiteSetting.chatbot_escalate_to_staff_cool_down_period.days)
   end
 
   def embedding_model_name
@@ -135,9 +117,7 @@ module ::DiscourseChatbot
   end
 
   def progress_debug_message(message)
-    if SiteSetting.chatbot_enable_verbose_console_logging
-      puts "Chatbot: #{message}"
-    end
+    puts "Chatbot: #{message}" if SiteSetting.chatbot_enable_verbose_console_logging
     if SiteSetting.chatbot_enable_verbose_rails_logging == "all"
       case SiteSetting.chatbot_verbose_rails_logging_destination_level
       when "warn"
@@ -170,99 +150,31 @@ after_initialize do
   # Allow user to disable quickchat Composer popup on mobile PMs
   User.register_custom_field_type(
     "chatbot_user_prefs_disable_quickchat_pm_composer_popup_mobile",
-    :boolean
+    :boolean,
   )
   register_editable_user_custom_field :chatbot_user_prefs_disable_quickchat_pm_composer_popup_mobile
   register_editable_user_custom_field :chatbot_additional_prompt
 
-  Category.register_custom_field_type(
-    "chatbot_auto_response_additional_prompt",
-    :string
-  )
+  Category.register_custom_field_type("chatbot_auto_response_additional_prompt", :string)
 
-  SeedFu.fixture_paths << Rails
-    .root
-    .join("plugins", "discourse-chatbot", "db", "fixtures")
-    .to_s
+  SeedFu.fixture_paths << Rails.root.join("plugins", "discourse-chatbot", "db", "fixtures").to_s
 
-  %w[
-    ../lib/discourse_chatbot/event_evaluation.rb
-    ../app/models/discourse_chatbot/post_embedding.rb
-    ../app/models/discourse_chatbot/post_embeddings_bookmark.rb
-    ../app/models/discourse_chatbot/topic_title_embedding.rb
-    ../app/models/discourse_chatbot/topic_embeddings_bookmark.rb
-    ../lib/discourse_chatbot/embedding_process.rb
-    ../lib/discourse_chatbot/blocked_question_matcher.rb
-    ../lib/discourse_chatbot/post/post_embedding_process.rb
-    ../lib/discourse_chatbot/topic/topic_title_embedding_process.rb
-    ../lib/discourse_chatbot/embedding_completionist_process.rb
-    ../lib/discourse_chatbot/message/message_evaluation.rb
-    ../lib/discourse_chatbot/post/post_evaluation.rb
-    ../lib/discourse_chatbot/bot.rb
-    ../lib/discourse_chatbot/bots/open_ai_bot_base.rb
-    ../lib/discourse_chatbot/bots/open_ai_bot_basic.rb
-    ../lib/discourse_chatbot/bots/open_ai_bot_rag.rb
-    ../lib/discourse_chatbot/safe_ruby/lib/safe_ruby.rb
-    ../lib/discourse_chatbot/function.rb
-    ../lib/discourse_chatbot/functions/remaining_quota_function.rb
-    ../lib/discourse_chatbot/functions/user_field_function.rb
-    ../lib/discourse_chatbot/functions/calculator_function.rb
-    ../lib/discourse_chatbot/functions/escalate_to_staff_function.rb
-    ../lib/discourse_chatbot/functions/news_function.rb
-    ../lib/discourse_chatbot/functions/web_crawler_function.rb
-    ../lib/discourse_chatbot/functions/web_search_function.rb
-    ../lib/discourse_chatbot/functions/wikipedia_function.rb
-    ../lib/discourse_chatbot/functions/vision_function.rb
-    ../lib/discourse_chatbot/functions/paint_function.rb
-    ../lib/discourse_chatbot/functions/paint_edit_function.rb
-    ../lib/discourse_chatbot/functions/forum_search_function.rb
-    ../lib/discourse_chatbot/functions/forum_user_distance_from_location_function.rb
-    ../lib/discourse_chatbot/functions/forum_user_search_from_location_function.rb
-    ../lib/discourse_chatbot/functions/forum_user_search_from_user_location_function.rb
-    ../lib/discourse_chatbot/functions/forum_user_search_from_topic_location_function.rb
-    ../lib/discourse_chatbot/functions/forum_get_user_address_function.rb
-    ../lib/discourse_chatbot/functions/forum_topic_search_from_location_function.rb
-    ../lib/discourse_chatbot/functions/forum_topic_search_from_user_location_function.rb
-    ../lib/discourse_chatbot/functions/forum_topic_search_from_topic_location_function.rb
-    ../lib/discourse_chatbot/functions/get_distance_between_locations_function.rb
-    ../lib/discourse_chatbot/functions/coords_from_location_description_search.rb
-    ../lib/discourse_chatbot/functions/stock_data_function.rb
-    ../lib/discourse_chatbot/functions/parser.rb
-    ../lib/discourse_chatbot/prompt_utils.rb
-    ../lib/discourse_chatbot/post/post_prompt_utils.rb
-    ../lib/discourse_chatbot/message/message_prompt_utils.rb
-    ../lib/discourse_chatbot/reply_creator.rb
-    ../lib/discourse_chatbot/post/post_reply_creator.rb
-    ../lib/discourse_chatbot/message/message_reply_creator.rb
-    ../app/controllers/discourse_chatbot/chatbot_controller.rb
-    ../app/jobs/regular/chatbot_reply.rb
-    ../app/jobs/regular/chatbot_post_embedding.rb
-    ../app/jobs/regular/chatbot_post_embedding_delete.rb
-    ../app/jobs/regular/chatbot_topic_title_embedding.rb
-    ../app/jobs/regular/chatbot_topic_title_embedding_delete.rb
-    ../app/jobs/scheduled/chatbot_quota_reset.rb
-    ../app/jobs/scheduled/chatbot_embeddings_set_completer.rb
-  ].each { |path| load File.expand_path(path, __FILE__) }
-
-  register_user_custom_field_type(
-    ::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD,
-    :integer
-  )
+  register_user_custom_field_type(::DiscourseChatbot::CHATBOT_QUERIES_CUSTOM_FIELD, :integer)
   register_user_custom_field_type(
     ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD,
-    :integer
+    :integer,
   )
   register_user_custom_field_type(
     ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD,
-    :integer
+    :integer,
   )
   register_user_custom_field_type(
     ::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD,
-    :date
+    :date,
   )
 
   add_to_serializer(:current_user, :chatbot_access) do
-    !::DiscourseChatbot::EventEvaluation.new.trust_level(object.id).blank?
+    ::DiscourseChatbot::EventEvaluation.new.trust_level(object.id).present?
   end
 
   #TODO this prevents a NotFound error in reads controller. This is a bit of a hack, we should really be finding the source of the issue and fixing it there
@@ -271,20 +183,15 @@ after_initialize do
       bot_user = ::User.find_by(username: SiteSetting.chatbot_bot_user)
       bot_guardian = Guardian.new(bot_user)
       bot_membership =
-        ::Chat::ChannelMembershipManager.new(channel).find_for_user(
-          bot_guardian.user
-        )
+        ::Chat::ChannelMembershipManager.new(channel).find_for_user(bot_guardian.user)
       if bot_membership.nil?
         membership =
           ::Chat::ChannelMembershipManager.new(channel).find_for_user(
             guardian.user,
-            following: true
+            following: true,
           )
       else
-        membership =
-          ::Chat::ChannelMembershipManager.new(channel).find_for_user(
-            guardian.user
-          )
+        membership = ::Chat::ChannelMembershipManager.new(channel).find_for_user(guardian.user)
       end
       membership
     end
@@ -294,7 +201,7 @@ after_initialize do
     prepend ChatUpdateUserLastReadExtension
   end
 
-  DiscourseEvent.on(:post_created) do |*params|
+  on(:post_created) do |*params|
     post, opts, user = params
 
     if SiteSetting.chatbot_enabled
@@ -313,14 +220,14 @@ after_initialize do
         bot_user = User.find_by(username: bot_username)
 
         if bot_user && (user.id != bot_user.id)
-          event_evaluation = ::DiscourseChatbot::PostEvaluation.new
+          event_evaluation = ::DiscourseChatbot::Post::PostEvaluation.new
           event_evaluation.on_submission(post)
         end
       end
     end
   end
 
-  DiscourseEvent.on(:topic_destroyed) do |*params|
+  on(:topic_destroyed) do |*params|
     topic, opts, user = params
 
     if SiteSetting.chatbot_enabled
@@ -329,7 +236,7 @@ after_initialize do
     end
   end
 
-  DiscourseEvent.on(:topic_recovered) do |*params|
+  on(:topic_recovered) do |*params|
     topic, opts = params
 
     if SiteSetting.chatbot_enabled
@@ -338,7 +245,7 @@ after_initialize do
     end
   end
 
-  DiscourseEvent.on(:topic_created) do |*params|
+  on(:topic_created) do |*params|
     topic, opts = params
 
     if SiteSetting.chatbot_enabled
@@ -347,7 +254,7 @@ after_initialize do
     end
   end
 
-  DiscourseEvent.on(:post_edited) do |*params|
+  on(:post_edited) do |*params|
     post, topic_changed, opts = params
 
     if SiteSetting.chatbot_enabled && post.post_type == 1
@@ -361,7 +268,7 @@ after_initialize do
     end
   end
 
-  DiscourseEvent.on(:post_recovered) do |*params|
+  on(:post_recovered) do |*params|
     post, opts = params
 
     if SiteSetting.chatbot_enabled && post.post_type == 1
@@ -370,7 +277,7 @@ after_initialize do
     end
   end
 
-  DiscourseEvent.on(:post_destroyed) do |*params|
+  on(:post_destroyed) do |*params|
     post, opts, user = params
 
     if SiteSetting.chatbot_enabled && post.post_type == 1
@@ -379,7 +286,7 @@ after_initialize do
     end
   end
 
-  DiscourseEvent.on(:chat_message_created) do |*params|
+  on(:chat_message_created) do |*params|
     chat_message, chat_channel, user = params
 
     if SiteSetting.chatbot_enabled
@@ -389,7 +296,7 @@ after_initialize do
       bot_user = User.find_by(username: bot_username)
 
       if bot_user && (user.id != bot_user.id)
-        event_evaluation = ::DiscourseChatbot::MessageEvaluation.new
+        event_evaluation = ::DiscourseChatbot::Message::MessageEvaluation.new
         event_evaluation.on_submission(chat_message)
       end
     end

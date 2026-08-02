@@ -1,11 +1,21 @@
 @mixin buttonShadow {
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.14), 0 4px 8px rgba(0, 0, 0, 0.28);
+  box-shadow:
+    0 0 4px rgb(0, 0, 0, 0.14),
+    0 4px 8px rgb(0, 0, 0, 0.28);
 }
 
 @mixin buttonTransition {
-  transition: right 0.5s, bottom 0.5s, border-radius 0.5s, text-indent 0.2s,
-    visibility 1s, width 0.2s ease, height 0.5s ease 0.4s, color 0.5s,
-    background-color 2s, transform 0.5s;
+  transition:
+    right 0.5s,
+    bottom 0.5s,
+    border-radius 0.5s,
+    text-indent 0.2s,
+    visibility 1s,
+    width 0.2s ease,
+    height 0.5s ease 0.4s,
+    color 0.5s,
+    background-color 2s,
+    transform 0.5s;
 }
 
 .widget-link.post-date {
@@ -44,21 +54,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  padding-bottom: 0.5em;
   margin: 0;
-  height: 30px;
-  border-radius: 40px;
   z-index: 1;
-  background-color: var(--secondary);
-  color: var(--primary);
   white-space: nowrap;
   overflow: hidden;
   transition: all 0.3s;
   padding: 0;
+
   @include buttonShadow;
   @include buttonTransition;
   background-color: $tertiary;
+
   .d-button-label {
     color: var(--secondary);
   }
@@ -68,6 +74,7 @@
   right: 50px;
   height: 50px;
   border-radius: 40px;
+
   .d-icon {
     margin: 0;
     padding: 0.7em;
@@ -75,10 +82,12 @@
     height: 30px;
     color: var(--seoncdary);
   }
+
   img {
     padding: 0.2em;
   }
-  &:not(:hover):not(:active):not(:focus) {
+
+  &:not(:hover, :active, :focus) {
     .d-button-label {
       opacity: 0;
       width: 0;

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe "Chatbot PM presence indicator", type: :system do
+describe DiscourseChatbot do
   before { enable_current_plugin }
 
   fab!(:current_user) { Fabricate(:user, username: "pm_user") }
@@ -18,15 +18,15 @@ describe "Chatbot PM presence indicator", type: :system do
     SiteSetting.chatbot_bot_user = bot_user.username
     SiteSetting.chatbot_reply_job_time_delay = 0
 
-    ::DiscourseChatbot::OpenAiBotBasic
+    ::DiscourseChatbot::Bots::OpenAiBotBasic
       .any_instance
       .stubs(:ask)
       .returns({ reply: "bot reply", inner_thoughts: nil })
-    ::DiscourseChatbot::OpenAiBotRag
+    ::DiscourseChatbot::Bots::OpenAiBotRag
       .any_instance
       .stubs(:ask)
       .returns({ reply: "bot reply", inner_thoughts: nil })
-    ::DiscourseChatbot::PostReplyCreator.any_instance.stubs(:create)
+    ::DiscourseChatbot::Post::PostReplyCreator.any_instance.stubs(:create)
 
     sign_in(current_user)
   end
@@ -35,7 +35,7 @@ describe "Chatbot PM presence indicator", type: :system do
     post =
       PostCreator.create!(current_user, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
 
-    opts = ::DiscourseChatbot::PostEvaluation.new.trigger_response(post)
+    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
     expect(opts).to be_present
     ::Jobs::ChatbotReply.new.execute(opts)
 

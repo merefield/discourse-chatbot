@@ -5,7 +5,6 @@ import { scheduleOnce } from "@ember/runloop";
 import { service } from "@ember/service";
 
 export default class ComposerRaiserCompopnent extends Component {
-  @service siteSettings;
   @service currentUser;
   @service site;
   @service composer;

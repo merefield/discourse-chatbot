@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "Category chatbot settings" do
+RSpec.describe DiscourseChatbot do
   fab!(:admin)
   fab!(:category, :category_with_definition)
 

@@ -4,10 +4,35 @@
   "repository": "git@github.com:merefield/discourse-chatbot.git",
   "author": "Robert Barrow",
   "license": "GPL V2",
+  "private": true,
   "devDependencies": {
-    "@discourse/lint-configs": "^1.0.0",
-    "ember-template-lint": "^5.11.2",
-    "eslint": "^8.52.0",
-    "prettier": "^2.8.8"
-  }
+    "@discourse/lint-configs": "3.2.0",
+    "@glint/ember-tsc": "1.8.11",
+    "concurrently": "^9.2.3",
+    "discourse": "npm:@discourse/types@2026.3.0-d02b2966",
+    "eslint": "10.6.0",
+    "lint-to-the-future": "^2.6.4",
+    "lint-to-the-future-eslint": "^3.3.0",
+    "prettier": "3.8.1",
+    "stylelint": "17.5.0"
+  },
+  "scripts": {
+    "lint": "concurrently \"pnpm:lint:*(!fix)\" --names \"lint:\"",
+    "lint:fix": "concurrently \"pnpm:lint:*:fix\" --names \"fix:\"",
+    "lint:css": "pnpm stylelint 'assets/stylesheets/**/*.scss' --allow-empty-input",
+    "lint:css:fix": "pnpm stylelint 'assets/stylesheets/**/*.scss' --fix --allow-empty-input",
+    "lint:js": "eslint {assets,admin/assets,test}/javascripts --cache --no-error-on-unmatched-pattern",
+    "lint:js:fix": "eslint {assets,admin/assets,test}/javascripts --fix --no-error-on-unmatched-pattern",
+    "lint:prettier": "pnpm prettier 'assets/stylesheets/**/*.scss' '{assets,admin/assets,test}/javascripts/**/*.{js,gjs,ts,gts,mts,cts}' --check --no-error-on-unmatched-pattern",
+    "lint:prettier:fix": "pnpm prettier 'assets/stylesheets/**/*.scss' '{assets,admin/assets,test}/javascripts/**/*.{js,gjs,ts,gts,mts,cts}' -w --no-error-on-unmatched-pattern",
+    "lint:types": "ember-tsc -b",
+    "lttf:ignore": "lint-to-the-future ignore"
+  },
+  "engines": {
+    "node": ">= 22",
+    "npm": "please-use-pnpm",
+    "yarn": "please-use-pnpm",
+    "pnpm": "^10"
+  },
+  "packageManager": "pnpm@10.28.0"
 }

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require_relative "../../plugin_helper"
 
-describe ::DiscourseChatbot::OpenAiBotBasic do
+describe ::DiscourseChatbot::Bots::OpenAiBotBasic do
   let(:opts) { {} }
   let(:client) { mock }
   let(:responses_api) { mock }
@@ -72,19 +72,13 @@ describe ::DiscourseChatbot::OpenAiBotBasic do
 
   it "rejects a completed responses api response without a message" do
     responses_api.expects(:create).returns(
-      {
-        "status" => "completed",
-        "output" => [],
-        "usage" => {
-          "total_tokens" => 3,
-        },
-      },
+      { "status" => "completed", "output" => [], "usage" => { "total_tokens" => 3 } },
     )
 
     expect do
       described_class.new(opts).get_response([{ role: "user", content: "Hi" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::OpenAIBotBase::ResponsesApiError,
+      ::DiscourseChatbot::Bots::OpenAiBotBase::ResponsesApiError,
       "OpenAI Responses API completed without visible message content",
     )
   end
@@ -106,7 +100,7 @@ describe ::DiscourseChatbot::OpenAiBotBasic do
     expect do
       described_class.new(opts).get_response([{ role: "user", content: "Hi" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::OpenAIBotBase::TokenBudgetError,
+      ::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError,
       "OpenAI Responses API exhausted chatbot_open_ai_max_reasoning_output_tokens before producing visible output",
     )
   end
@@ -182,18 +176,13 @@ describe ::DiscourseChatbot::OpenAiBotBasic do
 
   it "raises errors returned in a responses api payload" do
     responses_api.expects(:create).returns(
-      {
-        "status" => "failed",
-        "error" => {
-          "message" => "The request failed",
-        },
-      },
+      { "status" => "failed", "error" => { "message" => "The request failed" } },
     )
 
     expect do
       described_class.new(opts).get_response([{ role: "user", content: "Hi" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::OpenAIBotBase::ResponsesApiError,
+      ::DiscourseChatbot::Bots::OpenAiBotBase::ResponsesApiError,
       "OpenAI Responses API error: The request failed",
     )
   end

@@ -3,15 +3,15 @@ import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import didInsert from "@ember/render-modifiers/modifiers/did-insert";
 import { service } from "@ember/service";
-import DButton from "discourse/components/d-button";
-import avatar from "discourse/helpers/avatar";
-import concatClass from "discourse/helpers/concat-class";
-import icon from "discourse/helpers/d-icon";
 import { ajax } from "discourse/lib/ajax";
 import DiscourseURL from "discourse/lib/url";
 import Composer from "discourse/models/composer";
 import User from "discourse/models/user";
-import I18n, { i18n } from "discourse-i18n";
+import DButton from "discourse/ui-kit/d-button";
+import dAvatar from "discourse/ui-kit/helpers/d-avatar";
+import dConcatClass from "discourse/ui-kit/helpers/d-concat-class";
+import dIcon from "discourse/ui-kit/helpers/d-icon";
+import { i18n } from "discourse-i18n";
 
 export default class ContentLanguageDiscovery extends Component {
   @service siteSettings;
@@ -77,7 +77,7 @@ export default class ContentLanguageDiscovery extends Component {
         duration: 3000,
         showProgressBar: true,
         data: {
-          message: I18n.t("chatbot.post_launch.thinking"),
+          message: i18n("chatbot.post_launch.thinking"),
           icon: this.siteSettings.chatbot_quick_access_talk_button_bot_icon,
         },
       });
@@ -103,7 +103,7 @@ export default class ContentLanguageDiscovery extends Component {
           openOpts: {
             action: Composer.PRIVATE_MESSAGE,
             recipients: this.siteSettings.chatbot_bot_user,
-            topicTitle: I18n.t("chatbot.pm_prefix"),
+            topicTitle: i18n("chatbot.pm_prefix"),
             archetypeId: "private_message",
             draftKey: Composer.NEW_PRIVATE_MESSAGE_KEY,
             hasGroups: false,
@@ -130,15 +130,15 @@ export default class ContentLanguageDiscovery extends Component {
       <DButton
         {{didInsert this.getBotUser}}
         @id={{if this.primaryButton "chatbot-btn"}}
-        @class={{concatClass "chatbot-btn" this.chatbotLaunchClass}}
+        class={{dConcatClass "chatbot-btn" this.chatbotLaunchClass}}
         ...attributes
         @action={{this.startChatting}}
         @title={{this.title}}
       >
         {{#if this.chatbotLaunchUseAvatar}}
-          {{avatar this.botUser imageSize="medium"}}
+          {{dAvatar this.botUser imageSize="medium"}}
         {{else}}
-          {{icon this.chatbotLaunchIcon}}
+          {{dIcon this.chatbotLaunchIcon}}
         {{/if}}
         {{#if this.primaryButton}}
           <label class="d-button-label">{{i18n

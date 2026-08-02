@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require_relative "../plugin_helper"
 
-describe ::DiscourseChatbot::MessageReplyCreator do
+describe ::DiscourseChatbot::Message::MessageReplyCreator do
   subject(:reply_creator) { described_class.new({}) }
 
   describe "#find_upload_from_markdown" do

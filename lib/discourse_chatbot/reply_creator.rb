@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 module ::DiscourseChatbot
   class ReplyCreator
-
     def initialize(options = {})
       @options = options
       @author = ::User.find_by(id: options[:bot_user_id])
@@ -18,9 +17,7 @@ module ::DiscourseChatbot
       @trust_level = options[:trust_level]
       @chatbot_bot_type = options[:chatbot_bot_type]
       @blocked_question = options[:blocked_question]
-      if @message_body.blank?
-        @message_body = I18n.t('chatbot.errors.retries')
-      end
+      @message_body = I18n.t("chatbot.errors.retries") if @message_body.blank?
     end
 
     def create
