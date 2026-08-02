@@ -119,10 +119,12 @@ module ::DiscourseChatbot
             uri_base:
               SiteSetting.chatbot_open_ai_embeddings_model_custom_url.presence ||
                 OpenAI::Configuration::DEFAULT_URI_BASE,
-            api_type: azure ? :azure : :open_ai,
-            api_version: azure ? SiteSetting.chatbot_open_ai_model_custom_api_version : "v1",
             log_errors: SiteSetting.chatbot_enable_verbose_rails_logging != "off",
           }
+          if azure
+            config[:api_type] = :azure
+            config[:api_version] = SiteSetting.chatbot_open_ai_model_custom_api_version
+          end
 
           OpenAI::Client.new(config)
         end

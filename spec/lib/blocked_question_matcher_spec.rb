@@ -32,6 +32,27 @@ RSpec.describe ::DiscourseChatbot::BlockedQuestionMatcher do
     )
   end
 
+  it "uses the default API type and version for non-Azure embedding requests" do
+    SiteSetting.chatbot_open_ai_model_custom_api_type = "open_ai"
+    OpenAI::Client
+      .expects(:new)
+      .with { |config| !config.key?(:api_type) && !config.key?(:api_version) }
+      .returns(client)
+
+    described_class.new.send(:client)
+  end
+
+  it "configures the API type and version for Azure embedding requests" do
+    SiteSetting.chatbot_open_ai_model_custom_api_type = "azure"
+    SiteSetting.chatbot_open_ai_model_custom_api_version = "2026-01-01"
+    OpenAI::Client
+      .expects(:new)
+      .with { |config| config[:api_type] == :azure && config[:api_version] == "2026-01-01" }
+      .returns(client)
+
+    described_class.new.send(:client)
+  end
+
   before do
     SiteSetting.chatbot_blocked_questions_enabled = true
     SiteSetting.chatbot_blocked_questions_similarity_threshold = 0.8
