@@ -184,22 +184,26 @@ en:
           error: "I couldn't save any information about %{user_field} for answer '%{answer}'"
         calculator:
           description: |
-            Useful for getting the result of a math expression.  It is a general purpose calculator.  It works with Ruby expressions.
+            Evaluate a single mathematical expression using supported Ruby syntax. Use this tool for arithmetic, Ruby Math module operations, and calculations involving the current date or time.
 
-            You can retrieve the current date from it too and using the core Ruby Time method to calculate dates.
+            Ruby syntax requirements:
+            - Use `Math.method(...)` for mathematical functions, such as `Math.sqrt(8)` or `Math.cbrt(13)`.
+            - Use `Math::CONSTANT` for mathematical constants, such as `Math::PI` or `Math::E`. Never use forms such as `Math.PI`.
+            - Use a decimal operand when a fractional result is required; Ruby divides two integers using integer division.
+            - Use `Time.now` for the current date and time.
+            - Submit only the expression to evaluate.
 
-            The input to this tool should be a valid mathematical expression that could be executed by the base Ruby programming language with no extensions.
-
-            Be certain to prefix any functions with 'Math.'
+            If the tool reports that an expression is invalid, inspect the error and retry once with corrected Ruby syntax. Do not repeat the same invalid expression unchanged. If it cannot be corrected, continue without the calculation and do not treat the error as a result.
 
             Usage:
               Action Input: 1 + 1
-              Action Input: 3 * 2 / 4
+              Action Input: 3.0 * 2 / 4
               Action Input: 9 - 7
-              Action Input: Time.now - 2 * 24 * 60 * 60
+              Action Input: Math::PI / 3
               Action Input: Math.cbrt(13) + Math.cbrt(12)
               Action Input: Math.sqrt(8)
               Action Input: (4.1 + 2.3) / (2.0 - 5.6) * 3
+              Action Input: Time.now - 2 * 24 * 60 * 60
           parameters:
             input: the mathematical expression you need to process and get the answer to. Make sure it is Ruby compatible.
           error: "'%{parameter}' is an invalid mathematical expression, make sure if you are trying to calculate dates use Ruby Time class"
