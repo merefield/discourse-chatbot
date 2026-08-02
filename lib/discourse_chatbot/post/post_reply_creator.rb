@@ -61,7 +61,7 @@ module DiscourseChatbot
 
             prior_messages = PostPromptUtils.create_prompt(@options)
 
-            bot = ::DiscourseChatbot::Bots::OpenAiBotRag.new(@options, false)
+            bot = ::DiscourseChatbot::Bot.new(@options, false)
             messages =
               prior_messages << {
                 role: "user",

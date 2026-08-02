@@ -21,11 +21,11 @@ RSpec.describe Jobs::ChatbotReply do
     opts[:trust_level] = "low"
     summary_text = "I used the available budget to investigate the question."
 
-    ::DiscourseChatbot::Bots::OpenAiBotRag
+    ::DiscourseChatbot::Bot
       .any_instance
       .stubs(:ask)
-      .raises(::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError, "budget reached")
-    ::DiscourseChatbot::Bots::OpenAiBotRag
+      .raises(::DiscourseChatbot::Bot::TokenBudgetError, "budget reached")
+    ::DiscourseChatbot::Bot
       .any_instance
       .stubs(:inner_thoughts)
       .returns([{ type: "reasoning_summary", content: summary_text }])
@@ -42,10 +42,10 @@ RSpec.describe Jobs::ChatbotReply do
     opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
     opts[:trust_level] = "low"
 
-    ::DiscourseChatbot::Bots::OpenAiBotRag
+    ::DiscourseChatbot::Bot
       .any_instance
       .stubs(:ask)
-      .raises(::DiscourseChatbot::Bots::OpenAiBotBase::ChainLimitError, "iteration limit reached")
+      .raises(::DiscourseChatbot::Bot::ChainLimitError, "iteration limit reached")
 
     described_class.new.execute(opts)
 
@@ -57,13 +57,13 @@ RSpec.describe Jobs::ChatbotReply do
     opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
     opts[:trust_level] = "low"
 
-    ::DiscourseChatbot::Bots::OpenAiBotRag
+    ::DiscourseChatbot::Bot
       .any_instance
       .stubs(:ask)
-      .raises(::DiscourseChatbot::Bots::OpenAiBotBase::ResponsesApiError, "provider failed")
+      .raises(::DiscourseChatbot::Bot::ResponsesApiError, "provider failed")
 
     expect { described_class.new.execute(opts) }.to raise_error(
-      ::DiscourseChatbot::Bots::OpenAiBotBase::ResponsesApiError,
+      ::DiscourseChatbot::Bot::ResponsesApiError,
       "provider failed",
     )
   end
@@ -130,7 +130,7 @@ RSpec.describe Jobs::ChatbotReply do
       .times(2)
       .returns(embedding_response([1.0, 0.0]), embedding_response([0.7, 0.7]))
     OpenAI::Client.stubs(:new).returns(client)
-    ::DiscourseChatbot::Bots::OpenAiBotRag
+    ::DiscourseChatbot::Bot
       .any_instance
       .expects(:create_chat_completion)
       .with do |messages, _use_functions, _iteration|

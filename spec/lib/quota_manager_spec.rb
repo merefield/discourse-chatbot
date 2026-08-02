@@ -1,7 +1,7 @@
 # frozen_string_literal: true
-require_relative "../../plugin_helper"
+require_relative "../plugin_helper"
 
-describe ::DiscourseChatbot::Bot do
+describe ::DiscourseChatbot::QuotaManager do
   it "consumes some tokens" do
     SiteSetting.chatbot_enabled = true
     SiteSetting.chatbot_quota_basis = "tokens"
@@ -15,10 +15,10 @@ describe ::DiscourseChatbot::Bot do
 
     user = Fabricate(:user, trust_level: TrustLevel[1], refresh_auto_groups: true)
     event = ::DiscourseChatbot::EventEvaluation.new
-    ::DiscourseChatbot::Bot.new.reset_all_quotas
+    described_class.new.reset_all
     remaining_quota_field_name = ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD
     expect(event.get_remaining_quota(user.id, remaining_quota_field_name)).to eq(2000)
-    described_class.new.consume_quota(user.id, 100)
+    described_class.new.consume(user.id, 100)
     expect(event.get_remaining_quota(user.id, remaining_quota_field_name)).to eq(1900)
   end
 
@@ -35,47 +35,10 @@ describe ::DiscourseChatbot::Bot do
 
     user = Fabricate(:user, trust_level: TrustLevel[1], refresh_auto_groups: true)
     event = ::DiscourseChatbot::EventEvaluation.new
-    ::DiscourseChatbot::Bot.new.reset_all_quotas
+    described_class.new.reset_all
     remaining_quota_field_name = ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD
     expect(event.get_remaining_quota(user.id, remaining_quota_field_name)).to eq(200)
-    described_class.new.consume_quota(user.id, 0)
+    described_class.new.consume(user.id, 0)
     expect(event.get_remaining_quota(user.id, remaining_quota_field_name)).to eq(199)
-  end
-
-  it "consumes accumulated tokens when a response fails" do
-    SiteSetting.chatbot_quota_basis = "tokens"
-    user = Fabricate(:user)
-    bot_user = Fabricate(:user)
-    post = Fabricate(:post, user: user)
-    quota =
-      UserCustomField.create!(
-        user_id: user.id,
-        name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD,
-        value: "100",
-      )
-    failed_bot_class =
-      Class.new(described_class) do
-        attr_reader :total_tokens
-
-        define_method(:get_response) do |*|
-          @total_tokens = 10
-          raise ::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError, "budget reached"
-        end
-      end
-    opts = {
-      type: ::DiscourseChatbot::POST,
-      user_id: user.id,
-      bot_user_id: bot_user.id,
-      reply_to_message_or_post_id: post.id,
-      original_post_number: post.post_number,
-      category_id: post.topic.category_id,
-    }
-
-    expect { failed_bot_class.new.ask(opts) }.to raise_error(
-      ::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError,
-      "budget reached",
-    )
-
-    expect(quota.reload.value).to eq("90")
   end
 end

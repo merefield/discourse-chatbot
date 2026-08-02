@@ -5,6 +5,6 @@ class ::Jobs::ChatbotQuotaReset < ::Jobs::Scheduled
   every 1.week
 
   def execute(args)
-    ::DiscourseChatbot::Bot.new.reset_all_quotas
+    ::DiscourseChatbot::QuotaManager.new.reset_all
   end
 end

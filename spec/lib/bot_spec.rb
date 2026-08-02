@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require_relative "../../plugin_helper"
+require_relative "../plugin_helper"
 
 RSpec.configure do |config|
   config.prepend_before(:suite) do
@@ -7,9 +7,9 @@ RSpec.configure do |config|
   end
 end
 
-describe ::DiscourseChatbot::Bots::OpenAiBotRag do
+describe ::DiscourseChatbot::Bot do
   let(:opts) { {} }
-  let(:rag) { ::DiscourseChatbot::Bots::OpenAiBotRag.new(opts) }
+  let(:rag) { described_class.new(opts) }
   let(:llm_function_response) { get_chatbot_output_fixture("llm_function_response") }
   let(:llm_final_response) { get_chatbot_output_fixture("llm_final_response") }
   let(:post_ids_found) { [] }
@@ -53,6 +53,41 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
           I18n.t("chatbot.prompt.system.rag.advanced_local_reasoning.outcomes.#{key}", **options),
       }
     end
+  end
+
+  it "consumes accumulated tokens when a response fails" do
+    SiteSetting.chatbot_quota_basis = "tokens"
+    user = Fabricate(:user)
+    bot_user = Fabricate(:user)
+    post = Fabricate(:post, user: user)
+    quota =
+      UserCustomField.create!(
+        user_id: user.id,
+        name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD,
+        value: "100",
+      )
+    failed_bot_class =
+      Class.new(described_class) do
+        define_method(:initialize) { @total_tokens = 0 }
+        define_method(:get_response) do |*|
+          @total_tokens = 10
+          raise ::DiscourseChatbot::Bot::TokenBudgetError, "budget reached"
+        end
+      end
+    bot_options = {
+      type: ::DiscourseChatbot::POST,
+      user_id: user.id,
+      bot_user_id: bot_user.id,
+      reply_to_message_or_post_id: post.id,
+      original_post_number: post.post_number,
+      category_id: post.topic.category_id,
+    }
+
+    expect { failed_bot_class.new.ask(bot_options) }.to raise_error(
+      ::DiscourseChatbot::Bot::TokenBudgetError,
+      "budget reached",
+    )
+    expect(quota.reload.value).to eq("90")
   end
 
   it "calls function on returning a function request from LLN" do
@@ -566,7 +601,7 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
     )
 
     expect do rag.get_response([{ role: "user", content: "Answer me" }], opts) end.to raise_error(
-      ::DiscourseChatbot::Bots::OpenAiBotBase::ResponsesApiError,
+      ::DiscourseChatbot::Bot::ResponsesApiError,
       "OpenAI Responses API completed without visible message content",
     )
   end
@@ -614,7 +649,7 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
 
     expect do
       rag.get_response([{ role: "user", content: "Think this through" }], opts)
-    end.to raise_error(::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError)
+    end.to raise_error(::DiscourseChatbot::Bot::TokenBudgetError)
 
     expect(rag.total_tokens).to eq(10)
   end
@@ -642,7 +677,7 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
 
     expect do
       rag.get_response([{ role: "user", content: "Think this through" }], opts)
-    end.to raise_error(::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError)
+    end.to raise_error(::DiscourseChatbot::Bot::TokenBudgetError)
 
     expect(rag.inner_thoughts).to eq([{ type: "reasoning_summary", content: summary_text }])
   end
@@ -666,7 +701,7 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
     expect do
       rag.get_response([{ role: "user", content: "Think this through" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError,
+      ::DiscourseChatbot::Bot::TokenBudgetError,
       "OpenAI response exceeded the configured chatbot_open_ai_max_chain_tokens budget",
     )
   end
@@ -1130,7 +1165,7 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
     expect do
       rag.get_response([{ role: "user", content: "Calculate something" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError,
+      ::DiscourseChatbot::Bot::TokenBudgetError,
       "OpenAI response reached its token limit before producing usable content",
     )
   end
@@ -1509,7 +1544,7 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
     expect do
       rag.get_response([{ role: "user", content: "Keep reasoning" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::Bots::OpenAiBotBase::ChainLimitError,
+      ::DiscourseChatbot::Bot::ChainLimitError,
       "Chatbot response exceeded the maximum number of iterations",
     )
   end
@@ -1543,7 +1578,7 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
     expect do
       rag.get_response([{ role: "user", content: "Calculate twice" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::Bots::OpenAiBotBase::ChainLimitError,
+      ::DiscourseChatbot::Bot::ChainLimitError,
       "Chatbot response exceeded the maximum number of tool calls",
     )
   end
@@ -1607,16 +1642,16 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag do
     expect do
       rag.get_response([{ role: "user", content: "Find details" }], opts)
     end.to raise_error(
-      ::DiscourseChatbot::Bots::OpenAiBotBase::ChainLimitError,
+      ::DiscourseChatbot::Bot::ChainLimitError,
       "Chatbot response repeatedly contained unsupported URLs",
     )
   end
 end
 
-describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#get_system_message_suffix" do
+describe ::DiscourseChatbot::Bot, "#get_system_message_suffix" do
   fab!(:user)
   let(:opts) { { user_id: user.id } }
-  let(:rag) { ::DiscourseChatbot::Bots::OpenAiBotRag.new(opts) }
+  let(:rag) { described_class.new(opts) }
 
   before { SiteSetting.discourse_local_dates_enabled = false }
 
@@ -1645,14 +1680,12 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#get_system_message_suffix" do
   end
 end
 
-describe ::DiscourseChatbot::Bots::OpenAiBotRag,
-         "#get_system_message_suffix via api",
-         type: :request do
+describe ::DiscourseChatbot::Bot, "#get_system_message_suffix via api", type: :request do
   fab!(:user)
   fab!(:admin)
   let(:api_key) { Fabricate(:api_key, user: admin) }
   let(:opts) { { user_id: user.id } }
-  let(:rag) { ::DiscourseChatbot::Bots::OpenAiBotRag.new(opts) }
+  let(:rag) { described_class.new(opts) }
 
   before do
     SiteSetting.discourse_local_dates_enabled = false
@@ -1680,7 +1713,7 @@ describe ::DiscourseChatbot::Bots::OpenAiBotRag,
   end
 end
 
-describe ::DiscourseChatbot::Bots::OpenAiBotRag, "#merge_functions" do
+describe ::DiscourseChatbot::Bot, "#merge_functions" do
   fab!(:user)
 
   let(:extension_function_classes) { [] }

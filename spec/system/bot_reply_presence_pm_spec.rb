@@ -18,7 +18,7 @@ describe DiscourseChatbot do
     SiteSetting.chatbot_bot_user = bot_user.username
     SiteSetting.chatbot_reply_job_time_delay = 0
 
-    ::DiscourseChatbot::Bots::OpenAiBotRag
+    ::DiscourseChatbot::Bot
       .any_instance
       .stubs(:ask)
       .returns({ reply: "bot reply", inner_thoughts: nil })

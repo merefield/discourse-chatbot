@@ -145,12 +145,12 @@ class ::Jobs::ChatbotReply < Jobs::Base
     if create_bot_reply
       ::DiscourseChatbot.progress_debug_message("4. Retrieving new reply message...")
       begin
-        bot = ::DiscourseChatbot::Bots::OpenAiBotRag.new(opts)
+        bot = ::DiscourseChatbot::Bot.new(opts)
         reply_and_thoughts = bot.ask(opts)
-      rescue ::DiscourseChatbot::Bots::OpenAiBotBase::NonRetryableError => e
+      rescue ::DiscourseChatbot::Bot::NonRetryableError => e
         Rails.logger.warn("Chatbot: Reply stopped without retrying: #{e}")
         error_key =
-          if e.is_a?(::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError)
+          if e.is_a?(::DiscourseChatbot::Bot::TokenBudgetError)
             "chatbot.errors.token_budget"
           else
             "chatbot.errors.chain_limit"
