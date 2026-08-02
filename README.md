@@ -166,6 +166,15 @@ RAG mode is superior but will make more calls to the API, potentially increasing
 
 For Chatbot to work in Chat you must have Chat enabled.
 
+### Function extensions
+
+Other plugins can add RAG tools by loading zero-argument subclasses of
+`DiscourseChatbot::Function`. Chatbot discovers subclasses that are not in its built-in function
+list. An extension class may define `self.available?(opts)` to decide at request time whether it
+should be exposed; classes without this method remain available by default. This lets an optional
+integration honor its own settings and data prerequisites without introducing a hard plugin
+dependency.
+
 ## Local chain-of-thought strategies
 
 RAG requests made through the Chat Completions API can use additional inference-time computation to review or compare an answer before returning it. Configure this with `chatbot_advanced_local_reasoning`:
