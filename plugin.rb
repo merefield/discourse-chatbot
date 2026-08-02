@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Chat, Topics and Private Messages
-# version: 2.0.2
+# version: 2.1.0
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -129,6 +129,11 @@ module ::DiscourseChatbot
       )
   end
 
+  def embedding_model_name
+    custom_name = SiteSetting.chatbot_open_ai_embeddings_model_custom_name.to_s.strip
+    custom_name.presence || SiteSetting.chatbot_open_ai_embeddings_model
+  end
+
   def progress_debug_message(message)
     if SiteSetting.chatbot_enable_verbose_console_logging
       puts "Chatbot: #{message}"
@@ -148,6 +153,7 @@ module ::DiscourseChatbot
   module_function :latest_chatbot_escalation_topic_id
   module_function :latest_chatbot_escalation_at
   module_function :chatbot_escalation_cooldown_elapsed?
+  module_function :embedding_model_name
   module_function :progress_debug_message
 end
 
@@ -186,6 +192,7 @@ after_initialize do
     ../app/models/discourse_chatbot/topic_title_embedding.rb
     ../app/models/discourse_chatbot/topic_embeddings_bookmark.rb
     ../lib/discourse_chatbot/embedding_process.rb
+    ../lib/discourse_chatbot/blocked_question_matcher.rb
     ../lib/discourse_chatbot/post/post_embedding_process.rb
     ../lib/discourse_chatbot/topic/topic_title_embedding_process.rb
     ../lib/discourse_chatbot/embedding_completionist_process.rb

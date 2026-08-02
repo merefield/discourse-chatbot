@@ -20,7 +20,7 @@ module ::DiscourseChatbot
           config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
         end
       end
-      @model_name = SiteSetting.chatbot_open_ai_embeddings_model
+      @model_name = ::DiscourseChatbot.embedding_model_name
       @client = ::OpenAI::Client.new
     end
 

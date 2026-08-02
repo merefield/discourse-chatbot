@@ -11,7 +11,7 @@ module ::DiscourseChatbot
 
           embedding_vector = get_embedding(topic_id)
   
-          ::DiscourseChatbot::TopicTitleEmbedding.upsert({ topic_id: topic_id, model: SiteSetting.chatbot_open_ai_embeddings_model, embedding: "#{embedding_vector}" }, on_duplicate: :update, unique_by: :topic_id)
+          ::DiscourseChatbot::TopicTitleEmbedding.upsert({ topic_id: topic_id, model: ::DiscourseChatbot.embedding_model_name, embedding: "#{embedding_vector}" }, on_duplicate: :update, unique_by: :topic_id)
 
           ::DiscourseChatbot.progress_debug_message <<~EOS
           ---------------------------------------------------------------------------------------------------------------
@@ -123,7 +123,7 @@ module ::DiscourseChatbot
       topic = ::Topic.find_by(id: topic_id)
       embedding_record = ::DiscourseChatbot::TopicTitleEmbedding.find_by(topic_id: topic_id)
       return false if !embedding_record.present?
-      return false if embedding_record.model != SiteSetting.chatbot_open_ai_embeddings_model
+      return false if embedding_record.model != ::DiscourseChatbot.embedding_model_name
       return false if topic.updated_at > embedding_record.updated_at
       true
     end

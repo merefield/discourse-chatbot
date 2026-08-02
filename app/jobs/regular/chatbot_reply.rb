@@ -120,23 +120,40 @@ class ::Jobs::ChatbotReply < Jobs::Base
     end
 
     if create_bot_reply
+      opts[:chatbot_bot_type] = configured_bot_type(opts[:trust_level])
+      if opts[:chatbot_bot_type] == "RAG"
+        blocked_question_evaluation =
+          ::DiscourseChatbot::BlockedQuestionMatcher.new.evaluate(opts[:message_body])
+
+        if blocked_question_evaluation
+          audit_entry = blocked_question_audit(blocked_question_evaluation)
+          opts[:initial_inner_thoughts] = [audit_entry]
+        end
+
+        if blocked_question_evaluation&.dig(:blocked)
+          reply_and_thoughts[:reply] =
+            I18n.t(
+              "chatbot.errors.blocked_question",
+              category: blocked_question_evaluation[:category],
+            )
+          reply_and_thoughts[:inner_thoughts] = opts[:initial_inner_thoughts]
+          opts[:blocked_question] = true
+          create_bot_reply = false
+          ::DiscourseChatbot.progress_debug_message(
+            "4. Declining a question matching the '#{blocked_question_evaluation[:category]}' blocked category",
+          )
+        end
+      end
+    end
+
+    if create_bot_reply
       ::DiscourseChatbot.progress_debug_message("4. Retrieving new reply message...")
       begin
-        case opts[:trust_level]
-        when ::DiscourseChatbot::TRUST_LEVELS[0], ::DiscourseChatbot::TRUST_LEVELS[1],
-             ::DiscourseChatbot::TRUST_LEVELS[2]
-          if SiteSetting.send("chatbot_bot_type_" + opts[:trust_level] + "_trust") == "RAG"
-            ::DiscourseChatbot.progress_debug_message("4a. Using RAG bot...")
-            opts.merge!(chatbot_bot_type: "RAG")
-            bot = ::DiscourseChatbot::OpenAiBotRag.new(opts)
-          else
-            ::DiscourseChatbot.progress_debug_message("4a. Using basic bot...")
-            opts.merge!(chatbot_bot_type: "basic")
-            bot = ::DiscourseChatbot::OpenAiBotBasic.new(opts)
-          end
+        if opts[:chatbot_bot_type] == "RAG"
+          ::DiscourseChatbot.progress_debug_message("4a. Using RAG bot...")
+          bot = ::DiscourseChatbot::OpenAiBotRag.new(opts)
         else
           ::DiscourseChatbot.progress_debug_message("4a. Using basic bot...")
-          opts.merge!(chatbot_bot_type: "basic")
           bot = ::DiscourseChatbot::OpenAiBotBasic.new(opts)
         end
         reply_and_thoughts = bot.ask(opts)
@@ -164,5 +181,35 @@ class ::Jobs::ChatbotReply < Jobs::Base
       reply_creator = ::DiscourseChatbot::MessageReplyCreator.new(opts)
     end
     reply_creator.create
+  end
+
+  private
+
+  def configured_bot_type(trust_level)
+    return "basic" if ::DiscourseChatbot::TRUST_LEVELS.exclude?(trust_level)
+
+    SiteSetting.send("chatbot_bot_type_#{trust_level}_trust")
+  end
+
+  def blocked_question_audit(evaluation)
+    details = {
+      category: evaluation[:category],
+      example_question: evaluation[:question],
+      similarity: evaluation[:similarity]&.round(4),
+      threshold: evaluation[:threshold],
+      embedding_model: evaluation[:embedding_model],
+      error: evaluation[:error],
+    }.compact
+
+    {
+      type: "blocked_question_evaluation",
+      outcome: evaluation[:outcome],
+      content:
+        I18n.t(
+          "chatbot.inner_thoughts.blocked_question_evaluation.#{evaluation[:outcome]}",
+          **details,
+        ),
+      **details,
+    }
   end
 end
