@@ -195,7 +195,7 @@ plugins:
     client: false
     default: ''
   chatbot_tools_low_trust:
-    default: "calculate|remaining_bot_quota"
+    default: "calculate|remaining_bot_quota|local_forum_search"
     client: false
     type: list
     list_type: compact
