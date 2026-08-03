@@ -97,6 +97,10 @@ module ::DiscourseChatbot
       @llm_client.normalize_responses_response(response)
     end
 
+    def responses_text(response)
+      @llm_client.responses_text(response)
+    end
+
     def completion_token_limit_parameters
       @llm_client.completion_token_limit_parameters
     end

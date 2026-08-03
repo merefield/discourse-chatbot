@@ -36,8 +36,10 @@ module ::DiscourseChatbot
     end
 
     def reset_all
+      event_evaluation = ::DiscourseChatbot::EventEvaluation.new
+
       ::User.find_each do |user|
-        max_quota = ::DiscourseChatbot::EventEvaluation.new.get_max_quota(user.id)
+        max_quota = event_evaluation.get_max_quota(user.id)
 
         current_record =
           UserCustomField.find_by(

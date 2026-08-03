@@ -606,6 +606,20 @@ describe ::DiscourseChatbot::Bot do
     )
   end
 
+  it "returns visible text from responses api output used by auxiliary generations" do
+    response = {
+      "status" => "completed",
+      "output" => [
+        {
+          "type" => "message",
+          "content" => [{ "type" => "output_text", "text" => "Generated title" }],
+        },
+      ],
+    }
+
+    expect(rag.responses_text(response)).to eq("Generated title")
+  end
+
   it "returns visible text when a responses api response reaches its output budget" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
 
