@@ -59,7 +59,7 @@ module DiscourseChatbot
         query_vector = response.dig("data", 0, "embedding")
 
         begin
-          threshold = SiteSetting.chatbot_forum_search_function_similarity_threshold
+          threshold = SiteSetting.chatbot_forum_search_tool_similarity_threshold
           results =
             DB.query(<<~SQL, query_embedding: query_vector, threshold: threshold, limit: 100)
             SELECT
@@ -97,12 +97,12 @@ module DiscourseChatbot
           end
 
         if %w[group_promotion both].include?(
-             SiteSetting.chatbot_forum_search_function_reranking_strategy,
+             SiteSetting.chatbot_forum_search_tool_reranking_strategy,
            )
           high_ranked_users = []
 
           SiteSetting
-            .chatbot_forum_search_function_reranking_groups
+            .chatbot_forum_search_tool_reranking_groups
             .split("|")
             .each do |g|
               high_ranked_users = high_ranked_users | GroupUser.where(group_id: g).pluck(:user_id)
@@ -111,10 +111,8 @@ module DiscourseChatbot
           results.each { |r| r[:rank_modifier] += 1 if high_ranked_users.include?(r[:user_id]) }
         end
 
-        if %w[tag_promotion both].include?(
-             SiteSetting.chatbot_forum_search_function_reranking_strategy,
-           )
-          high_ranked_tags = SiteSetting.chatbot_forum_search_function_reranking_tags.split("|")
+        if %w[tag_promotion both].include?(SiteSetting.chatbot_forum_search_tool_reranking_strategy)
+          high_ranked_tags = SiteSetting.chatbot_forum_search_tool_reranking_tags.split("|")
 
           results.each do |r|
             tag_ids = ::TopicTag.where(topic_id: r[:topic_id]).pluck(:tag_id)
@@ -126,7 +124,7 @@ module DiscourseChatbot
         results
           .sort_by { |r| [r[:rank_modifier], r[:score]] }
           .reverse
-          .first(SiteSetting.chatbot_forum_search_function_max_results)
+          .first(SiteSetting.chatbot_forum_search_tool_max_results)
       end
 
       def in_scope(topic_id)

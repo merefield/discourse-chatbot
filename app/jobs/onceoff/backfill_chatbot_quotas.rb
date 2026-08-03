@@ -16,7 +16,7 @@ class ::Jobs::BackfillChatbotQuotas < ::Jobs::Onceoff
       ).count
     Rails.logger.warn "CHATBOT: Checked presence of Chatbot Custom Fields"
     if user_count > queries_field_count * 2 || user_count > token_field_count * 2
-      ::DiscourseChatbot::Bot.new.reset_all_quotas
+      ::DiscourseChatbot::QuotaManager.new.reset_all
       Rails.logger.warn "CHATBOT: Resetted Chatbot Quotas for all users as many users without required Chatbot Custom Fields"
     end
   end

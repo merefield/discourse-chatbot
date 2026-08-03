@@ -11,7 +11,6 @@ RSpec.describe Jobs::ChatbotReply do
     SiteSetting.chatbot_enabled = true
     SiteSetting.chatbot_permitted_in_private_messages = true
     SiteSetting.chatbot_bot_user = bot_user.username
-    SiteSetting.chatbot_bot_type_low_trust = "RAG"
     SiteSetting.chatbot_private_message_auto_title = false
   end
 
@@ -22,11 +21,11 @@ RSpec.describe Jobs::ChatbotReply do
     opts[:trust_level] = "low"
     summary_text = "I used the available budget to investigate the question."
 
-    ::DiscourseChatbot::Bots::OpenAiBotRag
+    ::DiscourseChatbot::Bot
       .any_instance
       .stubs(:ask)
-      .raises(::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError, "budget reached")
-    ::DiscourseChatbot::Bots::OpenAiBotRag
+      .raises(::DiscourseChatbot::Bot::TokenBudgetError, "budget reached")
+    ::DiscourseChatbot::Bot
       .any_instance
       .stubs(:inner_thoughts)
       .returns([{ type: "reasoning_summary", content: summary_text }])
@@ -43,10 +42,10 @@ RSpec.describe Jobs::ChatbotReply do
     opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
     opts[:trust_level] = "low"
 
-    ::DiscourseChatbot::Bots::OpenAiBotRag
+    ::DiscourseChatbot::Bot
       .any_instance
       .stubs(:ask)
-      .raises(::DiscourseChatbot::Bots::OpenAiBotBase::ChainLimitError, "iteration limit reached")
+      .raises(::DiscourseChatbot::Bot::ChainLimitError, "iteration limit reached")
 
     described_class.new.execute(opts)
 
@@ -58,13 +57,13 @@ RSpec.describe Jobs::ChatbotReply do
     opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
     opts[:trust_level] = "low"
 
-    ::DiscourseChatbot::Bots::OpenAiBotRag
+    ::DiscourseChatbot::Bot
       .any_instance
       .stubs(:ask)
-      .raises(::DiscourseChatbot::Bots::OpenAiBotBase::ResponsesApiError, "provider failed")
+      .raises(::DiscourseChatbot::Bot::ResponsesApiError, "provider failed")
 
     expect { described_class.new.execute(opts) }.to raise_error(
-      ::DiscourseChatbot::Bots::OpenAiBotBase::ResponsesApiError,
+      ::DiscourseChatbot::Bot::ResponsesApiError,
       "provider failed",
     )
   end
@@ -131,10 +130,10 @@ RSpec.describe Jobs::ChatbotReply do
       .times(2)
       .returns(embedding_response([1.0, 0.0]), embedding_response([0.7, 0.7]))
     OpenAI::Client.stubs(:new).returns(client)
-    ::DiscourseChatbot::Bots::OpenAiBotRag
+    ::DiscourseChatbot::Bot
       .any_instance
       .expects(:create_chat_completion)
-      .with do |messages, _use_functions, _iteration|
+      .with do |messages, _use_tools, _iteration|
         expect(JSON.generate(messages)).not_to include("blocked_question_evaluation")
         true
       end
@@ -170,28 +169,5 @@ RSpec.describe Jobs::ChatbotReply do
       "Allowed the request to continue",
     )
     expect(replies.last.raw).to eq("A normal RAG answer")
-  end
-
-  it "does not evaluate blocked-question examples for a basic bot" do
-    SiteSetting.chatbot_blocked_questions_enabled = true
-    SiteSetting.chatbot_bot_type_low_trust = "basic"
-    ::DiscourseChatbot::BlockedQuestionMatcher.any_instance.expects(:evaluate).never
-    ::DiscourseChatbot::Bots::OpenAiBotBasic
-      .any_instance
-      .expects(:ask)
-      .returns(reply: "A normal basic answer", inner_thoughts: nil, total_tokens: 2)
-
-    post =
-      PostCreator.create!(
-        requester,
-        topic_id: pm_topic.id,
-        raw: "Who should I vote for, @#{bot_user.username}?",
-      )
-    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
-    opts[:trust_level] = "low"
-
-    described_class.new.execute(opts)
-
-    expect(pm_topic.posts.order(:post_number).last.raw).to eq("A normal basic answer")
   end
 end

@@ -23,9 +23,9 @@ module ::DiscourseChatbot
       trust_level = ::DiscourseChatbot::EventEvaluation.new.trust_level(current_user.id)
       opts = { trust_level: trust_level, user_id: current_user.id }
 
-      start_bot = ::DiscourseChatbot::Bots::OpenAiBotRag.new(opts, false)
+      start_bot = ::DiscourseChatbot::Bot.new(opts, false)
 
-      if !post_id && SiteSetting.chatbot_user_fields_collection &&
+      if !post_id && start_bot.tool_enabled?("user_information") &&
            start_bot.has_empty_user_fields?(opts)
         system_message = {
           role: "system",

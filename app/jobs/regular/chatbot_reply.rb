@@ -120,46 +120,37 @@ class ::Jobs::ChatbotReply < Jobs::Base
     end
 
     if create_bot_reply
-      opts[:chatbot_bot_type] = configured_bot_type(opts[:trust_level])
-      if opts[:chatbot_bot_type] == "RAG"
-        blocked_question_evaluation =
-          ::DiscourseChatbot::BlockedQuestionMatcher.new.evaluate(opts[:message_body])
+      blocked_question_evaluation =
+        ::DiscourseChatbot::BlockedQuestionMatcher.new.evaluate(opts[:message_body])
 
-        if blocked_question_evaluation
-          audit_entry = blocked_question_audit(blocked_question_evaluation)
-          opts[:initial_inner_thoughts] = [audit_entry]
-        end
+      if blocked_question_evaluation
+        audit_entry = blocked_question_audit(blocked_question_evaluation)
+        opts[:initial_inner_thoughts] = [audit_entry]
+      end
 
-        if blocked_question_evaluation&.dig(:blocked)
-          reply_and_thoughts[:reply] = I18n.t(
-            "chatbot.errors.blocked_question",
-            category: blocked_question_evaluation[:category],
-          )
-          reply_and_thoughts[:inner_thoughts] = opts[:initial_inner_thoughts]
-          opts[:blocked_question] = true
-          create_bot_reply = false
-          ::DiscourseChatbot.progress_debug_message(
-            "4. Declining a question matching the '#{blocked_question_evaluation[:category]}' blocked category",
-          )
-        end
+      if blocked_question_evaluation&.dig(:blocked)
+        reply_and_thoughts[:reply] = I18n.t(
+          "chatbot.errors.blocked_question",
+          category: blocked_question_evaluation[:category],
+        )
+        reply_and_thoughts[:inner_thoughts] = opts[:initial_inner_thoughts]
+        opts[:blocked_question] = true
+        create_bot_reply = false
+        ::DiscourseChatbot.progress_debug_message(
+          "4. Declining a question matching the '#{blocked_question_evaluation[:category]}' blocked category",
+        )
       end
     end
 
     if create_bot_reply
       ::DiscourseChatbot.progress_debug_message("4. Retrieving new reply message...")
       begin
-        if opts[:chatbot_bot_type] == "RAG"
-          ::DiscourseChatbot.progress_debug_message("4a. Using RAG bot...")
-          bot = ::DiscourseChatbot::Bots::OpenAiBotRag.new(opts)
-        else
-          ::DiscourseChatbot.progress_debug_message("4a. Using basic bot...")
-          bot = ::DiscourseChatbot::Bots::OpenAiBotBasic.new(opts)
-        end
+        bot = ::DiscourseChatbot::Bot.new(opts)
         reply_and_thoughts = bot.ask(opts)
-      rescue ::DiscourseChatbot::Bots::OpenAiBotBase::NonRetryableError => e
+      rescue ::DiscourseChatbot::Bot::NonRetryableError => e
         Rails.logger.warn("Chatbot: Reply stopped without retrying: #{e}")
         error_key =
-          if e.is_a?(::DiscourseChatbot::Bots::OpenAiBotBase::TokenBudgetError)
+          if e.is_a?(::DiscourseChatbot::Bot::TokenBudgetError)
             "chatbot.errors.token_budget"
           else
             "chatbot.errors.chain_limit"
@@ -181,12 +172,6 @@ class ::Jobs::ChatbotReply < Jobs::Base
   end
 
   private
-
-  def configured_bot_type(trust_level)
-    return "basic" if ::DiscourseChatbot::TRUST_LEVELS.exclude?(trust_level)
-
-    SiteSetting.send("chatbot_bot_type_#{trust_level}_trust")
-  end
 
   def blocked_question_audit(evaluation)
     details = {

@@ -14,7 +14,7 @@ Our kind sponsors of this project:
 * Converse with the bot in any Post or Chat Channel, one to one or with others!
 * Customise the character of your bot to suit your forum!
   * want it to sound like William Shakespeare, or Winston Churchill? can do!
-* The new "RAG mode" can now:
+* Configurable tools let the bot:
   * Search your whole* forum for answers so the bot can be an expert on the subject of your forum.
     * not just be aware of the information on the current Topic or Channel.
   * Search Wikipedia
@@ -22,8 +22,8 @@ Our kind sponsors of this project:
   * Search Google*
   * Return current End Of Day market data for stocks.*
   * Do "complex" maths accurately (with no made up or "hallucinated" answers!)
-* EXPERIMENTAL Vision support - the bot can see your pictures and answer questions on them! (turn `chatbot_support_vision` ON)
-* Uses cutting edge Open AI API and functions capability of their excellent, industry leading Large Language Models.
+* EXPERIMENTAL Vision support - select the `vision` tool for the relevant trust levels to let the bot answer questions about uploaded images.
+* Uses the tool-calling capability of cutting-edge, industry-leading large language models through the OpenAI-compatible API.
 * Includes a special quota system to manage access to the bot: more trusted and/or paying members can have greater access to the bot!
 * Also supports Azure and proxy server connections
   * Use third party proxy processes to translate the calls to support alternative LLMs like Gemini e.g. [this one](https://github.com/PublicAffairs/openai-gemini)
@@ -31,24 +31,24 @@ Our kind sponsors of this project:
 <sup>*sign-up for external (not affiliated) API services required. Links in settings.
 
 
-There are two modes:
-
-- RAG mode is very smart and knows facts posted on your forum.
-
-- Basic bot mode can sometimes make mistakes, but is cheaper to run because it makes fewer calls to the Large Language Model:
+The bot has one implementation with a separate built-in tool allowlist for each trust level. Leave
+an allowlist empty to expose no built-in tools, or select tools to give that trust level access to
+local search and other capabilities. Tools that require credentials or supporting configuration
+are only exposed when those requirements are also met. Extension tools supplied by other plugins
+are independent of these allowlists.
 
 ### :biohazard: **Bot access and privacy :biohazard:
 
-This bot can be used in public spaces on your forum.  To make the bot especially useful there is RAG mode (one setting per bot trust level).  This is not set by default.
+This bot can be used in public spaces on your forum. Local forum search is controlled separately for each bot trust level through the tool settings.
 
-In RAG mode the bot is, by default, goverened by setting `chatbot embeddings strategy` (default `benchmark_user`) privy to all content a Trust Level 1 user would see.  Thus, if interacted with in a public facing Topic, there is a possibility the bot could  "leak" information if you tend to gate content at the Trust Level 0 or 1 level via Category permissions.  This level was chosen because through experience most sites usually do not gate sensitive content at low trust levels but it depends on your specific needs.
+When local forum search is enabled, the bot is governed by `chatbot_embeddings_strategy` (default `benchmark_user`) and is privy to all content the benchmark user can see. Thus, if interacted with in a public-facing Topic, the bot could leak information if you gate sensitive content at that level.
 
-For this mode, make sure you have at least one user with Trust Level 1 and no additional group membership beyond the automated groups.  (bear in mind the bot will then know everything a TL1 level user would know and can share it).  You can choose to lower `chatbot embeddings benchmark user trust level` if you have a Trust Level 0 user with no additional group membership beyond automated groups.
+For local forum search, make sure you have a benchmark user at the configured trust level with no additional group membership beyond the automated groups. Bear in mind that the bot can share anything that user can access.
 
 Alternatively:
 
 * Switch `chatbot embeddings strategy` to `category` and populate `chatbot embeddings categories` with Categories you wish the bot to know about.  (Be aware that if you add any private Categories, it should know about those and anything the bot says in public, anywhere might leak to less privileged users so just be a bit careful on what you add).
-* only use the bot in `basic` mode (but the bot then won't see any posts)
+* remove `local_forum_search` from the tool settings for trust levels that should not search embedded posts
 * mitigate with moderation
 
 You can see that this setup is a compromise.  In order to make the bot useful it needs to be knowledgeable about the content on your site.  Currently it is not possible for the bot to selectively read members only content and share that only with members which some admins might find limiting but there is no way to easily solve the that whilst the bot is able to talk in public. Contact me if you have special needs and would like to sponsor some work in this space. Bot permissioning with semantic search is a non-trivial problem.  The system is currently optimised for speed.  NB Private Messages are never read by the bot.
@@ -67,7 +67,7 @@ If you wish Chatbot to know about the content on your site, turn this setting ON
 
 `chatbot_embeddings_enabled`
 
-Only necessary if you want to use the RAG type bot and ensure it is aware of the content on your forum, not just the current Topic.
+This is only necessary when at least one trust level has the `local_forum_search` tool and the bot should know about content beyond the current Topic.
 
 Initially, we need to create the embeddings for all in-scope posts, so the bot can find forum information.  This now happens in the background once this setting is enabled and you do not need to do anything.
 
@@ -156,29 +156,32 @@ If you really want to speed the process up, do:
   * `exit` (to return to root within container)
 * run `rake chatbot:refresh_embeddings[1]`
 * if for any Open AI side reason that fails part way through, run it again until you get to 100%
-* the new model is known to be more accurate, so you might have to drop `chatbot_forum_search_function_similarity_threshold` or you might get no results :).  I dropped my default value from `0.8` to `0.6`, but your mileage may vary.
+* the new model is known to be more accurate, so you might have to drop `chatbot_forum_search_tool_similarity_threshold` or you might get no results :).  I dropped my default value from `0.8` to `0.6`, but your mileage may vary.
 
-## Bot Type
+## Tools by trust level
 
-Take a moment to read through the entire set of Plugin settings.  The `chatbot bot type` setting is key, and there is one for each chatbot "Trust Level":
-
-RAG mode is superior but will make more calls to the API, potentially increasing cost.  That said, the reduction in its propensity to ultimately output 'hallucinations' may facilitate you being able to drop down from GPT-4 to GPT-3.5 and you may end up spending less despite the significant increase in usefulness and reliability of the output.  GPT 3.5 is also a better fit for the Agent type based on response times.  A potential win-win! Experiment!
+The `chatbot_tools_low_trust`, `chatbot_tools_medium_trust`, and
+`chatbot_tools_high_trust` settings determine which built-in tools the bot may expose. An empty
+selection exposes no built-in tools. Selecting a tool is an allowlist decision; runtime
+requirements still apply. For example, `news`, `web_search`, `web_crawler`, and `stock_data` need
+their API credentials, while `local_forum_search` needs embeddings to be enabled. Extension tools
+provided by other plugins are controlled by those plugins instead.
 
 For Chatbot to work in Chat you must have Chat enabled.
 
-### Function extensions
+### Tool extensions
 
-Other plugins can add RAG tools by loading zero-argument subclasses of
-`DiscourseChatbot::Function`. Chatbot discovers subclasses that are not in its built-in function
-list. An extension class may define `self.available?(opts)` to decide at request time whether it
-should be exposed; classes without this method remain available by default. This lets an optional
-integration honor its own settings and data prerequisites without introducing a hard plugin
-dependency. If an extension raises while checking availability or initializing, Chatbot logs the
-error and omits that extension without affecting the remaining tools.
+Other plugins can add tools by loading zero-argument subclasses of
+`DiscourseChatbot::Tool`. Chatbot discovers subclasses that are not in its built-in tool
+list. Trust-level tool settings only control built-in tools and do not affect extension tools.
+An extension class may define `self.available?(opts)` to decide at request time whether it should
+be exposed; classes without this method remain available by default. If an extension raises while
+checking availability or initializing, Chatbot logs the error and omits that extension without
+affecting the remaining tools.
 
 ## Local chain-of-thought strategies
 
-RAG requests made through the Chat Completions API can use additional inference-time computation to review or compare an answer before returning it. Configure this with `chatbot_advanced_local_reasoning`:
+Requests made through the Chat Completions API can use additional inference-time computation to review or compare an answer before returning it. Configure this with `chatbot_advanced_local_reasoning`:
 
 | Strategy | Behaviour | Additional model calls after the first answer |
 | --- | --- | --- |
@@ -260,11 +263,11 @@ There are several locale text "settings" that influence what the bot receives an
 
 The most important one you should consider changing is the bot's `system` prompt.  This is sent every time you speak to the bot.
 
-For the basic bot, you can try a system prompt like:
+For example, you can try a system prompt like:
 
 ’You are an extreme Formula One fan, you love everything to do with motorsport and its high octane levels of excitement’ instead of the default.
 
-(For the agent bot you must keep everything after "You are a helpful assistant." or you may break the agent behaviour.  Reset it if you run into problems.  Again experiment!)
+Keep the tool-use instructions after "You are a helpful assistant." when tools are selected, or you may break agent behaviour. Reset the prompt if you run into problems.
 
 Try one that is most appropriate for the subject matter of your forum.  Be creative!
 
