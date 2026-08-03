@@ -26,21 +26,36 @@ module DiscourseChatbot
       end
 
       def process(args)
+        input = args[parameters[0][:name]]
+        if failed_inputs.include?(input)
+          return(
+            {
+              answer: I18n.t("chatbot.prompt.function.calculator.repeated_error", parameter: input),
+              token_usage: 0,
+            }
+          )
+        end
+
         super(args)
 
+        { answer: ::DiscourseChatbot::Calculator.evaluate(input), token_usage: 0 }
+      rescue ::DiscourseChatbot::Calculator::InvalidExpression
+        failed_inputs << input
         {
-          answer: ::DiscourseChatbot::Calculator.evaluate(args[parameters[0][:name]]),
+          answer: I18n.t("chatbot.prompt.function.calculator.error", parameter: input),
           token_usage: 0,
         }
       rescue StandardError
         {
-          answer:
-            I18n.t(
-              "chatbot.prompt.function.calculator.error",
-              parameter: args[parameters[0][:name]],
-            ),
+          answer: I18n.t("chatbot.prompt.function.calculator.error", parameter: input),
           token_usage: 0,
         }
+      end
+
+      private
+
+      def failed_inputs
+        @failed_inputs ||= []
       end
     end
   end

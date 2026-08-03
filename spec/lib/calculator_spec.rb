@@ -13,6 +13,13 @@ RSpec.describe DiscourseChatbot::Calculator do
       expect(described_class.evaluate("NOW - DURATION(2, days)", now:)).to eq(now - 2.days)
     end
 
+    it "normalizes common aliases for mathematical constants" do
+      expect(described_class.evaluate("3 * Math::PI")).to be_within(0.000_001).of(3 * Math::PI)
+      expect(described_class.evaluate("Math.PI + Math::E + Math.E + π")).to be_within(0.000_001).of(
+        2 * Math::PI + 2 * Math::E,
+      )
+    end
+
     it "rejects Ruby code and host resource access" do
       expressions = [
         "system('id')",

@@ -26,11 +26,11 @@ module DiscourseChatbot
     end
 
     def evaluate
-      validate_expression!
+      expression = validated_expression
 
       result =
         @calculator.disable_cache do |calculator|
-          calculator.evaluate!(@expression, pi: Math::PI, e: Math::E, now: @now)
+          calculator.evaluate!(expression, pi: Math::PI, e: Math::E, now: @now)
         end
 
       validate_result!(result)
@@ -41,7 +41,7 @@ module DiscourseChatbot
 
     private
 
-    def validate_expression!
+    def validated_expression
       if !@expression.is_a?(String) || @expression.blank? || !@expression.valid_encoding?
         raise InvalidExpression, "The expression must be a valid non-empty string"
       end
@@ -50,10 +50,16 @@ module DiscourseChatbot
         raise InvalidExpression, "The expression is too long"
       end
 
-      tokens = @calculator.tokenizer.tokenize(@expression)
+      expression = normalize_expression(@expression)
+      tokens = @calculator.tokenizer.tokenize(expression)
       raise InvalidExpression, "The expression is too complex" if tokens.length > MAX_TOKENS
 
       validate_tokens!(tokens)
+      expression
+    end
+
+    def normalize_expression(expression)
+      expression.gsub(/\bMath(?:::|\.)PI\b/i, "PI").gsub(/\bMath(?:::|\.)E\b/i, "E").gsub("π", "PI")
     end
 
     def validate_tokens!(tokens)
