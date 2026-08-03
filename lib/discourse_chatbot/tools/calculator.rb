@@ -27,6 +27,8 @@ module DiscourseChatbot
 
       def process(args)
         input = args[parameters[0][:name]]
+        super(args)
+
         if failed_inputs.include?(input)
           return(
             {
@@ -35,8 +37,6 @@ module DiscourseChatbot
             }
           )
         end
-
-        super(args)
 
         { answer: ::DiscourseChatbot::Calculator.evaluate(input), token_usage: 0 }
       rescue ::DiscourseChatbot::Calculator::InvalidExpression

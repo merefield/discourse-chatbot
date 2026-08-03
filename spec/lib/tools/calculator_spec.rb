@@ -30,4 +30,16 @@ describe ::DiscourseChatbot::Tools::Calculator do
       },
     )
   end
+
+  it "validates malformed arguments before rejecting a repeated expression" do
+    args = { "input" => "File.read('/etc/passwd')" }
+    calc.process(args)
+
+    expect(calc.process(args.merge("unexpected" => "value"))).to eq(
+      {
+        answer: I18n.t("chatbot.prompt.function.calculator.error", parameter: args["input"]),
+        token_usage: 0,
+      },
+    )
+  end
 end
