@@ -88,13 +88,26 @@ RSpec.describe SiteSetting do
     )
   end
 
-  it "selects the core tools by default at every trust level" do
-    expected_tools = %w[calculate remaining_bot_quota local_forum_search]
+  it "uses more restrictive default tools for low-trust users" do
+    default_tools =
+      ::DiscourseChatbot::TRUST_LEVELS.index_with do |trust_level|
+        SiteSetting.defaults["chatbot_tools_#{trust_level}_trust"].split("|")
+      end
 
-    ::DiscourseChatbot::TRUST_LEVELS.each do |trust_level|
-      default_tools = SiteSetting.defaults["chatbot_tools_#{trust_level}_trust"].split("|")
-
-      expect(default_tools).to include(*expected_tools)
-    end
+    expect(default_tools).to match(
+      "low" => contain_exactly("calculate", "remaining_bot_quota"),
+      "medium" => contain_exactly("calculate", "remaining_bot_quota", "local_forum_search"),
+      "high" =>
+        contain_exactly(
+          "calculate",
+          "wikipedia",
+          "remaining_bot_quota",
+          "local_forum_search",
+          "news",
+          "web_crawler",
+          "web_search",
+          "stock_data",
+        ),
+    )
   end
 end
