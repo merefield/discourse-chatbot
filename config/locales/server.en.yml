@@ -204,7 +204,8 @@ en:
               Action Input: NOW - DURATION(2, days)
           parameters:
             input: the mathematical expression to evaluate using the supported formula syntax.
-          error: "'%{parameter}' is not a valid supported mathematical expression"
+          error: "'%{parameter}' is not a valid supported mathematical expression. Use Dentaku expression syntax such as '3 * PI', and correct the expression before retrying."
+          repeated_error: "'%{parameter}' was already rejected. Do not retry it unchanged. Use Dentaku expression syntax such as '3 * PI', or continue without the calculation."
         paint:
           description: |
             creates a picture based on the provided description
