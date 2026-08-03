@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module DiscourseChatbot
-  module Functions
-    class CalculatorFunction < ::DiscourseChatbot::Function
+  module Tools
+    class Calculator < ::DiscourseChatbot::Tool
       def name
         "calculate"
       end

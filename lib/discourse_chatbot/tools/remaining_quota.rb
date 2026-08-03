@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module DiscourseChatbot
-  module Functions
-    class RemainingQuotaFunction < ::DiscourseChatbot::Function
+  module Tools
+    class RemainingQuota < ::DiscourseChatbot::Tool
       QUOTA_RESET_JOB = "Jobs::ChatbotQuotaReset"
 
       def name

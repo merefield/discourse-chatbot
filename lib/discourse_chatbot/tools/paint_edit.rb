@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module DiscourseChatbot
-  module Functions
-    class PaintEditFunction < ::DiscourseChatbot::Function
+  module Tools
+    class PaintEdit < ::DiscourseChatbot::Tool
       TOKEN_COST = 1_000_000 # 1M tokens per request based on cost of dall-e-3 model vs gpt-4o-mini
 
       def name
@@ -23,7 +23,7 @@ module DiscourseChatbot
           {
             name: "aspect_ratio",
             type: String,
-            enum: PaintFunction::ASPECT_RATIO_OPTIONS,
+            enum: Paint::ASPECT_RATIO_OPTIONS,
             description: I18n.t("chatbot.prompt.function.paint_edit.parameters.aspect_ratio"),
           },
         ]
@@ -76,8 +76,7 @@ module DiscourseChatbot
           end
 
           aspect_ratio = resolved_aspect_ratio(args[parameters[1][:name]], last_image_upload)
-          size =
-            PaintFunction.size_for(SiteSetting.chatbot_support_picture_creation_model, aspect_ratio)
+          size = Paint.size_for(SiteSetting.chatbot_support_picture_creation_model, aspect_ratio)
           quality = "auto"
 
           options = {
@@ -121,7 +120,7 @@ module DiscourseChatbot
 
           thumbnails = base64_to_image(artifacts, description, bot_user.id)
           markdown =
-            PaintFunction.markdown_for(
+            Paint.markdown_for(
               upload: thumbnails.first,
               description: description,
               fallback_size: size,
@@ -129,7 +128,7 @@ module DiscourseChatbot
 
           { answer: markdown, token_usage: tokens_used }
         rescue => e
-          Rails.logger.error("Chatbot: Error in paint edit function: #{e}")
+          Rails.logger.error("Chatbot: Error in paint edit tool: #{e}")
           if e.respond_to?(:response)
             status = e.response[:status]
             message = e.response[:body]["error"]["message"]
@@ -163,9 +162,9 @@ module DiscourseChatbot
       end
 
       def resolved_aspect_ratio(aspect_ratio, upload)
-        return PaintFunction.normalized_aspect_ratio(aspect_ratio) if aspect_ratio.present?
+        return Paint.normalized_aspect_ratio(aspect_ratio) if aspect_ratio.present?
 
-        PaintFunction.aspect_ratio_for_upload(upload)
+        Paint.aspect_ratio_for_upload(upload)
       end
 
       def last_post_image_upload(post_id)

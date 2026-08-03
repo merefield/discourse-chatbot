@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require_relative "../../plugin_helper"
 
-describe ::DiscourseChatbot::Functions::ForumSearchFunction do
+describe ::DiscourseChatbot::Tools::ForumSearch do
   subject(:forum_search) { described_class.new }
 
   let(:topic_1) { Fabricate(:topic, title: "weather in southern Europe") }

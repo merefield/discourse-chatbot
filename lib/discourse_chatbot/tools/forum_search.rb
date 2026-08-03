@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module DiscourseChatbot
-  module Functions
-    class ForumSearchFunction < ::DiscourseChatbot::Function
+  module Tools
+    class ForumSearch < ::DiscourseChatbot::Tool
       def name
         "local_forum_search"
       end

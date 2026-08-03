@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module DiscourseChatbot
-  module Functions
-    class UserFieldFunction < ::DiscourseChatbot::Function
+  module Tools
+    class UserInformation < ::DiscourseChatbot::Tool
       def initialize(user_field, user_id)
         @user_field_options = []
         @user_field = user_field
@@ -14,14 +14,14 @@ module DiscourseChatbot
             .where(user_field_id: @user_field_id)
             .each { |option| @user_field_options << option.value }
         end
-        @function_name = user_field.downcase.gsub(" ", "_")
+        @tool_name = user_field.downcase.gsub(" ", "_")
         @user_custom_field_name = "user_field_#{@user_field_id}"
         @user_id = user_id
         super()
       end
 
       def name
-        I18n.t("chatbot.prompt.function.user_information.name", user_field: @function_name)
+        I18n.t("chatbot.prompt.function.user_information.name", user_field: @tool_name)
       end
 
       def description

@@ -3,8 +3,8 @@
 require "google_search_results"
 
 module DiscourseChatbot
-  module Functions
-    class WebSearchFunction < ::DiscourseChatbot::Function
+  module Tools
+    class WebSearch < ::DiscourseChatbot::Tool
       def name
         "web_search"
       end
@@ -61,7 +61,7 @@ module DiscourseChatbot
             token_usage: token_usage,
           }
         rescue => e
-          Rails.logger.error("Chatbot: Error in web_search function: #{e}")
+          Rails.logger.error("Chatbot: Error in web_search tool: #{e}")
           {
             answer:
               I18n.t("chatbot.prompt.function.web_search.error", query: args[parameters[0][:name]]),

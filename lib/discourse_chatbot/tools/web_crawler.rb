@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module DiscourseChatbot
-  module Functions
-    class WebCrawlerFunction < ::DiscourseChatbot::Function
+  module Tools
+    class WebCrawler < ::DiscourseChatbot::Tool
       def name
         "web_crawler"
       end
@@ -85,7 +85,7 @@ module DiscourseChatbot
             token_usage: token_usage,
           }
         rescue => e
-          Rails.logger.error("Chatbot: Error in web crawler function: #{e}")
+          Rails.logger.error("Chatbot: Error in web crawler tool: #{e}")
           { answer: I18n.t("chatbot.prompt.function.web_crawler.error"), token_usage: token_usage }
         end
       end

@@ -110,7 +110,7 @@ plugins:
     type: list
     list_type: compact
     allow_any: false
-    choices: "DiscourseChatbot::Function.choices"
+    choices: "DiscourseChatbot::Tool.choices"
   chatbot_open_ai_model_high_trust:
     client: false
     type: enum
@@ -155,7 +155,7 @@ plugins:
     type: list
     list_type: compact
     allow_any: false
-    choices: "DiscourseChatbot::Function.choices"
+    choices: "DiscourseChatbot::Tool.choices"
   chatbot_open_ai_model_medium_trust:
     client: false
     type: enum
@@ -200,7 +200,7 @@ plugins:
     type: list
     list_type: compact
     allow_any: false
-    choices: "DiscourseChatbot::Function.choices"
+    choices: "DiscourseChatbot::Tool.choices"
   chatbot_open_ai_model_low_trust:
     client: false
     type: enum

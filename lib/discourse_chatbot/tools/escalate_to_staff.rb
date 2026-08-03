@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module DiscourseChatbot
-  module Functions
-    class EscalateToStaffFunction < ::DiscourseChatbot::Function
+  module Tools
+    class EscalateToStaff < ::DiscourseChatbot::Tool
       def name
         "escalate_to_staff"
       end

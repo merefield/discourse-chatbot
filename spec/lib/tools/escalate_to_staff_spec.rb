@@ -7,7 +7,7 @@ RSpec.configure do |config|
   end
 end
 
-describe ::DiscourseChatbot::Functions::EscalateToStaffFunction do
+describe ::DiscourseChatbot::Tools::EscalateToStaff do
   subject(:escalate_to_staff) { described_class.new }
 
   fab!(:user)

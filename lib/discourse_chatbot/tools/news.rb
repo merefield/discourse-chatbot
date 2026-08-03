@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module DiscourseChatbot
-  module Functions
-    class NewsFunction < ::DiscourseChatbot::Function
+  module Tools
+    class News < ::DiscourseChatbot::Tool
       def name
         "news"
       end

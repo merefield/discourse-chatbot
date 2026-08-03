@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module DiscourseChatbot
-  module Functions
-    class PaintFunction < ::DiscourseChatbot::Function
+  module Tools
+    class Paint < ::DiscourseChatbot::Tool
       TOKEN_COST = 1_000_000 # 1M tokens per request based on cost of dall-e-3 model vs gpt-4o-mini
       ASPECT_RATIO_OPTIONS = %w[square landscape portrait].freeze
       DEFAULT_ASPECT_RATIO = "landscape"
@@ -116,7 +116,7 @@ module DiscourseChatbot
 
           { answer: markdown, token_usage: tokens_used }
         rescue => e
-          Rails.logger.error("Chatbot: Error in paint function: #{e}")
+          Rails.logger.error("Chatbot: Error in paint tool: #{e}")
           if e.respond_to?(:response)
             status = e.response[:status]
             message = e.response[:body]["error"]["message"]

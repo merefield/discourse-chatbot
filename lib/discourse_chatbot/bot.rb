@@ -15,25 +15,25 @@ module ::DiscourseChatbot
 
     attr_reader :client, :model_name, :total_tokens
 
-    BUILT_IN_FUNCTIONS = %w[
-      DiscourseChatbot::Functions::StockDataFunction
-      DiscourseChatbot::Functions::ForumSearchFunction
-      DiscourseChatbot::Functions::PaintFunction
-      DiscourseChatbot::Functions::PaintEditFunction
-      DiscourseChatbot::Functions::VisionFunction
-      DiscourseChatbot::Functions::WikipediaFunction
-      DiscourseChatbot::Functions::WebSearchFunction
-      DiscourseChatbot::Functions::WebCrawlerFunction
-      DiscourseChatbot::Functions::NewsFunction
-      DiscourseChatbot::Functions::UserFieldFunction
-      DiscourseChatbot::Functions::EscalateToStaffFunction
-      DiscourseChatbot::Functions::CalculatorFunction
-      DiscourseChatbot::Functions::RemainingQuotaFunction
+    BUILT_IN_TOOL_CLASSES = %w[
+      DiscourseChatbot::Tools::StockData
+      DiscourseChatbot::Tools::ForumSearch
+      DiscourseChatbot::Tools::Paint
+      DiscourseChatbot::Tools::PaintEdit
+      DiscourseChatbot::Tools::Vision
+      DiscourseChatbot::Tools::Wikipedia
+      DiscourseChatbot::Tools::WebSearch
+      DiscourseChatbot::Tools::WebCrawler
+      DiscourseChatbot::Tools::News
+      DiscourseChatbot::Tools::UserInformation
+      DiscourseChatbot::Tools::EscalateToStaff
+      DiscourseChatbot::Tools::Calculator
+      DiscourseChatbot::Tools::RemainingQuota
     ]
 
     NOT_FORCED = "not_forced"
     FORCE_A_TOOL_VALUES = %w[force_a_tool force_a_function].freeze
-    FORCE_LOCAL_SEARCH_FUNCTION = "force_local_forum_search"
+    FORCE_LOCAL_SEARCH_TOOL = "force_local_forum_search"
     SIMPLE_LOCAL_REASONING = "simple"
     VERIFY_AND_REVISE = "verify_and_revise"
     BEST_OF_TWO = "best_of_two"
@@ -48,11 +48,11 @@ module ::DiscourseChatbot
       @total_tokens = 0
       @enabled_tool_names = configured_tool_names(opts[:trust_level])
       if tools
-        merge_functions(opts)
+        merge_tools(opts)
       else
-        @functions = []
+        @tool_definitions = []
         @tools = nil
-        @func_mapping = {}
+        @tool_mapping = {}
         @chat_history = []
       end
     end
@@ -90,7 +90,7 @@ module ::DiscourseChatbot
     end
 
     def responses_tools
-      @llm_client.responses_tools(@functions)
+      @llm_client.responses_tools(@tool_definitions)
     end
 
     def normalize_responses_response(response)
@@ -255,17 +255,13 @@ module ::DiscourseChatbot
       system_message_suffixes.join("  ")
     end
 
-    def merge_functions(opts)
-      functions = []
-      if tool_enabled?("calculate")
-        functions << ::DiscourseChatbot::Functions::CalculatorFunction.new
-      end
-      if tool_enabled?("wikipedia")
-        functions << ::DiscourseChatbot::Functions::WikipediaFunction.new
-      end
+    def merge_tools(opts)
+      tools = []
+      tools << ::DiscourseChatbot::Tools::Calculator.new if tool_enabled?("calculate")
+      tools << ::DiscourseChatbot::Tools::Wikipedia.new if tool_enabled?("wikipedia")
 
       if opts[:private] && tool_enabled?("user_information")
-        start_length = functions.length
+        start_length = tools.length
         UserField
           .where(editable: true)
           .order(:id)
@@ -284,69 +280,65 @@ module ::DiscourseChatbot
                    .first
                    .value
                    .blank?
-              functions << ::DiscourseChatbot::Functions::UserFieldFunction.new(
+              tools << ::DiscourseChatbot::Tools::UserInformation.new(
                 user_field.name,
                 opts[:user_id],
               )
             end
-            break if functions.length > start_length + 1
+            break if tools.length > start_length + 1
           end
       end
 
-      if tool_enabled?("remaining_bot_quota")
-        functions << ::DiscourseChatbot::Functions::RemainingQuotaFunction.new
-      end
+      tools << ::DiscourseChatbot::Tools::RemainingQuota.new if tool_enabled?("remaining_bot_quota")
       if tool_enabled?("local_forum_search") && SiteSetting.chatbot_embeddings_enabled
-        functions << ::DiscourseChatbot::Functions::ForumSearchFunction.new
+        tools << ::DiscourseChatbot::Tools::ForumSearch.new
       end
-      functions << ::DiscourseChatbot::Functions::VisionFunction.new if tool_enabled?("vision")
-      if tool_enabled?("paint_picture")
-        functions << ::DiscourseChatbot::Functions::PaintFunction.new
-      end
+      tools << ::DiscourseChatbot::Tools::Vision.new if tool_enabled?("vision")
+      tools << ::DiscourseChatbot::Tools::Paint.new if tool_enabled?("paint_picture")
       if tool_enabled?("paint_edit_picture") &&
            SiteSetting.chatbot_support_picture_creation_model.start_with?("gpt-image-")
-        functions << ::DiscourseChatbot::Functions::PaintEditFunction.new
+        tools << ::DiscourseChatbot::Tools::PaintEdit.new
       end
 
       if tool_enabled?("escalate_to_staff") && opts[:private] &&
            opts[:type] == ::DiscourseChatbot::MESSAGE
-        functions << ::DiscourseChatbot::Functions::EscalateToStaffFunction.new
+        tools << ::DiscourseChatbot::Tools::EscalateToStaff.new
       end
       if tool_enabled?("news") && SiteSetting.chatbot_news_api_token.present?
-        functions << ::DiscourseChatbot::Functions::NewsFunction.new
+        tools << ::DiscourseChatbot::Tools::News.new
       end
       if tool_enabled?("web_crawler") &&
            !(
              SiteSetting.chatbot_firecrawl_api_token.blank? &&
                SiteSetting.chatbot_jina_api_token.blank?
            )
-        functions << ::DiscourseChatbot::Functions::WebCrawlerFunction.new
+        tools << ::DiscourseChatbot::Tools::WebCrawler.new
       end
       if tool_enabled?("web_search") &&
            !(SiteSetting.chatbot_serp_api_key.blank? && SiteSetting.chatbot_jina_api_token.blank?)
-        functions << ::DiscourseChatbot::Functions::WebSearchFunction.new
+        tools << ::DiscourseChatbot::Tools::WebSearch.new
       end
       if tool_enabled?("stock_data") && SiteSetting.chatbot_marketstack_key.present?
-        functions << ::DiscourseChatbot::Functions::StockDataFunction.new
+        tools << ::DiscourseChatbot::Tools::StockData.new
       end
 
-      ::DiscourseChatbot::Function.descendants.each do |function_class|
-        next if BUILT_IN_FUNCTIONS.include?(function_class.to_s)
+      ::DiscourseChatbot::Tool.descendants.each do |tool_class|
+        next if BUILT_IN_TOOL_CLASSES.include?(tool_class.to_s)
 
         begin
-          next if function_class.respond_to?(:available?) && !function_class.available?(opts)
+          next if tool_class.respond_to?(:available?) && !tool_class.available?(opts)
 
-          functions << function_class.new
+          tools << tool_class.new
         rescue StandardError => error
           Rails.logger.warn(
-            "Chatbot: unable to load extension function #{function_class}: #{error.class}: #{error.message}",
+            "Chatbot: unable to load extension tool #{tool_class}: #{error.class}: #{error.message}",
           )
         end
       end
 
-      @functions = parse_functions(functions)
-      @tools = @functions.map { |func| { type: "function", function: func } }.presence
-      @func_mapping = create_func_mapping(functions)
+      @tool_definitions = parse_tools(tools)
+      @tools = @tool_definitions.map { |tool| { type: "function", function: tool } }.presence
+      @tool_mapping = create_tool_mapping(tools)
       @chat_history = []
     end
 
@@ -355,19 +347,19 @@ module ::DiscourseChatbot
       SiteSetting.send("chatbot_tools_#{trust_level}_trust").split("|")
     end
 
-    def parse_functions(functions)
-      return nil if functions.nil?
-      functions.map { |func| ::DiscourseChatbot::Functions::Parser.func_to_json(func) }
+    def parse_tools(tools)
+      return nil if tools.nil?
+      tools.map { |tool| ::DiscourseChatbot::Tools::Parser.tool_to_json(tool) }
     end
 
-    def create_func_mapping(functions)
-      return {} if functions.nil?
-      functions.index_by(&:name)
+    def create_tool_mapping(tools)
+      return {} if tools.nil?
+      tools.index_by(&:name)
     end
 
     def create_chat_completion(
       messages,
-      use_functions = true,
+      use_tools = true,
       iteration = 1,
       parameter_overrides: {},
       include_logprobs: nil
@@ -387,12 +379,12 @@ module ::DiscourseChatbot
               include_reasoning_summary: SiteSetting.chatbot_open_ai_include_reasoning_summaries,
             )
 
-          if use_functions && @tools
+          if use_tools && @tools
             parameters[:tools] = responses_tools
             if iteration == 1
               if FORCE_A_TOOL_VALUES.include?(SiteSetting.chatbot_tool_choice_first_iteration)
                 parameters[:tool_choice] = "required"
-              elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_FUNCTION
+              elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_TOOL
                 parameters[:tool_choice] = { type: "function", name: "local_forum_search" }
               end
             end
@@ -416,12 +408,12 @@ module ::DiscourseChatbot
           parameters[:logprobs] = true if include_logprobs && @logprobs_supported != false
           parameters.merge!(parameter_overrides)
 
-          if use_functions && @tools
+          if use_tools && @tools
             parameters.merge!(tools: @tools)
             if iteration == 1
               if FORCE_A_TOOL_VALUES.include?(SiteSetting.chatbot_tool_choice_first_iteration)
                 parameters.merge!(tool_choice: "required")
-              elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_FUNCTION
+              elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_TOOL
                 parameters.merge!(
                   tool_choice: {
                     type: "function",
@@ -493,8 +485,8 @@ module ::DiscourseChatbot
           -------------------------------
         EOS
         messages = @chat_history + (reasoning_model? ? @responses_context : @inner_thoughts)
-        use_functions = iteration < max_iterations
-        res = create_chat_completion(messages, use_functions, iteration)
+        use_tools = iteration < max_iterations
+        res = create_chat_completion(messages, use_tools, iteration)
         append_responses_output(res) if reasoning_model?
         append_reasoning_summaries(res) if reasoning_model?
 
@@ -539,9 +531,7 @@ module ::DiscourseChatbot
 
           append_url_validation_feedback
         elsif finish_reason == "tool_calls" || !tools_calls.nil?
-          if !use_functions
-            raise ChainLimitError, "Chatbot requested a tool after tools were disabled"
-          end
+          raise ChainLimitError, "Chatbot requested a tool after tools were disabled" if !use_tools
           raise "Chatbot returned a tool finish reason without tool calls" if tools_calls.blank?
 
           tool_call_count += tools_calls.length
@@ -550,7 +540,7 @@ module ::DiscourseChatbot
           end
 
           ensure_chain_token_budget!
-          tool_results = handle_function_call(res, opts)
+          tool_results = handle_tool_calls(res, opts)
         else
           raise "Unexpected finish reason: #{finish_reason}"
         end
@@ -871,10 +861,10 @@ module ::DiscourseChatbot
       content if response_urls_valid?(content)
     end
 
-    def handle_function_call(res, opts)
-      functions_called = res["choices"][0]["message"]
+    def handle_tool_calls(res, opts)
+      assistant_message = res["choices"][0]["message"]
 
-      tools_called = functions_called["tool_calls"]
+      tools_called = assistant_message["tool_calls"]
 
       # Convert the semi-JSON string to Ruby objects so we can make tests pass otherwise
       # format of tools_called is generated won't match what is expected in the tests
@@ -895,16 +885,16 @@ module ::DiscourseChatbot
       @inner_thoughts << tools_thought
       tool_results = []
 
-      tools_called.each do |function_called|
+      tools_called.each do |tool_call|
         ensure_chain_token_budget!
 
-        func_name = function_called["function"]["name"]
-        args_str = function_called["function"]["arguments"]
-        tool_call_id = function_called["id"]
-        tool_result = normalize_tool_result(call_function(func_name, args_str, opts))
+        tool_name = tool_call["function"]["name"]
+        args_str = tool_call["function"]["arguments"]
+        tool_call_id = tool_call["id"]
+        tool_result = normalize_tool_result(call_tool(tool_name, args_str, opts))
         collect_trusted_url_provenance(tool_result)
         result = tool_result[:content].to_s
-        tool_results << { name: func_name, content: result }
+        tool_results << { name: tool_name, content: result }
         @inner_thoughts << { role: "tool", tool_call_id: tool_call_id, content: result }
         if reasoning_model?
           @responses_context << {
@@ -995,33 +985,31 @@ module ::DiscourseChatbot
       end
     end
 
-    def call_function(func_name, args_str, opts)
+    def call_tool(tool_name, args_str, opts)
       begin
         token_usage = 0
         args = JSON.parse(args_str)
         ::DiscourseChatbot.progress_debug_message <<~EOS
           +++++++++++++++++++++++++++++++++++++++
-          I used '#{func_name}' to help me
+          I used '#{tool_name}' to help me
           args_str was '#{JSON.pretty_generate(args)}'
           opts was '#{JSON.pretty_generate(opts)}'
           +++++++++++++++++++++++++++++++++++++++
         EOS
-        func = @func_mapping[func_name]
-        if %w[escalate_to_staff remaining_bot_quota].include?(func_name)
-          res, token_usage = func.process(args, opts).values_at(:answer, :token_usage)
-        elsif ["vision"].include?(func_name)
-          res, token_usage = func.process(args, opts, @client).values_at(:answer, :token_usage)
-        elsif ["paint_edit_picture"].include?(func_name)
-          res, token_usage = func.process(args, opts).values_at(:answer, :token_usage)
+        tool = @tool_mapping[tool_name]
+        if %w[escalate_to_staff remaining_bot_quota].include?(tool_name)
+          res, token_usage = tool.process(args, opts).values_at(:answer, :token_usage)
+        elsif ["vision"].include?(tool_name)
+          res, token_usage = tool.process(args, opts, @client).values_at(:answer, :token_usage)
+        elsif ["paint_edit_picture"].include?(tool_name)
+          res, token_usage = tool.process(args, opts).values_at(:answer, :token_usage)
         else
-          res, token_usage = func.process(args).values_at(:answer, :token_usage)
+          res, token_usage = tool.process(args).values_at(:answer, :token_usage)
         end
         @total_tokens += token_usage.to_i
         res
       rescue => e
-        Rails.logger.error(
-          "Chatbot: There was a problem with local function arguments, message: #{e}",
-        )
+        Rails.logger.error("Chatbot: There was a problem with local tool arguments, message: #{e}")
         I18n.t("chatbot.prompt.rag.call_function.error")
       end
     end

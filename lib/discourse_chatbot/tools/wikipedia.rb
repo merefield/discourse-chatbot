@@ -3,8 +3,8 @@
 require "wikipedia-client"
 
 module DiscourseChatbot
-  module Functions
-    class WikipediaFunction < ::DiscourseChatbot::Function
+  module Tools
+    class Wikipedia < ::DiscourseChatbot::Tool
       def name
         "wikipedia"
       end

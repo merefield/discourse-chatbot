@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 require_relative "../plugin_helper"
 
-describe ::DiscourseChatbot::Function do
-  let(:calc) { ::DiscourseChatbot::Functions::CalculatorFunction.new }
-  let(:news) { ::DiscourseChatbot::Functions::NewsFunction.new }
-  let(:search) { ::DiscourseChatbot::Functions::WikipediaFunction.new }
-  let(:paint) { ::DiscourseChatbot::Functions::PaintFunction.new }
+describe ::DiscourseChatbot::Tool do
+  let(:calc) { ::DiscourseChatbot::Tools::Calculator.new }
+  let(:news) { ::DiscourseChatbot::Tools::News.new }
+  let(:search) { ::DiscourseChatbot::Tools::Wikipedia.new }
+  let(:paint) { ::DiscourseChatbot::Tools::Paint.new }
 
   it "lists every built-in tool for trust-level settings" do
     expect(described_class.choices).to include(*described_class::BUILT_IN_TOOL_NAMES)
@@ -50,10 +50,10 @@ describe ::DiscourseChatbot::Function do
     expect { paint.send(:validate_parameters, args) }.to raise_error(ArgumentError)
   end
 
-  it "includes enum values in parsed function json" do
-    func_json = ::DiscourseChatbot::Functions::Parser.func_to_json(paint)
+  it "includes enum values in the parsed tool schema" do
+    tool_json = ::DiscourseChatbot::Tools::Parser.tool_to_json(paint)
 
-    expect(func_json.dig("parameters", "properties", "aspect_ratio", "enum")).to eq(
+    expect(tool_json.dig("parameters", "properties", "aspect_ratio", "enum")).to eq(
       %w[square landscape portrait],
     )
   end

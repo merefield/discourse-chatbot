@@ -2,7 +2,7 @@
 require "json"
 
 module DiscourseChatbot
-  module Functions
+  module Tools
     class Parser
       def self.type_mapping(dtype)
         case dtype.to_s
@@ -35,9 +35,9 @@ module DiscourseChatbot
         params
       end
 
-      def self.func_to_json(func)
+      def self.tool_to_json(tool)
         params = {}
-        func.parameters.each do |param|
+        tool.parameters.each do |param|
           params.merge!("#{param[:name]}": {})
 
           params[:"#{param[:name]}"].merge!(type: type_mapping(param[:type]).to_s)
@@ -46,13 +46,13 @@ module DiscourseChatbot
         end
         params = JSON.parse(params.to_json)
 
-        func_json = {
-          "name" => func.name,
-          "description" => func.description,
+        {
+          "name" => tool.name,
+          "description" => tool.description,
           "parameters" => {
             "type" => "object",
             "properties" => params,
-            "required" => func.required,
+            "required" => tool.required,
           },
         }
       end

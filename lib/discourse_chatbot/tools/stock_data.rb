@@ -6,8 +6,8 @@ require "net/http"
 require "json"
 
 module DiscourseChatbot
-  module Functions
-    class StockDataFunction < ::DiscourseChatbot::Function
+  module Tools
+    class StockData < ::DiscourseChatbot::Tool
       def name
         "stock_data"
       end

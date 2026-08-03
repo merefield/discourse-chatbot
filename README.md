@@ -23,7 +23,7 @@ Our kind sponsors of this project:
   * Return current End Of Day market data for stocks.*
   * Do "complex" maths accurately (with no made up or "hallucinated" answers!)
 * EXPERIMENTAL Vision support - select the `vision` tool for the relevant trust levels to let the bot answer questions about uploaded images.
-* Uses cutting edge Open AI API and functions capability of their excellent, industry leading Large Language Models.
+* Uses the tool-calling capability of cutting-edge, industry-leading large language models through the OpenAI-compatible API.
 * Includes a special quota system to manage access to the bot: more trusted and/or paying members can have greater access to the bot!
 * Also supports Azure and proxy server connections
   * Use third party proxy processes to translate the calls to support alternative LLMs like Gemini e.g. [this one](https://github.com/PublicAffairs/openai-gemini)
@@ -169,11 +169,11 @@ provided by other plugins are controlled by those plugins instead.
 
 For Chatbot to work in Chat you must have Chat enabled.
 
-### Function extensions
+### Tool extensions
 
 Other plugins can add tools by loading zero-argument subclasses of
-`DiscourseChatbot::Function`. Chatbot discovers subclasses that are not in its built-in function
-list. Trust-level tool settings only control built-in tools and do not affect extension functions.
+`DiscourseChatbot::Tool`. Chatbot discovers subclasses that are not in its built-in tool
+list. Trust-level tool settings only control built-in tools and do not affect extension tools.
 An extension class may define `self.available?(opts)` to decide at request time whether it should
 be exposed; classes without this method remain available by default. If an extension raises while
 checking availability or initializing, Chatbot logs the error and omits that extension without

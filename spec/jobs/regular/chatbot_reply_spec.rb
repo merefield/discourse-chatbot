@@ -133,7 +133,7 @@ RSpec.describe Jobs::ChatbotReply do
     ::DiscourseChatbot::Bot
       .any_instance
       .expects(:create_chat_completion)
-      .with do |messages, _use_functions, _iteration|
+      .with do |messages, _use_tools, _iteration|
         expect(JSON.generate(messages)).not_to include("blocked_question_evaluation")
         true
       end

@@ -117,12 +117,12 @@ module DiscourseChatbot
       elsif message[:tool_calls].present?
         Array(message[:tool_calls]).map do |tool_call|
           tool_call = tool_call.with_indifferent_access
-          function = tool_call[:function].with_indifferent_access
+          function_payload = tool_call[:function].with_indifferent_access
           {
             type: "function_call",
             call_id: tool_call[:id],
-            name: function[:name],
-            arguments: function[:arguments].to_s,
+            name: function_payload[:name],
+            arguments: function_payload[:arguments].to_s,
           }
         end
       else
@@ -138,10 +138,10 @@ module DiscourseChatbot
       end
     end
 
-    def responses_tools(functions)
-      return nil if functions.blank?
+    def responses_tools(tools)
+      return nil if tools.blank?
 
-      functions.map do |tool|
+      tools.map do |tool|
         {
           type: "function",
           name: tool["name"],

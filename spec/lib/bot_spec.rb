@@ -25,7 +25,7 @@ describe ::DiscourseChatbot::Bot do
   before do
     SiteSetting.discourse_local_dates_enabled = false
     SiteSetting.chatbot_tools_low_trust =
-      (::DiscourseChatbot::Function::BUILT_IN_TOOL_NAMES - ["user_information"]).join("|")
+      (::DiscourseChatbot::Tool::BUILT_IN_TOOL_NAMES - ["user_information"]).join("|")
     OpenAI::Client.stubs(:new).returns(client)
     client.stubs(:responses).returns(responses_api)
   end
@@ -90,7 +90,7 @@ describe ::DiscourseChatbot::Bot do
     expect(quota.reload.value).to eq("90")
   end
 
-  it "calls function on returning a function request from LLN" do
+  it "calls a tool on returning a tool request from LLN" do
     DateTime.expects(:current).returns("2023-08-18T10:11:44+00:00")
 
     query = [{ role: "user", content: "merefield said what is 3 * 23.452432?" }]
@@ -189,7 +189,7 @@ describe ::DiscourseChatbot::Bot do
   it "returns a single successful image tool result directly" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     image_markdown = "![generated image](upload://image.png)"
-    ::DiscourseChatbot::Functions::PaintFunction
+    ::DiscourseChatbot::Tools::Paint
       .any_instance
       .stubs(:process)
       .returns({ answer: image_markdown, token_usage: 10 })
@@ -222,7 +222,7 @@ describe ::DiscourseChatbot::Bot do
   it "continues mixed tool batches when the image result is last" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     image_markdown = "![generated image](upload://image.png)"
-    ::DiscourseChatbot::Functions::PaintFunction
+    ::DiscourseChatbot::Tools::Paint
       .any_instance
       .stubs(:process)
       .returns({ answer: image_markdown, token_usage: 10 })
@@ -1044,7 +1044,7 @@ describe ::DiscourseChatbot::Bot do
   it "executes tools only on the shared path before comparing answers" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
     SiteSetting.chatbot_advanced_local_reasoning = "best_of_two"
-    ::DiscourseChatbot::Functions::CalculatorFunction
+    ::DiscourseChatbot::Tools::Calculator
       .any_instance
       .expects(:process)
       .once
@@ -1220,7 +1220,7 @@ describe ::DiscourseChatbot::Bot do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_url_integrity_check = true
     SiteSetting.chatbot_embeddings_enabled = true
-    ::DiscourseChatbot::Functions::ForumSearchFunction
+    ::DiscourseChatbot::Tools::ForumSearch
       .any_instance
       .stubs(:process)
       .returns(
@@ -1347,7 +1347,7 @@ describe ::DiscourseChatbot::Bot do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.4-mini"
     SiteSetting.chatbot_url_integrity_check = true
     wikipedia_url = "https://en.wikipedia.org/wiki/Discourse"
-    ::DiscourseChatbot::Functions::WikipediaFunction
+    ::DiscourseChatbot::Tools::Wikipedia
       .any_instance
       .stubs(:process)
       .returns({ answer: "Discourse is described at #{wikipedia_url}", token_usage: 0 })
@@ -1405,7 +1405,7 @@ describe ::DiscourseChatbot::Bot do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
     SiteSetting.chatbot_url_integrity_check = true
     SiteSetting.chatbot_embeddings_enabled = true
-    ::DiscourseChatbot::Functions::ForumSearchFunction
+    ::DiscourseChatbot::Tools::ForumSearch
       .any_instance
       .stubs(:process)
       .returns(
@@ -1602,7 +1602,7 @@ describe ::DiscourseChatbot::Bot do
     SiteSetting.chatbot_url_integrity_check = true
     SiteSetting.chatbot_chain_of_thought_max_url_repair_attempts = 0
     SiteSetting.chatbot_embeddings_enabled = true
-    ::DiscourseChatbot::Functions::ForumSearchFunction
+    ::DiscourseChatbot::Tools::ForumSearch
       .any_instance
       .stubs(:process)
       .returns(
@@ -1727,21 +1727,21 @@ describe ::DiscourseChatbot::Bot, "#get_system_message_suffix via api", type: :r
   end
 end
 
-describe ::DiscourseChatbot::Bot, "#merge_functions" do
+describe ::DiscourseChatbot::Bot, "#merge_tools" do
   fab!(:user)
 
-  let(:extension_function_classes) { [] }
+  let(:extension_tool_classes) { [] }
 
-  before { ::DiscourseChatbot::Function.stubs(:descendants).returns(extension_function_classes) }
+  before { ::DiscourseChatbot::Tool.stubs(:descendants).returns(extension_tool_classes) }
 
   let(:enable_tools) do
     ->(*tool_names) { SiteSetting.chatbot_tools_low_trust = tool_names.join("|") }
   end
 
-  let(:build_extension_function) do
+  let(:build_extension_tool) do
     lambda do |name, availability: nil, &initializer|
-      function_class =
-        Class.new(::DiscourseChatbot::Function) do
+      tool_class =
+        Class.new(::DiscourseChatbot::Tool) do
           define_singleton_method(:available?) { |opts| availability.call(opts) } if availability
           define_method(:name) { name }
           define_method(:description) { "An extension tool used by this spec" }
@@ -1749,23 +1749,23 @@ describe ::DiscourseChatbot::Bot, "#merge_functions" do
           define_method(:required) { [] }
           define_method(:initialize, &initializer) if initializer
         end
-      extension_function_classes << function_class
-      function_class
+      extension_tool_classes << tool_class
+      tool_class
     end
   end
 
   it "includes the default high-trust tools" do
     rag = described_class.new({ trust_level: "high" })
-    func_mapping = rag.instance_variable_get(:@func_mapping)
+    tool_mapping = rag.instance_variable_get(:@tool_mapping)
 
-    expect(func_mapping).to have_key("wikipedia")
+    expect(tool_mapping).to have_key("wikipedia")
   end
 
   it "excludes tools that are not selected" do
     rag = described_class.new({})
-    func_mapping = rag.instance_variable_get(:@func_mapping)
+    tool_mapping = rag.instance_variable_get(:@tool_mapping)
 
-    expect(func_mapping).not_to have_key("wikipedia")
+    expect(tool_mapping).not_to have_key("wikipedia")
   end
 
   it "does not send a tools parameter when no built-in or extension tools are available" do
@@ -1791,10 +1791,10 @@ describe ::DiscourseChatbot::Bot, "#merge_functions" do
 
   it "requires both selection and a configured credential for token-gated tools" do
     enable_tools.call("news")
-    without_token = described_class.new({}).instance_variable_get(:@func_mapping)
+    without_token = described_class.new({}).instance_variable_get(:@tool_mapping)
 
     SiteSetting.chatbot_news_api_token = "token"
-    with_token = described_class.new({}).instance_variable_get(:@func_mapping)
+    with_token = described_class.new({}).instance_variable_get(:@tool_mapping)
 
     expect(without_token).not_to have_key("news")
     expect(with_token).to have_key("news")
@@ -1819,9 +1819,9 @@ describe ::DiscourseChatbot::Bot, "#merge_functions" do
 
     rag =
       described_class.new({ private: true, type: ::DiscourseChatbot::MESSAGE, user_id: user.id })
-    func_mapping = rag.instance_variable_get(:@func_mapping)
+    tool_mapping = rag.instance_variable_get(:@tool_mapping)
 
-    expect(func_mapping).to have_key("escalate_to_staff")
+    expect(tool_mapping).to have_key("escalate_to_staff")
   end
 
   it "includes escalate_to_staff even when latest cooldown date is invalid" do
@@ -1843,9 +1843,9 @@ describe ::DiscourseChatbot::Bot, "#merge_functions" do
 
     rag =
       described_class.new({ private: true, type: ::DiscourseChatbot::MESSAGE, user_id: user.id })
-    func_mapping = rag.instance_variable_get(:@func_mapping)
+    tool_mapping = rag.instance_variable_get(:@tool_mapping)
 
-    expect(func_mapping).to have_key("escalate_to_staff")
+    expect(tool_mapping).to have_key("escalate_to_staff")
   end
 
   %w[gpt-image-1 gpt-image-1-mini gpt-image-1.5 gpt-image-2].each do |model_name|
@@ -1854,9 +1854,9 @@ describe ::DiscourseChatbot::Bot, "#merge_functions" do
       SiteSetting.chatbot_support_picture_creation_model = model_name
 
       rag = described_class.new({})
-      func_mapping = rag.instance_variable_get(:@func_mapping)
+      tool_mapping = rag.instance_variable_get(:@tool_mapping)
 
-      expect(func_mapping).to have_key("paint_edit_picture")
+      expect(tool_mapping).to have_key("paint_edit_picture")
     end
   end
 
@@ -1865,38 +1865,38 @@ describe ::DiscourseChatbot::Bot, "#merge_functions" do
     SiteSetting.chatbot_support_picture_creation_model = "dall-e-3"
 
     rag = described_class.new({})
-    func_mapping = rag.instance_variable_get(:@func_mapping)
+    tool_mapping = rag.instance_variable_get(:@tool_mapping)
 
-    expect(func_mapping).not_to have_key("paint_edit_picture")
+    expect(tool_mapping).not_to have_key("paint_edit_picture")
   end
 
-  it "discovers external functions and honors their availability" do
+  it "discovers external tools and honors their availability" do
     extension_name = "conditional_extension"
-    build_extension_function.call(
+    build_extension_tool.call(
       extension_name,
       availability: ->(opts) { opts[:enable_test_extension] },
     )
 
     enabled_mapping =
-      described_class.new({ enable_test_extension: true }).instance_variable_get(:@func_mapping)
-    disabled_mapping = described_class.new({}).instance_variable_get(:@func_mapping)
+      described_class.new({ enable_test_extension: true }).instance_variable_get(:@tool_mapping)
+    disabled_mapping = described_class.new({}).instance_variable_get(:@tool_mapping)
 
     expect(enabled_mapping).to have_key(extension_name)
     expect(disabled_mapping).not_to have_key(extension_name)
-    expect(::DiscourseChatbot::Function.choices).not_to include(extension_name)
+    expect(::DiscourseChatbot::Tool.choices).not_to include(extension_name)
   end
 
-  it "isolates errors raised by individual external functions" do
-    build_extension_function.call(
+  it "isolates errors raised by individual external tools" do
+    build_extension_tool.call(
       "unavailable_extension",
       availability: ->(_opts) { raise "availability failed" },
     )
-    build_extension_function.call("invalid_extension") { |_required_argument| }
-    build_extension_function.call("healthy_extension")
+    build_extension_tool.call("invalid_extension") { |_required_argument| }
+    build_extension_tool.call("healthy_extension")
 
-    func_mapping = described_class.new({}).instance_variable_get(:@func_mapping)
+    tool_mapping = described_class.new({}).instance_variable_get(:@tool_mapping)
 
-    expect(func_mapping).to have_key("healthy_extension")
+    expect(tool_mapping).to have_key("healthy_extension")
   end
 end
 

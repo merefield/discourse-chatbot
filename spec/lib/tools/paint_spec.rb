@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 require_relative "../../plugin_helper"
 
-describe ::DiscourseChatbot::Functions::PaintFunction do
-  subject(:paint_function) { described_class.new }
+describe ::DiscourseChatbot::Tools::Paint do
+  subject(:paint_tool) { described_class.new }
 
   describe "#parameters" do
     it "exposes aspect_ratio as an enum" do
-      aspect_ratio_parameter =
-        paint_function.parameters.find { |param| param[:name] == "aspect_ratio" }
+      aspect_ratio_parameter = paint_tool.parameters.find { |param| param[:name] == "aspect_ratio" }
 
       expect(aspect_ratio_parameter[:enum]).to eq(%w[square landscape portrait])
     end

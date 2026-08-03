@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module ::DiscourseChatbot
-  class Function
+  class Tool
     BUILT_IN_TOOL_NAMES = %w[
       calculate
       escalate_to_staff

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 require_relative "../../plugin_helper"
 
-describe ::DiscourseChatbot::Functions::CalculatorFunction do
-  let(:calc) { ::DiscourseChatbot::Functions::CalculatorFunction.new }
+describe ::DiscourseChatbot::Tools::Calculator do
+  let(:calc) { ::DiscourseChatbot::Tools::Calculator.new }
 
-  it "calculation function returns correct result" do
+  it "returns the calculation result" do
     args = { "input" => "3 + 4" }
 
     expect(calc.process(args)).to eq({ answer: 7, token_usage: 0 })
