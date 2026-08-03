@@ -30,7 +30,7 @@ module DiscourseChatbot
           config.api_type = :azure
           config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
         end
-        config.log_errors = true if SiteSetting.chatbot_enable_verbose_rails_logging
+        config.log_errors = SiteSetting.chatbot_enable_verbose_rails_logging != "off"
       end
 
       @client =
