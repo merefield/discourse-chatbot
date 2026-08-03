@@ -28,7 +28,7 @@ module DiscourseChatbot
               if ul.extension == "pdf" && SiteSetting.chatbot_support_pdf
                 role = "user"
                 file_path = Discourse.store.path_for(ul)
-                base64_encoded_data = Base64.strict_encode64(File.read(file_path))
+                base64_encoded_data = Base64.strict_encode64(File.binread(file_path))
                 content << {
                   type: "file",
                   file: {
