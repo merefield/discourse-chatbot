@@ -35,16 +35,12 @@ module ::DiscourseChatbot
             CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD
           end
         )
-      remaining_quota = get_remaining_quota(user_id, remaining_quota_field_name)
-
-      if remaining_quota.nil?
-        UserCustomField.create!(
-          user_id: user_id,
-          name: remaining_quota_field_name,
-          value: max_quota.to_s,
+      remaining_quota =
+        ::DiscourseChatbot::QuotaManager.new.initialize_remaining_quota(
+          user_id,
+          remaining_quota_field_name,
+          max_quota,
         )
-        remaining_quota = max_quota
-      end
 
       breach = remaining_quota < 0
       escalate_as_required(user_id) if breach

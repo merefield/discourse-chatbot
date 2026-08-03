@@ -16,23 +16,25 @@ module ::DiscourseChatbot
         )
       deduction = query_quota ? 1 : token_usage
 
-      current_record = UserCustomField.find_by(user_id: user_id, name: remaining_quota_field_name)
-
-      if current_record.present?
-        remaining_quota = current_record.value.to_i - deduction
-        current_record.value = remaining_quota.to_s
-      else
-        max_quota = ::DiscourseChatbot::EventEvaluation.new.get_max_quota(user_id)
+      with_user_lock(user_id) do
         current_record =
-          UserCustomField.create!(
-            user_id: user_id,
-            name: remaining_quota_field_name,
-            value: max_quota.to_s,
-          )
-        remaining_quota = current_record.value.to_i - deduction
-        current_record.value = remaining_quota.to_s
+          UserCustomField.find_or_initialize_by(user_id: user_id, name: remaining_quota_field_name)
+        if current_record.new_record?
+          current_record.value = ::DiscourseChatbot::EventEvaluation.new.get_max_quota(user_id).to_s
+        end
+
+        current_record.value = (current_record.value.to_i - deduction).to_s
+        current_record.save!
       end
-      current_record.save!
+    end
+
+    def initialize_remaining_quota(user_id, remaining_quota_field_name, max_quota)
+      with_user_lock(user_id) do
+        current_record =
+          UserCustomField.find_or_initialize_by(user_id: user_id, name: remaining_quota_field_name)
+        current_record.update!(value: max_quota.to_s) if current_record.new_record?
+        current_record.value.to_i
+      end
     end
 
     def reset_all
@@ -41,47 +43,31 @@ module ::DiscourseChatbot
       ::User.find_each do |user|
         max_quota = event_evaluation.get_max_quota(user.id)
 
-        current_record =
-          UserCustomField.find_by(
-            user_id: user.id,
-            name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD,
-          )
+        with_user_lock(user.id) do
+          [
+            ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD,
+            ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD,
+          ].each do |remaining_quota_field_name|
+            UserCustomField.find_or_initialize_by(
+              user_id: user.id,
+              name: remaining_quota_field_name,
+            ).update!(value: max_quota.to_s)
+          end
 
-        if current_record.present?
-          current_record.value = max_quota.to_s
-          current_record.save!
-        else
-          UserCustomField.create!(
+          UserCustomField.where(
             user_id: user.id,
-            name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD,
-            value: max_quota.to_s,
-          )
+            name: ::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD,
+          ).delete_all
         end
+      end
+    end
 
-        current_record =
-          UserCustomField.find_by(
-            user_id: user.id,
-            name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD,
-          )
+    private
 
-        if current_record.present?
-          current_record.value = max_quota.to_s
-          current_record.save!
-        else
-          UserCustomField.create!(
-            user_id: user.id,
-            name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_TOKENS_CUSTOM_FIELD,
-            value: max_quota.to_s,
-          )
-        end
-
-        if current_record =
-             UserCustomField.find_by(
-               user_id: user.id,
-               name: ::DiscourseChatbot::CHATBOT_QUERIES_QUOTA_REACH_ESCALATION_DATE_CUSTOM_FIELD,
-             )
-          current_record.delete
-        end
+    def with_user_lock(user_id)
+      ::User.transaction do
+        ::User.lock.find(user_id)
+        yield
       end
     end
   end
