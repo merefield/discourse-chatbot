@@ -81,7 +81,7 @@ module DiscourseChatbot
             token_usage = SiteSetting.chatbot_firecrawl_api_token_cost
           end
           {
-            answer: result[0..SiteSetting.chatbot_tool_response_char_limit],
+            answer: result.to_s[0, SiteSetting.chatbot_tool_response_char_limit],
             token_usage: token_usage,
           }
         rescue => e
