@@ -21,8 +21,10 @@ Our kind sponsors of this project:
   * Search current news*
   * Search Google*
   * Return current End Of Day market data for stocks.*
-  * Do "complex" maths accurately (with no made up or "hallucinated" answers!)
-* EXPERIMENTAL Vision support - select the `vision` tool for the relevant trust levels to let the bot answer questions about uploaded images.
+  * Evaluate mathematical expressions with Dentaku, including common aliases for PI and E.
+* Vision support - select the `vision` tool for the relevant trust levels to let the bot answer questions about uploaded images.
+* Image generation and editing support - select the paint tools and choose a supported image model.
+* PDF input support can be enabled with `chatbot_support_pdf`.
 * Uses the tool-calling capability of cutting-edge, industry-leading large language models through the OpenAI-compatible API.
 * Includes a special quota system to manage access to the bot: more trusted and/or paying members can have greater access to the bot!
 * Also supports Azure and proxy server connections
@@ -47,7 +49,7 @@ For local forum search, make sure you have a benchmark user at the configured tr
 
 Alternatively:
 
-* Switch `chatbot embeddings strategy` to `category` and populate `chatbot embeddings categories` with Categories you wish the bot to know about.  (Be aware that if you add any private Categories, it should know about those and anything the bot says in public, anywhere might leak to less privileged users so just be a bit careful on what you add).
+* Switch `chatbot embeddings strategy` to `categories` and populate `chatbot embeddings categories` with Categories you wish the bot to know about.  (Be aware that if you add any private Categories, it should know about those and anything the bot says in public, anywhere might leak to less privileged users so just be a bit careful on what you add).
 * remove `local_forum_search` from the tool settings for trust levels that should not search embedded posts
 * mitigate with moderation
 
@@ -55,8 +57,8 @@ You can see that this setup is a compromise.  In order to make the bot useful it
 
 # FYI's
 
-* Open AI API response can be slow at times on more advanced models due to high demand.  However Chatbot supports GPT 3.5 too which is fast and responsive and perfectly capable.
-* Is extensible and supporting other cloud bots is intended (hence the generic name for the plugin), but currently 'only' supports interaction with Open AI Large Language Models (LLM) such as GPT-4 natively. Please contact me if you wish to add additional bot types or want to support me to add more. PR welcome.  Can already use proxy servers to access other services without code changes though!
+* OpenAI API responses can be slower for higher-capability and reasoning models. Choose the model for each trust level based on the quality, latency, and cost your community needs.
+* Chatbot natively supports OpenAI and OpenAI-compatible endpoints, including custom model names and URLs for each trust level. Proxy servers can provide access to other model providers without changing Chatbot code.
 * Is extensible to support the searching of other content beyond just the current set provided.
 
 # Setup
@@ -77,9 +79,9 @@ This seeding job can take a period of days for very big sites.
 
 This is determined by several settings:
 
-* `chatbot_embeddings_strategy` which can be either "benchmark_user" or "category"
+* `chatbot_embeddings_strategy` which can be either "benchmark_user" or "categories"
 * `chatbot_embeddings_benchmark_user_trust_level` sets the relevant trust level for the former
-* `chatbot_embeddings_categories` if `category` strategy is set, gives the bot access to consider all posts in specified Category.
+* `chatbot_embeddings_categories` if the `categories` strategy is set, gives the bot access to consider all posts in specified Categories.
 
 If you change these settings, over time, the population of Embeddings will morph.
 
@@ -99,11 +101,11 @@ In the unlikely event you get rate limited by OpenAI (unlikely!) you can complet
 
 `rake chatbot:refresh_embeddings[1,1]`
 
-which will fill in the missing ones (so nothing lost from the error) but will continue more cautiously putting a 1 second delay between each call to Open AI.
+which will fill in the missing ones (so nothing lost from the error) but will continue more cautiously putting a 1 second delay between each call to OpenAI.
 
-Compared to bot interactions, embeddings are not expensive to create, but do watch your usage on your Open AI dashboard in any case.
+Compared to bot interactions, embeddings are not expensive to create, but do watch your usage on your OpenAI dashboard in any case.
 
-NB Embeddings are only created for Posts and only those Posts for which a Trust Level One user would have access.  This seemed like a reasonable compromise.  It will not create embeddings for posts from Trust Level 2+ only accessible content.
+Embeddings are created only for Posts in the scope selected above. The `benchmark_user` strategy uses the configured trust level, while `categories` uses the explicitly selected Categories. Personal Messages are never embedded.
 
 ### Useful Data Explorer query to monitor embeddings population
 
@@ -146,6 +148,11 @@ This will then cut off more text and request tokens and hopefully the embedding 
 
 You don't need to do anything but change the setting: the background job will take care of things, if gradually.
 
+For an OpenAI-compatible embedding provider, set
+`chatbot_open_ai_embeddings_model_custom_name` to override the built-in model selection and set
+`chatbot_open_ai_embeddings_model_custom_url` when the provider uses a different API base URL. The
+custom model must return 1,536-dimensional vectors to fit the existing embedding storage.
+
 If you really want to speed the process up, do:
 
 * Change the setting `chatbot_open_ai_embeddings_model` to your new preferred model
@@ -155,8 +162,18 @@ If you really want to speed the process up, do:
   * run `::DiscourseChatbot::PostEmbedding.delete_all`
   * `exit` (to return to root within container)
 * run `rake chatbot:refresh_embeddings[1]`
-* if for any Open AI side reason that fails part way through, run it again until you get to 100%
+* if for any OpenAI-side reason that fails part way through, run it again until you get to 100%
 * the new model is known to be more accurate, so you might have to drop `chatbot_forum_search_tool_similarity_threshold` or you might get no results :).  I dropped my default value from `0.8` to `0.6`, but your mileage may vary.
+
+## Blocked questions
+
+Enable `chatbot_blocked_questions_enabled` to compare each incoming question with configured
+examples before sending it to the full language model. Add examples and subject labels in
+`chatbot_blocked_question_examples`, then tune
+`chatbot_blocked_questions_similarity_threshold` to control how closely a question must match.
+Matching questions receive a canned decline response containing the configured subject label. If
+the semantic check fails, normal bot processing continues. This feature uses the configured
+embedding model and endpoint.
 
 ## Tools by trust level
 
@@ -166,6 +183,19 @@ selection exposes no built-in tools. Selecting a tool is an allowlist decision; 
 requirements still apply. For example, `news`, `web_search`, `web_crawler`, and `stock_data` need
 their API credentials, while `local_forum_search` needs embeddings to be enabled. Extension tools
 provided by other plugins are controlled by those plugins instead.
+
+The defaults are:
+
+* Low and medium trust: `calculate`, `remaining_bot_quota`, and `local_forum_search`.
+* High trust: those tools plus `wikipedia`, `news`, `web_crawler`, `web_search`, and `stock_data`.
+
+Runtime requirements still take precedence over these defaults. For example,
+`local_forum_search` is exposed only when embeddings are enabled, and tools backed by external
+services are exposed only when the required credentials are configured.
+
+The `calculate` tool uses Dentaku expression syntax. It accepts constants such as `PI` and `E`,
+normalizes common model-generated forms such as `Math::PI`, and returns correction guidance for
+invalid expressions rather than evaluating the same rejected input repeatedly.
 
 For Chatbot to work in Chat you must have Chat enabled.
 
@@ -204,6 +234,19 @@ These strategies have several safeguards:
 
 The staff-visible inner-thoughts trace records tool calls, the selected advanced strategy, compact review, confidence, and selection information, and the final outcome in chronological order, including safe fallbacks. It does not request or expose a model's hidden chain-of-thought.
 
+### Token, tool, and URL limits
+
+`chatbot_max_response_tokens` limits visible output for non-reasoning Chat Completions requests,
+while `chatbot_open_ai_max_reasoning_output_tokens` limits the combined reasoning and visible output
+for Responses API requests. `chatbot_open_ai_max_chain_tokens`,
+`chatbot_chain_of_thought_max_iterations`, and `chatbot_chain_of_thought_max_tool_calls` cap the
+overall tool loop. `chatbot_tool_response_char_limit` caps content returned by web tools before it
+is included in a later model request.
+
+When `chatbot_url_integrity_check` is enabled, Chatbot checks generated URLs against trusted URLs
+from the conversation and tool results. `chatbot_chain_of_thought_max_url_repair_attempts` controls
+how many times the model may repair an unsupported URL before the response is rejected.
+
 ### References
 
 * [Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters](https://arxiv.org/abs/2408.03314) motivates adaptive allocation of inference-time compute and compares search strategies with best-of-N sampling.
@@ -218,24 +261,24 @@ This is governed mostly by a setting: `‎chatbot_reply_job_time_delay‎` over 
 
 The intention of having this setting is to:
 
-* protect you from reaching rate limits of Open AI
+* protect you from reaching rate limits of OpenAI
 * protect your site from users that would like to spam the bot and cost you money.
 
 It is now default '1' second and can now be reduced to zero :racing_car: , but be aware of the above risks.
 
-Setting this zero and the bot, even in 'agent' mode, becomes a lot more 'snappy'.
+Setting this to zero can make the bot, including tool-enabled conversations, feel much more responsive.
 
 Obviously this can be a bit artificial and no real person would actually type that fast ... but set it to your taste and wallet size.
 
-NB I cannot directly control the speed of response of Open AI's API - and the general rule is the more sophisticated the model you set the slower this response will usually be.  So GPT 3.5 is much faster that GPT 4 ... although this may change with the newer GPT 4 Turbo model.
+Chatbot cannot directly control provider response time. Higher-capability models, greater reasoning effort, advanced local reasoning, and multi-step tool use can all increase latency.
 
 For Chatbot to work in Chat you must have Chat enabled.
 
 ## OpenAI
 
-You must get a [token](https://platform.openai.com/account/api-keys) from [https://platform.openai.com/](https://platform.openai.com/) in order to use the current bot. A default language model is set (one of the most sophisticated), but you can try a cheaper alternative, [the list is here](https://platform.openai.com/docs/models/overview)
+You must configure `chatbot_open_ai_token` with an [OpenAI API key](https://platform.openai.com/api-keys), or a token accepted by your OpenAI-compatible endpoint. The language model is selected independently for low-, medium-, and high-trust users. The built-in choices include current GPT-5 families and GPT-4.1 models; custom model settings allow other compatible model names and URLs.
 
-There is an automated part of the setup: upon addition to a Discourse, the plugin currently sets up a AI bot user with the following attributes
+There is an automated part of the setup: upon addition to a Discourse, the plugin currently sets up an AI bot user with the following attributes
 
 * Name: 'Chatbot'
 * User Id: -4
@@ -249,11 +292,13 @@ You can edit the name, avatar and bio (see locale string in admin -> customize -
 
 Initially **no-one** will have access to the bot, not even staff.
 
-Calling the Open AI API is not free after an initial free allocation has expired! So, I've implemented a quota system to keep this under control, keep costs down and prevent abuse.  The cost is not crazy with these small interactions, but it may add up if it gets popular. You can read more about OpenAI pricing [on their pricing page](https://openai.com/pricing).
+Calling the OpenAI API is not free after an initial free allocation has expired! So, I've implemented a quota system to keep this under control, keep costs down and prevent abuse.  The cost is not crazy with these small interactions, but it may add up if it gets popular. You can read more about OpenAI pricing [on their pricing page](https://openai.com/pricing).
 
 In order to interact with the bot you must belong to a group that has been added to one of the three levels of trusted sets of groups, low, medium & high trust group sets. You can modify each of the number of allowed interactions per week per trusted group sets in the corresponding settings.
 
-You must populate the groups too.  That configuration is entirely up to you.  They start out blank so initially **no-one** will have access to the bot.  There are corresponding quotas in three additional settings.
+You must populate the groups too. That configuration is entirely up to you. They start out blank,
+so initially **no-one** will have access to the bot. Set `chatbot_quota_basis` to enforce either
+query or token quotas, then configure the corresponding quota for each trust level.
 
 Note the user gets the quota based on the highest trusted group they are a member of.
 
@@ -277,7 +322,7 @@ NB In Topics, the first Post and Topic Title are sent in addition to the window 
 
 You can edit these strings in Admin -> Customize -> Text under `chatbot.prompt.`
 
-https://github.com/merefield/discourse-chatbot/blob/262a0a419fa261d7771a23fe07361cdfa78196eb/config/locales/server.en.yml#L45
+[View the chatbot prompt text in the server locale file.](config/locales/server.en.yml)
 
 # Supports both Posts & Chat Messages!
 
@@ -301,8 +346,8 @@ I'm *not* responsible for what the bot responds with. Consider the plugin to be 
 
 # Privacy Note
 
-Whatever you write on your forum may get forwarded to Open AI as part of the bots scan of the last few posts once it is prompted to reply (obviously this is restricted to the current Topic or Chat Channel).  Whilst it almost certainly won't be incorporated into their pre-trained models, they will use the data in their analytics and logging.  **Be sure to add this fact into your forum's TOS & privacy statements**.  Related links:  https://openai.com/policies/terms-of-use, https://openai.com/policies/privacy-policy, https://platform.openai.com/docs/data-usage-policies
+Whatever you write on your forum may be forwarded to OpenAI or your configured model provider as part of the conversation context or a tool request. Local forum search may also provide matching embedded Posts within the configured scope. **Be sure to cover this in your forum's terms of service and privacy statements.** Related links: https://openai.com/policies/terms-of-use, https://openai.com/policies/privacy-policy, https://platform.openai.com/docs/data-usage-policies
 
 # Copyright
 
-Open AI made a statement about Copyright here: https://help.openai.com/en/articles/5008634-will-openai-claim-copyright-over-what-outputs-i-generate-with-the-api
+OpenAI made a statement about Copyright here: https://help.openai.com/en/articles/5008634-will-openai-claim-copyright-over-what-outputs-i-generate-with-the-api
