@@ -170,4 +170,53 @@ RSpec.describe Jobs::ChatbotReply do
     )
     expect(replies.last.raw).to eq("A normal RAG answer")
   end
+
+  it "persists usage statistics outside future model context" do
+    SiteSetting.chatbot_include_inner_thoughts_in_private_messages = true
+    statistics = {
+      type: "usage_statistics",
+      model: "gpt-5.6",
+      input_tokens: 200,
+      cached_input_tokens: 150,
+      cached_input_percentage: 75.0,
+      output_tokens: 40,
+      reasoning_tokens: 10,
+      total_tokens: 240,
+    }
+    post = PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
+    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
+    opts[:trust_level] = "low"
+
+    ::DiscourseChatbot::Bot
+      .any_instance
+      .stubs(:ask)
+      .returns(
+        {
+          reply: "A measured response",
+          inner_thoughts: [],
+          usage_statistics: statistics,
+          total_tokens: 240,
+        },
+      )
+
+    described_class.new.execute(opts)
+
+    replies = pm_topic.posts.order(:post_number).last(2)
+    audit_post = replies.first
+    expect(JSON.parse(audit_post.raw[/```json\n(.*)\n```/m, 1])).to eq(
+      [statistics.deep_stringify_keys],
+    )
+    expect(replies.last.raw).to eq("A measured response")
+
+    follow_up = PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Tell me more")
+    prompt =
+      ::DiscourseChatbot::Post::PostPromptUtils.create_prompt(
+        reply_to_message_or_post_id: follow_up.id,
+        original_post_number: follow_up.post_number,
+        bot_user_id: bot_user.id,
+        category_id: pm_topic.category_id,
+      )
+
+    expect(JSON.generate(prompt)).not_to include(audit_post.raw)
+  end
 end

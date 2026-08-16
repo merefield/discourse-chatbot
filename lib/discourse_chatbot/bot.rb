@@ -48,6 +48,8 @@ module ::DiscourseChatbot
       @total_tokens = 0
       @cached_tokens = 0
       @cache_write_tokens = 0
+      @usage_totals = Hash.new(0)
+      @reported_usage_fields = {}
       @enabled_tool_names = configured_tool_names(opts[:trust_level])
       if tools
         merge_tools(opts)
@@ -65,6 +67,36 @@ module ::DiscourseChatbot
 
     def inner_thoughts
       Array(@initial_inner_thoughts) + Array(@inner_thoughts)
+    end
+
+    def usage_statistics
+      return if @reported_usage_fields.empty?
+
+      statistics = { type: "usage_statistics", model: @model_name }
+      statistics[:input_tokens] = @usage_totals[:input_tokens] if usage_field_reported?(
+        :input_tokens,
+      )
+      if usage_field_reported?(:cached_input_tokens)
+        statistics[:cached_input_tokens] = @usage_totals[:cached_input_tokens]
+        if @usage_totals[:input_tokens].positive?
+          statistics[:cached_input_percentage] = (
+            @usage_totals[:cached_input_tokens].to_f / @usage_totals[:input_tokens] * 100
+          ).round(1)
+        end
+      end
+      if usage_field_reported?(:cache_write_tokens)
+        statistics[:cache_write_tokens] = @usage_totals[:cache_write_tokens]
+      end
+      statistics[:output_tokens] = @usage_totals[:output_tokens] if usage_field_reported?(
+        :output_tokens,
+      )
+      if usage_field_reported?(:reasoning_tokens)
+        statistics[:reasoning_tokens] = @usage_totals[:reasoning_tokens]
+      end
+      statistics[:total_tokens] = @usage_totals[:total_tokens] if usage_field_reported?(
+        :total_tokens,
+      )
+      statistics
     end
 
     def ask(opts)
@@ -157,6 +189,7 @@ module ::DiscourseChatbot
       {
         reply: res["choices"][0]["message"]["content"],
         inner_thoughts: inner_thoughts,
+        usage_statistics: usage_statistics,
         total_tokens: @total_tokens,
         cached_tokens: @cached_tokens,
         cache_write_tokens: @cache_write_tokens,
@@ -565,16 +598,29 @@ module ::DiscourseChatbot
 
     def track_token_usage(usage)
       usage = usage.to_h.with_indifferent_access
-      @total_tokens += usage[:total_tokens].to_i
+      input_tokens = usage[:input_tokens] || usage[:prompt_tokens]
+      output_tokens = usage[:output_tokens] || usage[:completion_tokens]
+      total_tokens = usage[:total_tokens]
       cache_details = usage[:input_tokens_details] || usage[:prompt_tokens_details] || {}
       cache_details = cache_details.with_indifferent_access
-      cached_tokens = cache_details[:cached_tokens].to_i
-      cache_write_tokens = cache_details[:cache_write_tokens].to_i
-      @cached_tokens += cached_tokens
-      @cache_write_tokens += cache_write_tokens
+      output_details = usage[:output_tokens_details] || usage[:completion_tokens_details] || {}
+      output_details = output_details.with_indifferent_access
+      cached_tokens = cache_details[:cached_tokens]
+      cache_write_tokens = cache_details[:cache_write_tokens]
+
+      record_usage_stat(:input_tokens, input_tokens)
+      record_usage_stat(:cached_input_tokens, cached_tokens)
+      record_usage_stat(:cache_write_tokens, cache_write_tokens)
+      record_usage_stat(:output_tokens, output_tokens)
+      record_usage_stat(:reasoning_tokens, output_details[:reasoning_tokens])
+      record_usage_stat(:total_tokens, total_tokens)
+
+      @total_tokens += total_tokens.to_i
+      @cached_tokens += cached_tokens.to_i
+      @cache_write_tokens += cache_write_tokens.to_i
 
       ::DiscourseChatbot.progress_debug_message(
-        "Prompt cache usage: cached #{cached_tokens} tokens, wrote #{cache_write_tokens} tokens",
+        "Prompt cache usage: cached #{cached_tokens.to_i} tokens, wrote #{cache_write_tokens.to_i} tokens",
       )
     end
 
@@ -1129,6 +1175,17 @@ module ::DiscourseChatbot
     end
 
     private
+
+    def record_usage_stat(name, value)
+      return if value.nil?
+
+      @reported_usage_fields[name] = true
+      @usage_totals[name] += value.to_i
+    end
+
+    def usage_field_reported?(name)
+      @reported_usage_fields[name]
+    end
 
     def image_url?(string)
       # Regular expression to find URLs

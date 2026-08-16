@@ -35,10 +35,12 @@ module DiscourseChatbot
                SiteSetting.chatbot_include_inner_thoughts_in_private_messages && @is_private_msg ||
                  SiteSetting.chatbot_include_inner_thoughts_in_topics && !@is_private_msg
              )
+            audit_entries = Array(@inner_thoughts)
+            audit_entries << @usage_statistics if @usage_statistics.present?
             default_opts.merge!(
               raw:
                 ::DiscourseChatbot::INNER_THOUGHTS_POST_PREFIX +
-                  JSON.pretty_generate(@inner_thoughts) + "\n```\n[/details]",
+                  JSON.pretty_generate(audit_entries) + "\n```\n[/details]",
             )
             if SiteSetting.chatbot_include_inner_thoughts_in_topics_as_whisper && !@is_private_msg
               default_opts.merge!(post_type: ::Post.types[:whisper])

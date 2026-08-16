@@ -14,6 +14,7 @@ module ::DiscourseChatbot
       @private = options[:private]
       @human_participants_count = options[:human_participants_count]
       @inner_thoughts = options[:inner_thoughts]
+      @usage_statistics = options[:usage_statistics]
       @trust_level = options[:trust_level]
       @blocked_question = options[:blocked_question]
       @message_body = I18n.t("chatbot.errors.retries") if @message_body.blank?
