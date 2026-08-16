@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require "digest"
 require "openai"
 
 module DiscourseChatbot
@@ -9,22 +10,13 @@ module DiscourseChatbot
     attr_reader :client, :model_name
 
     def initialize(opts)
+      custom_api_url = custom_uri_base(opts)
+      @official_openai_endpoint =
+        custom_api_url.blank? && SiteSetting.chatbot_open_ai_model_custom_api_type != "azure"
+
       ::OpenAI.configure do |config|
         config.access_token = SiteSetting.chatbot_open_ai_token
-
-        case opts[:trust_level]
-        when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
-          if SiteSetting.send(
-               "chatbot_open_ai_model_custom_url_" + opts[:trust_level] + "_trust",
-             ).present?
-            config.uri_base =
-              SiteSetting.send("chatbot_open_ai_model_custom_url_" + opts[:trust_level] + "_trust")
-          end
-        else
-          if SiteSetting.chatbot_open_ai_model_custom_url_low_trust.present?
-            config.uri_base = SiteSetting.chatbot_open_ai_model_custom_url_low_trust
-          end
-        end
+        config.uri_base = custom_api_url if custom_api_url.present?
 
         if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
           config.api_type = :azure
@@ -51,6 +43,7 @@ module DiscourseChatbot
       @model_name = get_model(opts)
       @model_reasoning_level = SiteSetting.chatbot_open_ai_model_reasoning_level
       @model_verbosity = SiteSetting.chatbot_open_ai_model_verbosity
+      @prompt_cache_key = build_prompt_cache_key(opts)
     end
 
     def get_model(opts)
@@ -75,7 +68,10 @@ module DiscourseChatbot
     end
 
     def responses_parameters(messages, include_reasoning_summary: false)
-      parameters = { model: @model_name, input: responses_input(messages) }
+      parameters = { model: @model_name, input: responses_input(messages) }.merge(
+        prompt_cache_parameters,
+      )
+      parameters[:prompt_cache_options] = { mode: "implicit" } if explicit_prompt_caching?
       reasoning_output_tokens = SiteSetting.chatbot_open_ai_max_reasoning_output_tokens
       parameters[:max_output_tokens] = reasoning_output_tokens if reasoning_output_tokens.positive?
 
@@ -89,6 +85,41 @@ module DiscourseChatbot
       parameters[:text] = text if text.present?
 
       parameters
+    end
+
+    def prompt_cache_parameters
+      @prompt_cache_key ? { prompt_cache_key: @prompt_cache_key } : {}
+    end
+
+    def chat_completions_parameters(messages)
+      { model: @model_name, messages: chat_completions_messages(messages) }.merge(
+        prompt_cache_parameters,
+      )
+    end
+
+    def explicit_prompt_caching?
+      @official_openai_endpoint && @model_name.match?(/\Agpt-5\.6(?:-|\z)/)
+    end
+
+    def chat_completions_messages(messages)
+      return messages if !explicit_prompt_caching?
+
+      messages.map do |message|
+        message = message.deep_symbolize_keys
+        next message.except(:prompt_cache_breakpoint) if !message[:prompt_cache_breakpoint]
+
+        message.except(:prompt_cache_breakpoint).merge(
+          content: [
+            {
+              type: "text",
+              text: message[:content].to_s,
+              prompt_cache_breakpoint: {
+                mode: "explicit",
+              },
+            },
+          ],
+        )
+      end
     end
 
     def completion_token_limit_parameters
@@ -126,15 +157,15 @@ module DiscourseChatbot
           }
         end
       else
-        {
-          role: %w[developer system].include?(role) ? "developer" : role,
-          content: [
-            {
-              type: role == "assistant" ? "output_text" : "input_text",
-              text: message[:content].to_s,
-            },
-          ],
+        content = {
+          type: role == "assistant" ? "output_text" : "input_text",
+          text: message[:content].to_s,
         }
+        if message[:prompt_cache_breakpoint] && explicit_prompt_caching?
+          content[:prompt_cache_breakpoint] = { mode: "explicit" }
+        end
+
+        { role: %w[developer system].include?(role) ? "developer" : role, content: [content] }
       end
     end
 
@@ -255,6 +286,27 @@ module DiscourseChatbot
       end
 
       raise ResponsesApiError, "OpenAI Responses API returned unexpected status: #{status}"
+    end
+
+    private
+
+    def custom_uri_base(opts)
+      trust_level =
+        TRUST_LEVELS.include?(opts[:trust_level]) ? opts[:trust_level] : TRUST_LEVELS.first
+      SiteSetting.send("chatbot_open_ai_model_custom_url_#{trust_level}_trust")
+    end
+
+    def build_prompt_cache_key(opts)
+      return if !@official_openai_endpoint || opts[:topic_or_channel_id].blank?
+
+      context = [
+        Discourse.current_hostname,
+        opts[:type],
+        opts[:topic_or_channel_id],
+        opts[:thread_id] || "root",
+        @model_name,
+      ].join(":")
+      "discourse-chatbot:#{Digest::SHA256.hexdigest(context).first(40)}"
     end
   end
 end

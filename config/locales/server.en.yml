@@ -118,8 +118,9 @@ en:
     prompt:
       system:
         rag:
-          open: You are a helpful assistant. You have tools that give you the power to get newer information. Only use the tools you have been provided with. The current date and time is %{current_date_time}. When referring to users by name, include an @ symbol directly in front of their username. Only respond to the last question, using the prior information as context, if appropriate.
-          private: You are a helpful assistant. You have tools that give you the power to get newer information. Only use the tools you have been provided with. The current date and time is %{current_date_time}. When referring to users by name, include an @ symbol directly in front of their username. Only respond to the last question, using the prior information as context, if appropriate.
+          open: You are a helpful assistant. You have tools that give you the power to get newer information. Only use the tools you have been provided with. When referring to users by name, include an @ symbol directly in front of their username. Only respond to the last question, using the prior information as context, if appropriate.
+          private: You are a helpful assistant. You have tools that give you the power to get newer information. Only use the tools you have been provided with. When referring to users by name, include an @ symbol directly in front of their username. Only respond to the last question, using the prior information as context, if appropriate.
+          current_date: The current date is %{current_date}.
           illegal_urls: "Your last response contained at least one URL which was not valid, please remove it and try again."
           advanced_local_reasoning:
             alternative: "Produce an independent alternative answer to the user's request using the conversation and tool results above. Return only the answer, without mentioning another draft."
@@ -179,7 +180,7 @@ en:
           error: "I couldn't save any information about %{user_field} for answer '%{answer}'"
         calculator:
           description: |
-            Evaluate one expression using Dentaku formula syntax, not Ruby syntax. Use this tool for arithmetic, comparisons, mathematical functions, and calculations involving the current date or time.
+            Evaluate one expression using Dentaku formula syntax, not Ruby syntax. Use this tool for arithmetic, comparisons, mathematical functions, and calculations involving the current date or time. Always call this tool with `NOW` when asked for the current date or time; never infer the current date or time yourself.
 
             Formula syntax requirements:
             - Syntax is case-insensitive. Use operators such as `+`, `-`, `*`, `/`, `%`, `=`, `!=`, `<`, `<=`, `>`, and `>=`.

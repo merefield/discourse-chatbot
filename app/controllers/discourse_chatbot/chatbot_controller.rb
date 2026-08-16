@@ -27,10 +27,7 @@ module ::DiscourseChatbot
 
       if !post_id && start_bot.tool_enabled?("user_information") &&
            start_bot.has_empty_user_fields?(opts)
-        system_message = {
-          role: "system",
-          content: I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current),
-        }
+        system_message = { role: "system", content: I18n.t("chatbot.prompt.system.rag.private") }
         assistant_message = {
           role: "assistant",
           content:
@@ -45,21 +42,18 @@ module ::DiscourseChatbot
 
         messages = [system_message, assistant_message]
 
-        model = start_bot.model_name
-
         if start_bot.reasoning_model?
           res =
             start_bot.client.responses.create(parameters: start_bot.responses_parameters(messages))
           kick_off_statement = start_bot.responses_text(res)
         else
-          parameters = {
-            model: model,
-            messages: messages,
-            temperature: SiteSetting.chatbot_request_temperature / 100.0,
-            top_p: SiteSetting.chatbot_request_top_p / 100.0,
-            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
-          }
+          parameters =
+            start_bot.chat_completions_parameters(messages).merge(
+              temperature: SiteSetting.chatbot_request_temperature / 100.0,
+              top_p: SiteSetting.chatbot_request_top_p / 100.0,
+              frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+              presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
+            )
           parameters.merge!(start_bot.completion_token_limit_parameters)
 
           res = start_bot.client.chat(parameters: parameters)
@@ -68,10 +62,7 @@ module ::DiscourseChatbot
         end
       elsif post_id
         post = ::Post.find_by(id: post_id)
-        system_message = {
-          role: "system",
-          content: I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current),
-        }
+        system_message = { role: "system", content: I18n.t("chatbot.prompt.system.rag.private") }
 
         opts[:reply_to_message_or_post_id] = post_id
 
@@ -94,20 +85,18 @@ module ::DiscourseChatbot
               username: current_user.username,
             ),
         }
-        model = start_bot.model_name
         if start_bot.reasoning_model?
           res =
             start_bot.client.responses.create(parameters: start_bot.responses_parameters(messages))
           kick_off_statement = start_bot.responses_text(res)
         else
-          parameters = {
-            model: model,
-            messages: messages,
-            temperature: SiteSetting.chatbot_request_temperature / 100.0,
-            top_p: SiteSetting.chatbot_request_top_p / 100.0,
-            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
-          }
+          parameters =
+            start_bot.chat_completions_parameters(messages).merge(
+              temperature: SiteSetting.chatbot_request_temperature / 100.0,
+              top_p: SiteSetting.chatbot_request_top_p / 100.0,
+              frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+              presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
+            )
           parameters.merge!(start_bot.completion_token_limit_parameters)
           res = start_bot.client.chat(parameters: parameters)
           kick_off_statement = res.dig("choices", 0, "message", "content")
