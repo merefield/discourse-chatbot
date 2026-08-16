@@ -180,7 +180,7 @@ en:
           error: "I couldn't save any information about %{user_field} for answer '%{answer}'"
         calculator:
           description: |
-            Evaluate one expression using Dentaku formula syntax, not Ruby syntax. Use this tool for arithmetic, comparisons, mathematical functions, and calculations involving the current date or time.
+            Evaluate one expression using Dentaku formula syntax, not Ruby syntax. Use this tool for arithmetic, comparisons, mathematical functions, and calculations involving the current date or time. Always call this tool with `NOW` when asked for the current date or time; never infer the current date or time yourself.
 
             Formula syntax requirements:
             - Syntax is case-insensitive. Use operators such as `+`, `-`, `*`, `/`, `%`, `=`, `!=`, `<`, `<=`, `>`, and `>=`.
