@@ -59,7 +59,11 @@ module DiscourseChatbot
     end
 
     def normalize_expression(expression)
-      expression.gsub(/\bMath(?:::|\.)PI\b/i, "PI").gsub(/\bMath(?:::|\.)E\b/i, "E").gsub("π", "PI")
+      expression
+        .gsub(/\bMath(?:::|\.)PI\b/i, "PI")
+        .gsub(/\bMath(?:::|\.)E\b/i, "E")
+        .gsub(/\b(?:Time|DateTime)\.(?:now|current)\b/i, "NOW")
+        .gsub("π", "PI")
     end
 
     def validate_tokens!(tokens)
