@@ -180,19 +180,20 @@ en:
           error: "I couldn't save any information about %{user_field} for answer '%{answer}'"
         calculator:
           description: |
-            Evaluate one expression using Dentaku formula syntax, not Ruby syntax. Use this tool for arithmetic, comparisons, mathematical functions, and calculations involving the current date or time. Always call this tool with `NOW` when asked for the current date or time; never infer the current date or time yourself.
+            Evaluate one expression using Dentaku formula syntax. Use this tool for arithmetic, comparisons, mathematical functions, and calculations involving the current date or time. Always call this tool with `NOW` when asked for the current date or time; never infer the current date or time yourself.
 
             Formula syntax requirements:
             - Syntax is case-insensitive. Use operators such as `+`, `-`, `*`, `/`, `%`, `=`, `!=`, `<`, `<=`, `>`, and `>=`.
             - Use functions such as `ABS`, `ROUND`, `MIN`, `MAX`, `SUM`, `SQRT`, `CBRT`, and `IF(condition, true_value, false_value)`.
             - Use the predefined variables `PI`, `E`, and `NOW`. Other variables are not available.
             - Use `DURATION(number, unit)` for calendar offsets. The unit must be `day`, `days`, `month`, `months`, `year`, or `years` without quotes.
-            - Ruby code, method calls, assignments, exponentiation, and bit shifting are not supported.
+            - Use only the operators, functions, variables, and duration syntax listed above.
             - Submit only the expression to evaluate.
 
             If the expression is rejected, retry once using the supported syntax. Do not repeat the same invalid expression unchanged. If it cannot be corrected, continue without the calculation and do not treat the error as a result.
 
             Usage:
+              Action Input: NOW
               Action Input: 1 + 1
               Action Input: 3.0 * 2 / 4
               Action Input: 9 - 7
