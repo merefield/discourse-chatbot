@@ -10,13 +10,13 @@ module DiscourseChatbot
     attr_reader :client, :model_name
 
     def initialize(opts)
-      custom_uri_base = custom_uri_base(opts)
+      custom_api_url = custom_uri_base(opts)
       @official_openai_endpoint =
-        custom_uri_base.blank? && SiteSetting.chatbot_open_ai_model_custom_api_type != "azure"
+        custom_api_url.blank? && SiteSetting.chatbot_open_ai_model_custom_api_type != "azure"
 
       ::OpenAI.configure do |config|
         config.access_token = SiteSetting.chatbot_open_ai_token
-        config.uri_base = custom_uri_base if custom_uri_base.present?
+        config.uri_base = custom_api_url if custom_api_url.present?
 
         if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
           config.api_type = :azure
