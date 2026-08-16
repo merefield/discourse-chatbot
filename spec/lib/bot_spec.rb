@@ -117,6 +117,85 @@ describe ::DiscourseChatbot::Bot do
     )
   end
 
+  it "aggregates usage statistics without adding them to the active model context" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    requests = []
+
+    client
+      .expects(:chat)
+      .times(2)
+      .with do |args|
+        requests << args[:parameters]
+        true
+      end
+      .returns(
+        {
+          "choices" => [
+            {
+              "finish_reason" => "tool_calls",
+              "message" => {
+                "content" => "",
+                "tool_calls" => [
+                  {
+                    "id" => "call_1",
+                    "type" => "function",
+                    "function" => {
+                      "name" => "calculate",
+                      "arguments" => '{"input":"2 + 2"}',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+          "usage" => {
+            "prompt_tokens" => 100,
+            "completion_tokens" => 10,
+            "total_tokens" => 110,
+            "prompt_tokens_details" => {
+              "cached_tokens" => 60,
+              "cache_write_tokens" => 20,
+            },
+          },
+        },
+        {
+          "choices" => [
+            { "finish_reason" => "stop", "message" => { "content" => "The answer is 4." } },
+          ],
+          "usage" => {
+            "prompt_tokens" => 150,
+            "completion_tokens" => 20,
+            "total_tokens" => 170,
+            "prompt_tokens_details" => {
+              "cached_tokens" => 100,
+            },
+            "completion_tokens_details" => {
+              "reasoning_tokens" => 5,
+            },
+          },
+        },
+      )
+
+    response = rag.get_response([{ role: "user", content: "What is 2 + 2?" }], opts)
+    statistics = response[:usage_statistics]
+
+    expect(statistics).to eq(
+      {
+        type: "usage_statistics",
+        model: rag.model_name,
+        input_tokens: 250,
+        cached_input_tokens: 160,
+        cached_input_percentage: 64.0,
+        cache_write_tokens: 20,
+        output_tokens: 30,
+        reasoning_tokens: 5,
+        total_tokens: 280,
+      },
+    )
+    expect(JSON.generate(requests.second[:messages])).not_to include(statistics[:type])
+    expect(JSON.generate(response[:inner_thoughts])).not_to include(statistics[:type])
+  end
+
   it "optimizes official Chat Completions requests for prompt caching" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
     SiteSetting.chatbot_chain_of_thought_max_iterations = 1
@@ -130,8 +209,10 @@ describe ::DiscourseChatbot::Bot do
         true
       end
       .returns(
-        completion_response.call("Done").deep_merge(
+        completion_response.call("Done", total_tokens: 250).deep_merge(
           "usage" => {
+            "prompt_tokens" => 200,
+            "completion_tokens" => 50,
             "prompt_tokens_details" => {
               "cached_tokens" => 120,
               "cache_write_tokens" => 30,
@@ -153,6 +234,14 @@ describe ::DiscourseChatbot::Bot do
     expect(request).to include(tool_choice: "none")
     expect(request[:tools]).to be_present
     expect(response).to include(cached_tokens: 120, cache_write_tokens: 30)
+    expect(response[:usage_statistics]).to include(
+      input_tokens: 200,
+      cached_input_tokens: 120,
+      cached_input_percentage: 60.0,
+      cache_write_tokens: 30,
+      output_tokens: 50,
+      total_tokens: 250,
+    )
   end
 
   it "uses an explicit stable-prefix breakpoint for GPT-5.6 Responses requests" do
@@ -180,9 +269,14 @@ describe ::DiscourseChatbot::Bot do
           ],
           "usage" => {
             "total_tokens" => 200,
+            "input_tokens" => 180,
+            "output_tokens" => 20,
             "input_tokens_details" => {
               "cached_tokens" => 150,
               "cache_write_tokens" => 25,
+            },
+            "output_tokens_details" => {
+              "reasoning_tokens" => 12,
             },
           },
         },
@@ -199,6 +293,15 @@ describe ::DiscourseChatbot::Bot do
     expect(request).to include(tool_choice: "none")
     expect(request[:tools]).to be_present
     expect(response).to include(cached_tokens: 150, cache_write_tokens: 25)
+    expect(response[:usage_statistics]).to include(
+      input_tokens: 180,
+      cached_input_tokens: 150,
+      cached_input_percentage: 83.3,
+      cache_write_tokens: 25,
+      output_tokens: 20,
+      reasoning_tokens: 12,
+      total_tokens: 200,
+    )
   end
 
   it "places a date-only context before the conversation when calculate is unavailable" do

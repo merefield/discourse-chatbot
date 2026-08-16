@@ -157,6 +157,9 @@ class ::Jobs::ChatbotReply < Jobs::Base
           end
         reply_and_thoughts[:reply] = I18n.t(error_key)
         reply_and_thoughts[:inner_thoughts] = bot.inner_thoughts if bot.respond_to?(:inner_thoughts)
+        if bot.respond_to?(:usage_statistics)
+          reply_and_thoughts[:usage_statistics] = bot.usage_statistics
+        end
       rescue => e
         Rails.logger.error("Chatbot: There was a problem, but will retry til limit: #{e}")
         fail e

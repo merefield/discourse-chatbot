@@ -232,7 +232,7 @@ These strategies have several safeguards:
 * Usable partial responses produced at the configured completion length limit are returned without additional reasoning.
 * If optional reasoning fails, exceeds its available budget, produces malformed control output, or proposes an invalid answer, the already-valid first answer is returned.
 
-The staff-visible inner-thoughts trace records tool calls, the selected advanced strategy, compact review, confidence, and selection information, and the final outcome in chronological order, including safe fallbacks. It does not request or expose a model's hidden chain-of-thought.
+The staff-visible inner-thoughts trace records tool calls, the selected advanced strategy, compact review, confidence, and selection information, and the final outcome in chronological order, including safe fallbacks. It also includes aggregate input, output, cache, and provider-reported reasoning token statistics for the complete response. These statistics are accumulated outside the model context and are only merged into the persisted audit entry after generation finishes. It does not request or expose a model's hidden chain-of-thought.
 
 ### Token, tool, and URL limits
 
