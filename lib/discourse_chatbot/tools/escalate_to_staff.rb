@@ -206,7 +206,7 @@ module DiscourseChatbot
           res = bot.client.responses.create(parameters: bot.responses_parameters(messages))
           bot.responses_text(res)&.strip
         else
-          res = bot.client.chat(parameters: { model: bot.model_name, messages: messages })
+          res = bot.client.chat(parameters: bot.chat_completions_parameters(messages))
 
           return nil if res["error"].present?
 

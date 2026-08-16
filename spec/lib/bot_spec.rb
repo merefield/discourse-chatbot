@@ -98,11 +98,17 @@ describe ::DiscourseChatbot::Bot do
     system_entry = {
       role: "developer",
       content:
-        "You are a helpful assistant. You have tools that give you the power to get newer information. Only use the tools you have been provided with. The current date and time is 2023-08-18T10:11:44+00:00. When referring to users by name, include an @ symbol directly in front of their username. Only respond to the last question, using the prior information as context, if appropriate.",
+        "You are a helpful assistant. You have tools that give you the power to get newer information. Only use the tools you have been provided with. When referring to users by name, include an @ symbol directly in front of their username. Only respond to the last question, using the prior information as context, if appropriate.",
+    }
+    date_entry = {
+      role: "developer",
+      content: "The current date and time is 2023-08-18T10:11:44+00:00.",
     }
 
-    first_query = get_chatbot_input_fixture("llm_first_query").unshift(system_entry)
+    first_query =
+      get_chatbot_input_fixture("llm_first_query").unshift(system_entry).push(date_entry)
     second_query = get_chatbot_input_fixture("llm_second_query").unshift(system_entry)
+    second_query.insert(2, date_entry)
 
     described_class
       .any_instance
@@ -118,6 +124,108 @@ describe ::DiscourseChatbot::Bot do
     expect(rag.get_response(query, opts)[:reply]).to eq(
       llm_final_response["choices"][0]["message"]["content"],
     )
+  end
+
+  it "optimizes official Chat Completions requests for prompt caching" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    SiteSetting.chatbot_chain_of_thought_max_iterations = 1
+    DateTime.stubs(:current).returns("2026-08-16T12:00:00+00:00")
+    request = nil
+    bot_opts = { type: ::DiscourseChatbot::POST, topic_or_channel_id: 42, trust_level: "low" }
+
+    client
+      .expects(:chat)
+      .with do |args|
+        request = args[:parameters]
+        true
+      end
+      .returns(
+        completion_response.call("Done").deep_merge(
+          "usage" => {
+            "prompt_tokens_details" => {
+              "cached_tokens" => 120,
+              "cache_write_tokens" => 30,
+            },
+          },
+        ),
+      )
+
+    response =
+      described_class.new(bot_opts).get_response([{ role: "user", content: "Help me" }], bot_opts)
+
+    expect(request[:prompt_cache_key]).to match(/\Adiscourse-chatbot:[0-9a-f]{40}\z/)
+    expect(request[:messages].first[:content]).not_to include("current date")
+    expect(request[:messages].last[:content]).to eq(
+      "The current date and time is 2026-08-16T12:00:00+00:00.",
+    )
+    expect(request).to include(tool_choice: "none")
+    expect(request[:tools]).to be_present
+    expect(response).to include(cached_tokens: 120, cache_write_tokens: 30)
+  end
+
+  it "uses an explicit stable-prefix breakpoint for GPT-5.6 Responses requests" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.6"
+    SiteSetting.chatbot_chain_of_thought_max_iterations = 1
+    DateTime.stubs(:current).returns("2026-08-16T12:00:00+00:00")
+    request = nil
+    bot_opts = {
+      type: ::DiscourseChatbot::MESSAGE,
+      topic_or_channel_id: 7,
+      thread_id: 9,
+      trust_level: "low",
+    }
+
+    responses_api
+      .expects(:create)
+      .with do |args|
+        request = args[:parameters]
+        true
+      end
+      .returns(
+        {
+          "status" => "completed",
+          "output" => [
+            { "type" => "message", "content" => [{ "type" => "output_text", "text" => "Done" }] },
+          ],
+          "usage" => {
+            "total_tokens" => 200,
+            "input_tokens_details" => {
+              "cached_tokens" => 150,
+              "cache_write_tokens" => 25,
+            },
+          },
+        },
+      )
+
+    response =
+      described_class.new(bot_opts).get_response([{ role: "user", content: "Help me" }], bot_opts)
+
+    stable_content = request.dig(:input, 0, :content, 0)
+    expect(request[:prompt_cache_key]).to match(/\Adiscourse-chatbot:[0-9a-f]{40}\z/)
+    expect(request[:prompt_cache_options]).to eq(mode: "implicit")
+    expect(stable_content[:prompt_cache_breakpoint]).to eq(mode: "explicit")
+    expect(request.dig(:input, -1, :content, 0, :text)).to eq(
+      "The current date and time is 2026-08-16T12:00:00+00:00.",
+    )
+    expect(request).to include(tool_choice: "none")
+    expect(request[:tools]).to be_present
+    expect(response).to include(cached_tokens: 150, cache_write_tokens: 25)
+  end
+
+  it "does not send OpenAI-specific cache parameters to a custom endpoint" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.6"
+    SiteSetting.chatbot_open_ai_model_custom_url_low_trust = "https://llm.example.com/v1"
+    bot_opts = { type: ::DiscourseChatbot::POST, topic_or_channel_id: 42, trust_level: "low" }
+    bot = described_class.new(bot_opts)
+
+    parameters =
+      bot.responses_parameters(
+        [{ role: "developer", content: "Stable", prompt_cache_breakpoint: true }],
+      )
+
+    expect(parameters).not_to have_key(:prompt_cache_key)
+    expect(parameters).not_to have_key(:prompt_cache_options)
+    expect(parameters.dig(:input, 0, :content, 0)).to eq(type: "input_text", text: "Stable")
   end
 
   it "requires a tool during the first iteration when configured" do
@@ -771,8 +879,10 @@ describe ::DiscourseChatbot::Bot do
       ],
     )
     expect(requests.second[:max_completion_tokens]).to eq(96)
-    expect(requests.second).not_to have_key(:tools)
-    expect(requests.third).not_to have_key(:tools)
+    expect(requests.second).to include(tool_choice: "none")
+    expect(requests.second[:tools]).to be_present
+    expect(requests.third).to include(tool_choice: "none")
+    expect(requests.third[:tools]).to be_present
   end
 
   it "records when a review passes and retains the first answer" do
@@ -826,7 +936,8 @@ describe ::DiscourseChatbot::Bot do
         },
       ],
     )
-    expect(requests.second).not_to have_key(:tools)
+    expect(requests.second).to include(tool_choice: "none")
+    expect(requests.second[:tools]).to be_present
     expect(requests.third[:max_completion_tokens]).to eq(8)
     expect(requests.third[:messages].last[:content]).to include(
       JSON.generate(A: "Candidate A", B: "Candidate B"),
@@ -1092,8 +1203,10 @@ describe ::DiscourseChatbot::Bot do
     expect(response[:reply]).to eq("Candidate B")
     expect(requests.first).to have_key(:tools)
     expect(requests.second).to have_key(:tools)
-    expect(requests.third).not_to have_key(:tools)
-    expect(requests.fourth).not_to have_key(:tools)
+    expect(requests.third).to include(tool_choice: "none")
+    expect(requests.third[:tools]).to be_present
+    expect(requests.fourth).to include(tool_choice: "none")
+    expect(requests.fourth[:tools]).to be_present
     expect(response[:inner_thoughts]).to eq(
       [
         {
@@ -1535,7 +1648,8 @@ describe ::DiscourseChatbot::Bot do
 
     expect(response[:reply]).to eq("The answer is 4.")
     expect(requests.first).to have_key(:tools)
-    expect(requests.last).not_to have_key(:tools)
+    expect(requests.last).to include(tool_choice: "none")
+    expect(requests.last[:tools]).to eq(requests.first[:tools])
   end
 
   it "raises a non-retryable error after exhausting response iterations" do
@@ -1759,6 +1873,16 @@ describe ::DiscourseChatbot::Bot, "#merge_tools" do
     tool_mapping = rag.instance_variable_get(:@tool_mapping)
 
     expect(tool_mapping).to have_key("wikipedia")
+  end
+
+  it "orders extension tools by name" do
+    enable_tools.call
+    build_extension_tool.call("zeta")
+    build_extension_tool.call("alpha")
+
+    tool_definitions = described_class.new({}).instance_variable_get(:@tool_definitions)
+
+    expect(tool_definitions.map { |tool| tool["name"] }).to eq(%w[alpha zeta])
   end
 
   it "excludes tools that are not selected" do

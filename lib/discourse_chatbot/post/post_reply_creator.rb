@@ -72,7 +72,7 @@ module DiscourseChatbot
               res = bot.client.responses.create(parameters: bot.responses_parameters(messages))
               title = bot.responses_text(res)
             else
-              res = bot.client.chat(parameters: { model: bot.model_name, messages: messages })
+              res = bot.client.chat(parameters: bot.chat_completions_parameters(messages))
               title = res.dig("choices", 0, "message", "content")
             end
 

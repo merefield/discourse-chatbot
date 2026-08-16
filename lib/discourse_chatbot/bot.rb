@@ -13,7 +13,7 @@ module ::DiscourseChatbot
     class ChainLimitError < NonRetryableError
     end
 
-    attr_reader :client, :model_name, :total_tokens
+    attr_reader :cache_write_tokens, :cached_tokens, :client, :model_name, :total_tokens
 
     BUILT_IN_TOOL_CLASSES = %w[
       DiscourseChatbot::Tools::StockData
@@ -46,6 +46,8 @@ module ::DiscourseChatbot
       @client = @llm_client.client
       @model_name = @llm_client.model_name
       @total_tokens = 0
+      @cached_tokens = 0
+      @cache_write_tokens = 0
       @enabled_tool_names = configured_tool_names(opts[:trust_level])
       if tools
         merge_tools(opts)
@@ -89,6 +91,10 @@ module ::DiscourseChatbot
       )
     end
 
+    def chat_completions_parameters(messages)
+      @llm_client.chat_completions_parameters(messages)
+    end
+
     def responses_tools
       @llm_client.responses_tools(@tool_definitions)
     end
@@ -115,27 +121,19 @@ module ::DiscourseChatbot
 
     def get_response(prompt, opts)
       private_discussion = opts[:private] || false
+      system_message = {
+        role: "developer",
+        content: I18n.t("chatbot.prompt.system.rag.#{private_discussion ? "private" : "open"}"),
+      }
+      system_message[:prompt_cache_breakpoint] = true if @llm_client.explicit_prompt_caching?
+      prompt.unshift(system_message)
 
-      if private_discussion
-        system_message = {
-          role: "developer",
-          content: I18n.t("chatbot.prompt.system.rag.private", current_date_time: DateTime.current),
-        }
-
-        system_message_suffix = get_system_message_suffix(opts)
-        system_message[:content] += "  " + system_message_suffix if system_message_suffix.present?
-      else
-        system_message = {
-          role: "developer",
-          content: I18n.t("chatbot.prompt.system.rag.open", current_date_time: DateTime.current),
-        }
+      dynamic_system_message =
+        I18n.t("chatbot.prompt.system.rag.current_date_time", current_date_time: DateTime.current)
+      if private_discussion && (system_message_suffix = get_system_message_suffix(opts)).present?
+        dynamic_system_message += "  #{system_message_suffix}"
       end
-
-      if tool_enabled?("user_information")
-        prompt << system_message
-      else
-        prompt.unshift(system_message)
-      end
+      prompt << { role: "developer", content: dynamic_system_message }
 
       @initial_inner_thoughts = Array(opts[:initial_inner_thoughts]).deep_dup
       @inner_thoughts = []
@@ -153,6 +151,8 @@ module ::DiscourseChatbot
         reply: res["choices"][0]["message"]["content"],
         inner_thoughts: inner_thoughts,
         total_tokens: @total_tokens,
+        cached_tokens: @cached_tokens,
+        cache_write_tokens: @cache_write_tokens,
       }
     end
 
@@ -322,19 +322,21 @@ module ::DiscourseChatbot
         tools << ::DiscourseChatbot::Tools::StockData.new
       end
 
+      extension_tools = []
       ::DiscourseChatbot::Tool.descendants.each do |tool_class|
         next if BUILT_IN_TOOL_CLASSES.include?(tool_class.to_s)
 
         begin
           next if tool_class.respond_to?(:available?) && !tool_class.available?(opts)
 
-          tools << tool_class.new
+          extension_tools << tool_class.new
         rescue StandardError => error
           Rails.logger.warn(
             "Chatbot: unable to load extension tool #{tool_class}: #{error.class}: #{error.message}",
           )
         end
       end
+      tools.concat(extension_tools.sort_by(&:name))
 
       @tool_definitions = parse_tools(tools)
       @tools = @tool_definitions.map { |tool| { type: "function", function: tool } }.presence
@@ -379,9 +381,11 @@ module ::DiscourseChatbot
               include_reasoning_summary: SiteSetting.chatbot_open_ai_include_reasoning_summaries,
             )
 
-          if use_tools && @tools
+          if @tools
             parameters[:tools] = responses_tools
-            if iteration == 1
+            if !use_tools
+              parameters[:tool_choice] = "none"
+            elsif iteration == 1
               if FORCE_A_TOOL_VALUES.include?(SiteSetting.chatbot_tool_choice_first_iteration)
                 parameters[:tool_choice] = "required"
               elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_TOOL
@@ -391,26 +395,26 @@ module ::DiscourseChatbot
           end
 
           raw_response = @client.responses.create(parameters: parameters)
-          token_usage = raw_response.dig("usage", "total_tokens")
-          @total_tokens += token_usage.to_i
+          track_token_usage(raw_response["usage"])
           res = normalize_responses_response(raw_response)
         else
-          parameters = {
-            model: @model_name,
-            messages: messages,
-            temperature: SiteSetting.chatbot_request_temperature / 100.0,
-            top_p: SiteSetting.chatbot_request_top_p / 100.0,
-            frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-            presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
-          }
+          parameters =
+            chat_completions_parameters(messages).merge(
+              temperature: SiteSetting.chatbot_request_temperature / 100.0,
+              top_p: SiteSetting.chatbot_request_top_p / 100.0,
+              frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+              presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
+            )
           parameters.merge!(completion_token_limit_parameters)
           include_logprobs = uncertainty_guided_reasoning? if include_logprobs.nil?
           parameters[:logprobs] = true if include_logprobs && @logprobs_supported != false
           parameters.merge!(parameter_overrides)
 
-          if use_tools && @tools
+          if @tools
             parameters.merge!(tools: @tools)
-            if iteration == 1
+            if !use_tools
+              parameters[:tool_choice] = "none"
+            elsif iteration == 1
               if FORCE_A_TOOL_VALUES.include?(SiteSetting.chatbot_tool_choice_first_iteration)
                 parameters.merge!(tool_choice: "required")
               elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_TOOL
@@ -438,8 +442,7 @@ module ::DiscourseChatbot
             )
             res = @client.chat(parameters: parameters)
           end
-          token_usage = res.dig("usage", "total_tokens")
-          @total_tokens += token_usage.to_i
+          track_token_usage(res["usage"])
         end
 
         ::DiscourseChatbot.progress_debug_message <<~EOS
@@ -551,6 +554,21 @@ module ::DiscourseChatbot
 
         iteration += 1
       end
+    end
+
+    def track_token_usage(usage)
+      usage = usage.to_h.with_indifferent_access
+      @total_tokens += usage[:total_tokens].to_i
+      cache_details = usage[:input_tokens_details] || usage[:prompt_tokens_details] || {}
+      cache_details = cache_details.with_indifferent_access
+      cached_tokens = cache_details[:cached_tokens].to_i
+      cache_write_tokens = cache_details[:cache_write_tokens].to_i
+      @cached_tokens += cached_tokens
+      @cache_write_tokens += cache_write_tokens
+
+      ::DiscourseChatbot.progress_debug_message(
+        "Prompt cache usage: cached #{cached_tokens} tokens, wrote #{cache_write_tokens} tokens",
+      )
     end
 
     def apply_advanced_local_reasoning(res, messages, iteration, max_iterations)
