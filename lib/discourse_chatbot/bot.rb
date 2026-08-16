@@ -128,12 +128,19 @@ module ::DiscourseChatbot
       system_message[:prompt_cache_breakpoint] = true if @llm_client.explicit_prompt_caching?
       prompt.unshift(system_message)
 
-      dynamic_system_message =
-        I18n.t("chatbot.prompt.system.rag.current_date_time", current_date_time: DateTime.current)
-      if private_discussion && (system_message_suffix = get_system_message_suffix(opts)).present?
-        dynamic_system_message += "  #{system_message_suffix}"
+      dynamic_system_message_parts = []
+      if !tool_enabled?("calculate")
+        dynamic_system_message_parts << I18n.t(
+          "chatbot.prompt.system.rag.current_date",
+          current_date: Date.current.iso8601,
+        )
       end
-      prompt << { role: "developer", content: dynamic_system_message }
+      if private_discussion && (system_message_suffix = get_system_message_suffix(opts)).present?
+        dynamic_system_message_parts << system_message_suffix
+      end
+      if dynamic_system_message_parts.present?
+        prompt.insert(1, { role: "developer", content: dynamic_system_message_parts.join("  ") })
+      end
 
       @initial_inner_thoughts = Array(opts[:initial_inner_thoughts]).deep_dup
       @inner_thoughts = []

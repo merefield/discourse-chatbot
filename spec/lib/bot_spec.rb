@@ -91,8 +91,6 @@ describe ::DiscourseChatbot::Bot do
   end
 
   it "calls a tool on returning a tool request from LLN" do
-    DateTime.expects(:current).returns("2023-08-18T10:11:44+00:00")
-
     query = [{ role: "user", content: "merefield said what is 3 * 23.452432?" }]
 
     system_entry = {
@@ -100,15 +98,8 @@ describe ::DiscourseChatbot::Bot do
       content:
         "You are a helpful assistant. You have tools that give you the power to get newer information. Only use the tools you have been provided with. When referring to users by name, include an @ symbol directly in front of their username. Only respond to the last question, using the prior information as context, if appropriate.",
     }
-    date_entry = {
-      role: "developer",
-      content: "The current date and time is 2023-08-18T10:11:44+00:00.",
-    }
-
-    first_query =
-      get_chatbot_input_fixture("llm_first_query").unshift(system_entry).push(date_entry)
+    first_query = get_chatbot_input_fixture("llm_first_query").unshift(system_entry)
     second_query = get_chatbot_input_fixture("llm_second_query").unshift(system_entry)
-    second_query.insert(2, date_entry)
 
     described_class
       .any_instance
@@ -129,7 +120,6 @@ describe ::DiscourseChatbot::Bot do
   it "optimizes official Chat Completions requests for prompt caching" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
     SiteSetting.chatbot_chain_of_thought_max_iterations = 1
-    DateTime.stubs(:current).returns("2026-08-16T12:00:00+00:00")
     request = nil
     bot_opts = { type: ::DiscourseChatbot::POST, topic_or_channel_id: 42, trust_level: "low" }
 
@@ -154,9 +144,11 @@ describe ::DiscourseChatbot::Bot do
       described_class.new(bot_opts).get_response([{ role: "user", content: "Help me" }], bot_opts)
 
     expect(request[:prompt_cache_key]).to match(/\Adiscourse-chatbot:[0-9a-f]{40}\z/)
-    expect(request[:messages].first[:content]).not_to include("current date")
-    expect(request[:messages].last[:content]).to eq(
-      "The current date and time is 2026-08-16T12:00:00+00:00.",
+    expect(request[:messages]).to eq(
+      [
+        { role: "developer", content: I18n.t("chatbot.prompt.system.rag.open") },
+        { role: "user", content: "Help me" },
+      ],
     )
     expect(request).to include(tool_choice: "none")
     expect(request[:tools]).to be_present
@@ -166,7 +158,6 @@ describe ::DiscourseChatbot::Bot do
   it "uses an explicit stable-prefix breakpoint for GPT-5.6 Responses requests" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.6"
     SiteSetting.chatbot_chain_of_thought_max_iterations = 1
-    DateTime.stubs(:current).returns("2026-08-16T12:00:00+00:00")
     request = nil
     bot_opts = {
       type: ::DiscourseChatbot::MESSAGE,
@@ -204,12 +195,35 @@ describe ::DiscourseChatbot::Bot do
     expect(request[:prompt_cache_key]).to match(/\Adiscourse-chatbot:[0-9a-f]{40}\z/)
     expect(request[:prompt_cache_options]).to eq(mode: "implicit")
     expect(stable_content[:prompt_cache_breakpoint]).to eq(mode: "explicit")
-    expect(request.dig(:input, -1, :content, 0, :text)).to eq(
-      "The current date and time is 2026-08-16T12:00:00+00:00.",
-    )
+    expect(request.dig(:input, -1, :content, 0, :text)).to eq("Help me")
     expect(request).to include(tool_choice: "none")
     expect(request[:tools]).to be_present
     expect(response).to include(cached_tokens: 150, cache_write_tokens: 25)
+  end
+
+  it "places a date-only context before the conversation when calculate is unavailable" do
+    SiteSetting.chatbot_tools_low_trust = ""
+    Date.stubs(:current).returns(Date.new(2026, 8, 16))
+    request = nil
+
+    client
+      .expects(:chat)
+      .with do |args|
+        request = args[:parameters]
+        true
+      end
+      .returns(completion_response.call("Done"))
+
+    response = described_class.new({}).get_response([{ role: "user", content: "Help me" }], {})
+
+    expect(response[:reply]).to eq("Done")
+    expect(request[:messages]).to eq(
+      [
+        { role: "developer", content: I18n.t("chatbot.prompt.system.rag.open") },
+        { role: "developer", content: "The current date is 2026-08-16." },
+        { role: "user", content: "Help me" },
+      ],
+    )
   end
 
   it "does not send OpenAI-specific cache parameters to a custom endpoint" do
