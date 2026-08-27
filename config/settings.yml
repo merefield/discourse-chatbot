@@ -536,31 +536,21 @@ plugins:
   chatbot_blocked_question_examples:
     client: false
     type: objects
-    default:
-      - category: Politics
-        example_question: "Who should I vote for in the next election?"
-      - category: Politics
-        example_question: "Which political party has the best policies?"
-      - category: Politics
-        example_question: "What do you think of the current government?"
-      - category: Politics
-        example_question: "Do you support the current president or prime minister?"
-      - category: Politics
-        example_question: "Will the opposition win the next election?"
-      - category: Politics
-        example_question: "Which political candidate do you prefer?"
-      - category: Video Games
-        example_question: "What video game should I play next?"
-      - category: Video Games
-        example_question: "Which games console should I buy?"
-      - category: Video Games
-        example_question: "Is PlayStation better than Xbox?"
-      - category: Video Games
-        example_question: "How do I beat this boss in a video game?"
-      - category: Video Games
-        example_question: "What is the best character build for this game?"
-      - category: Video Games
-        example_question: "What do you think of the latest video game release?"
+    default: >-
+      [
+        {"category":"Politics","example_question":"Who should I vote for in the next election?"},
+        {"category":"Politics","example_question":"Which political party has the best policies?"},
+        {"category":"Politics","example_question":"What do you think of the current government?"},
+        {"category":"Politics","example_question":"Do you support the current president or prime minister?"},
+        {"category":"Politics","example_question":"Will the opposition win the next election?"},
+        {"category":"Politics","example_question":"Which political candidate do you prefer?"},
+        {"category":"Video Games","example_question":"What video game should I play next?"},
+        {"category":"Video Games","example_question":"Which games console should I buy?"},
+        {"category":"Video Games","example_question":"Is PlayStation better than Xbox?"},
+        {"category":"Video Games","example_question":"How do I beat this boss in a video game?"},
+        {"category":"Video Games","example_question":"What is the best character build for this game?"},
+        {"category":"Video Games","example_question":"What do you think of the latest video game release?"}
+      ]
     depends_on:
       - chatbot_blocked_questions_enabled
     depends_behavior: hidden

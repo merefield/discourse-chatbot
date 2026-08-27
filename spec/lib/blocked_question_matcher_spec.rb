@@ -5,9 +5,9 @@ require_relative "../plugin_helper"
 RSpec.describe ::DiscourseChatbot::BlockedQuestionMatcher do
   let(:client) { mock }
 
-  it "ships multiple default questions for each default category" do
-    examples = SiteSetting.defaults[:chatbot_blocked_question_examples]
-    examples = JSON.parse(examples) if examples.is_a?(String)
+  it "ships multiple default questions as valid JSON" do
+    SiteSetting.remove_override!(:chatbot_blocked_question_examples)
+    examples = JSON.parse(SiteSetting.settings_hash[:chatbot_blocked_question_examples])
 
     expect(examples.map { |example| example["category"] }.tally).to eq(
       "Politics" => 6,
