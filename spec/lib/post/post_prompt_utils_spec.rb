@@ -147,4 +147,16 @@ describe ::DiscourseChatbot::Post::PostPromptUtils do
 
     expect(prompt).to all(satisfy { |message| !message.key?(:name) })
   end
+
+  it "only enables PDF input for OpenAI-compatible language models" do
+    SiteSetting.chatbot_support_pdf = true
+
+    SiteSetting.chatbot_llm_provider = "open_ai"
+    expect(described_class.supports_pdf_input?).to eq(true)
+
+    %w[anthropic google_gemini x_ai].each do |provider|
+      SiteSetting.chatbot_llm_provider = provider
+      expect(described_class.supports_pdf_input?).to eq(false)
+    end
+  end
 end

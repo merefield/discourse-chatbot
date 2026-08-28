@@ -92,7 +92,7 @@ module DiscourseChatbot
         upload_refs = UploadReference.where(target_id: p.id, target_type: "Post")
         upload_refs.each do |uf|
           upload = Upload.find(uf.upload_id)
-          if upload.extension == "pdf" && SiteSetting.chatbot_support_pdf
+          if upload.extension == "pdf" && supports_pdf_input?
             role = "user"
             file_path = Discourse.store.path_for(upload)
             base64_encoded_data = Base64.strict_encode64(File.binread(file_path))

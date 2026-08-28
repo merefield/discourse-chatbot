@@ -65,14 +65,7 @@ module DiscourseChatbot
 
           aspect_ratio = resolved_aspect_ratio(args[parameters[1][:name]], last_image_upload)
           size = Paint.size_for(model_name, aspect_ratio)
-
-          options = {
-            model: model_name,
-            prompt: description,
-            size: size,
-            quality: "auto",
-            response_format: "b64_json",
-          }
+          options = edit_options(provider, model_name, description, aspect_ratio, size)
 
           file_path = Discourse.store.path_for(last_image_upload)
           extension = last_image_upload.extension
@@ -80,7 +73,7 @@ module DiscourseChatbot
 
           response =
             if provider == "x_ai"
-              x_ai_edit_response(options.except(:size, :quality), file_path, mime_type)
+              x_ai_edit_response(options, file_path, mime_type)
             else
               open_ai_edit_response(options, file_path, extension, mime_type)
             end
@@ -120,6 +113,21 @@ module DiscourseChatbot
       end
 
       private
+
+      def edit_options(provider, model_name, description, aspect_ratio, size)
+        options = { model: model_name, prompt: description }
+
+        if provider == "x_ai"
+          options.merge!(
+            aspect_ratio: Paint::X_AI_ASPECT_RATIOS.fetch(aspect_ratio),
+            response_format: "b64_json",
+          )
+        else
+          options.merge!(size: size, quality: "auto")
+        end
+
+        options
+      end
 
       def open_ai_edit_response(options, file_path, extension, mime_type)
         client =

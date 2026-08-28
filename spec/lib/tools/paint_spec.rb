@@ -56,6 +56,41 @@ describe ::DiscourseChatbot::Tools::Paint do
   end
 
   describe "provider request options" do
+    it "omits response_format for GPT Image models" do
+      options =
+        paint_tool.send(
+          :generation_options,
+          "open_ai",
+          "gpt-image-1.5",
+          "A lighthouse",
+          "landscape",
+          "1536x1024",
+        )
+
+      expect(options).to eq(
+        model: "gpt-image-1.5",
+        prompt: "A lighthouse",
+        n: 1,
+        size: "1536x1024",
+        quality: "auto",
+        moderation: "low",
+      )
+    end
+
+    it "requests base64 responses for DALL-E models" do
+      options =
+        paint_tool.send(
+          :generation_options,
+          "open_ai",
+          "dall-e-3",
+          "A lighthouse",
+          "landscape",
+          "1792x1024",
+        )
+
+      expect(options[:response_format]).to eq("b64_json")
+    end
+
     it "uses only Gemini-supported image generation parameters" do
       options =
         paint_tool.send(

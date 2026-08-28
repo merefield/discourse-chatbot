@@ -151,17 +151,21 @@ module DiscourseChatbot
       end
 
       def generation_options(provider, model_name, description, aspect_ratio, size)
-        options = { model: model_name, prompt: description, response_format: "b64_json", n: 1 }
+        options = { model: model_name, prompt: description, n: 1 }
 
         case provider
         when "open_ai"
           options.merge!(size: size, quality: model_name == "dall-e-3" ? "standard" : "auto")
+          options[:response_format] = "b64_json" unless gpt_image_model?(provider, model_name)
           options[:style] = "natural" if model_name == "dall-e-3"
           options[:moderation] = "low" if gpt_image_model?(provider, model_name)
         when "google_gemini"
-          options[:size] = size
+          options.merge!(size: size, response_format: "b64_json")
         when "x_ai"
-          options[:aspect_ratio] = X_AI_ASPECT_RATIOS.fetch(aspect_ratio)
+          options.merge!(
+            aspect_ratio: X_AI_ASPECT_RATIOS.fetch(aspect_ratio),
+            response_format: "b64_json",
+          )
         end
 
         options

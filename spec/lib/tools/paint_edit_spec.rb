@@ -27,6 +27,46 @@ describe ::DiscourseChatbot::Tools::PaintEdit do
     end
   end
 
+  describe "provider request options" do
+    it "omits response_format for OpenAI GPT Image edits" do
+      options =
+        paint_edit_tool.send(
+          :edit_options,
+          "open_ai",
+          "gpt-image-1.5",
+          "Make it blue",
+          "portrait",
+          "1024x1536",
+        )
+
+      expect(options).to eq(
+        model: "gpt-image-1.5",
+        prompt: "Make it blue",
+        size: "1024x1536",
+        quality: "auto",
+      )
+    end
+
+    it "maps xAI edit aspect ratios and requests base64 responses" do
+      options =
+        paint_edit_tool.send(
+          :edit_options,
+          "x_ai",
+          "grok-imagine-image-2.0",
+          "Make it blue",
+          "portrait",
+          "1024x1792",
+        )
+
+      expect(options).to eq(
+        model: "grok-imagine-image-2.0",
+        prompt: "Make it blue",
+        aspect_ratio: "9:16",
+        response_format: "b64_json",
+      )
+    end
+  end
+
   describe "xAI image editing" do
     it "uses xAI's JSON API with the shared xAI credential" do
       SiteSetting.chatbot_x_ai_token = "x-ai-image-token"
@@ -36,7 +76,8 @@ describe ::DiscourseChatbot::Tools::PaintEdit do
           .with do |http_request|
             body = JSON.parse(http_request.body)
             http_request.headers["Authorization"] == "Bearer x-ai-image-token" &&
-              body["model"] == "grok-imagine-image-2.0" &&
+              body["model"] == "grok-imagine-image-2.0" && body["aspect_ratio"] == "9:16" &&
+              body["response_format"] == "b64_json" &&
               body.dig("image", "url").start_with?("data:image/png;base64,")
           end
           .to_return(body: JSON.generate("data" => [{ "b64_json" => "image-data" }]))
@@ -49,7 +90,12 @@ describe ::DiscourseChatbot::Tools::PaintEdit do
       response =
         paint_edit_tool.send(
           :x_ai_edit_response,
-          { model: "grok-imagine-image-2.0", prompt: "Make it blue" },
+          {
+            model: "grok-imagine-image-2.0",
+            prompt: "Make it blue",
+            aspect_ratio: "9:16",
+            response_format: "b64_json",
+          },
           file.path,
           "image/png",
         )

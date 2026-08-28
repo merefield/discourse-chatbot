@@ -25,7 +25,7 @@ module DiscourseChatbot
 
             content << { type: "text", text: text }
             cm.uploads.each do |ul|
-              if ul.extension == "pdf" && SiteSetting.chatbot_support_pdf
+              if ul.extension == "pdf" && supports_pdf_input?
                 role = "user"
                 file_path = Discourse.store.path_for(ul)
                 base64_encoded_data = Base64.strict_encode64(File.binread(file_path))

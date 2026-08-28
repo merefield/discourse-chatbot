@@ -279,7 +279,7 @@ Select OpenAI, Anthropic, Google Gemini, or xAI with `chatbot_llm_provider`, the
 
 The language model is selected independently for low-, medium-, and high-trust users. Each trust level shows a model dropdown for the active provider and hides the other providers' dropdowns. The defaults are GPT-4.1 Mini, Claude Sonnet 5, Gemini 3.7 Flash, and Grok 4.6. Custom model settings override the active dropdown and custom URLs override the provider's default endpoint for the selected trust level. A custom endpoint must implement the selected provider's OpenAI-compatible API shape and receives that provider's key. Azure remains available through the custom OpenAI API settings.
 
-Embedding models and endpoints are configured separately and continue to use `chatbot_open_ai_token`. Anthropic does not provide an embedding API, and custom embedding providers must return 1,536-dimensional vectors to fit the existing embedding storage. Image generation and editing also continue to use the OpenAI key, independently of the selected chat provider.
+Embedding, vision, and image models are configured independently from the language model. Each capability uses the API key for its selected provider: `chatbot_open_ai_token`, `chatbot_anthropic_token`, `chatbot_google_gemini_token`, or `chatbot_x_ai_token`. Anthropic does not provide an embedding API, and custom embedding providers must return 1,536-dimensional vectors to fit the existing embedding storage.
 
 There is an automated part of the setup: upon addition to a Discourse, the plugin currently sets up an AI bot user with the following attributes
 
