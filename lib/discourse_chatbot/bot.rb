@@ -340,7 +340,7 @@ module ::DiscourseChatbot
       tools << ::DiscourseChatbot::Tools::Vision.new if tool_enabled?("vision")
       tools << ::DiscourseChatbot::Tools::Paint.new if tool_enabled?("paint_picture")
       if tool_enabled?("paint_edit_picture") &&
-           SiteSetting.chatbot_support_picture_creation_model.start_with?("gpt-image-")
+           ::DiscourseChatbot::Tools::Paint.image_edit_supported?
         tools << ::DiscourseChatbot::Tools::PaintEdit.new
       end
 

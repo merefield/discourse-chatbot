@@ -22,7 +22,18 @@ module DiscourseChatbot
           "landscape" => "1536x1024",
           "portrait" => "1024x1536",
         }.freeze,
+        "gemini-image" => {
+          "square" => "1024x1024",
+          "landscape" => "1536x1024",
+          "portrait" => "1024x1536",
+        }.freeze,
+        "grok-imagine" => {
+          "square" => "1024x1024",
+          "landscape" => "1792x1024",
+          "portrait" => "1024x1792",
+        }.freeze,
       }.freeze
+      X_AI_ASPECT_RATIOS = { "square" => "1:1", "landscape" => "16:9", "portrait" => "9:16" }.freeze
 
       def name
         "paint_picture"
@@ -60,40 +71,20 @@ module DiscourseChatbot
           description = args[parameters[0][:name]]
           aspect_ratio = self.class.normalized_aspect_ratio(args[parameters[1][:name]])
 
+          provider = SiteSetting.chatbot_image_provider
+          model_name = ::DiscourseChatbot.image_model_name
           client =
-            OpenAI::Client.new(
-              access_token: SiteSetting.chatbot_open_ai_token,
-              log_errors: SiteSetting.chatbot_enable_verbose_rails_logging != "off",
-            ) do |f|
-              if SiteSetting.chatbot_enable_verbose_console_logging
-                f.response :logger, Logger.new($stdout), bodies: true, headers: false
-              end
-              if SiteSetting.chatbot_enable_verbose_rails_logging != "off"
-                case SiteSetting.chatbot_verbose_rails_logging_destination_level
-                when "warn"
-                  f.response :logger, Rails.logger, bodies: true, headers: false, log_level: :warn
-                else
-                  f.response :logger, Rails.logger, bodies: true, headers: false, log_level: :info
-                end
-              end
-            end
+            ::DiscourseChatbot::LlmClient.build_client(
+              provider: provider,
+              custom_uri_base: SiteSetting.chatbot_image_model_custom_url,
+              azure:
+                provider == "open_ai" &&
+                  SiteSetting.chatbot_open_ai_model_custom_api_type == "azure",
+            )
 
-          size =
-            self.class.size_for(SiteSetting.chatbot_support_picture_creation_model, aspect_ratio)
-          quality =
-            SiteSetting.chatbot_support_picture_creation_model == "dall-e-3" ? "standard" : "auto"
+          size = self.class.size_for(model_name, aspect_ratio)
 
-          options = {
-            model: SiteSetting.chatbot_support_picture_creation_model,
-            prompt: description,
-            size: size,
-            quality: quality,
-          }
-
-          if SiteSetting.chatbot_support_picture_creation_model == "dall-e-3"
-            options.merge!(response_format: "b64_json", style: "natural")
-          end
-          options.merge!(moderation: "low") if gpt_image_model?
+          options = generation_options(provider, model_name, description, aspect_ratio, size)
 
           response = client.images.generate(parameters: options)
 
@@ -102,7 +93,14 @@ module DiscourseChatbot
             raise StandardError, error_text
           end
 
-          tokens_used = gpt_image_model? ? response.dig("usage", "total_tokens") : TOKEN_COST
+          tokens_used =
+            (
+              if gpt_image_model?(provider, model_name)
+                response.dig("usage", "total_tokens")
+              else
+                TOKEN_COST
+              end
+            )
 
           artifacts = response.dig("data").to_a.map { |art| art["b64_json"] }
 
@@ -152,8 +150,25 @@ module DiscourseChatbot
         end
       end
 
-      def gpt_image_model?
-        SiteSetting.chatbot_support_picture_creation_model.start_with?("gpt-image-")
+      def generation_options(provider, model_name, description, aspect_ratio, size)
+        options = { model: model_name, prompt: description, response_format: "b64_json", n: 1 }
+
+        case provider
+        when "open_ai"
+          options.merge!(size: size, quality: model_name == "dall-e-3" ? "standard" : "auto")
+          options[:style] = "natural" if model_name == "dall-e-3"
+          options[:moderation] = "low" if gpt_image_model?(provider, model_name)
+        when "google_gemini"
+          options[:size] = size
+        when "x_ai"
+          options[:aspect_ratio] = X_AI_ASPECT_RATIOS.fetch(aspect_ratio)
+        end
+
+        options
+      end
+
+      def gpt_image_model?(provider, model_name)
+        provider == "open_ai" && model_name.start_with?("gpt-image-")
       end
 
       class << self
@@ -163,7 +178,12 @@ module DiscourseChatbot
 
         def size_for(model_name, aspect_ratio)
           model_family = image_model_family(model_name)
-          SIZE_BY_MODEL_AND_ASPECT_RATIO[model_family][aspect_ratio]
+          sizes =
+            SIZE_BY_MODEL_AND_ASPECT_RATIO.fetch(
+              model_family,
+              SIZE_BY_MODEL_AND_ASPECT_RATIO["gpt-image"],
+            )
+          sizes.fetch(aspect_ratio)
         end
 
         def aspect_ratio_for_upload(upload)
@@ -183,10 +203,19 @@ module DiscourseChatbot
           "![#{description}|#{width}x#{height}](#{upload.short_url})"
         end
 
+        def image_edit_supported?
+          provider = SiteSetting.chatbot_image_provider
+          return true if provider == "x_ai"
+
+          provider == "open_ai" && ::DiscourseChatbot.image_model_name.start_with?("gpt-image-")
+        end
+
         private
 
         def image_model_family(model_name)
           return "gpt-image" if model_name.start_with?("gpt-image-")
+          return "gemini-image" if model_name.start_with?("gemini-")
+          return "grok-imagine" if model_name.start_with?("grok-imagine-")
 
           model_name
         end

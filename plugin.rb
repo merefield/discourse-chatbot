@@ -113,7 +113,38 @@ module ::DiscourseChatbot
 
   def embedding_model_name
     custom_name = SiteSetting.chatbot_open_ai_embeddings_model_custom_name.to_s.strip
-    custom_name.presence || SiteSetting.chatbot_open_ai_embeddings_model
+    return custom_name if custom_name.present?
+
+    setting =
+      if SiteSetting.chatbot_embeddings_provider == "google_gemini"
+        :chatbot_google_gemini_embeddings_model
+      else
+        :chatbot_open_ai_embeddings_model
+      end
+    SiteSetting.public_send(setting)
+  end
+
+  def vision_model_name
+    custom_name = SiteSetting.chatbot_vision_model_custom_name.to_s.strip
+    return custom_name if custom_name.present?
+
+    SiteSetting.public_send("chatbot_#{SiteSetting.chatbot_vision_provider}_vision_model")
+  end
+
+  def image_model_name
+    custom_name = SiteSetting.chatbot_image_model_custom_name.to_s.strip
+    return custom_name if custom_name.present?
+
+    setting =
+      case SiteSetting.chatbot_image_provider
+      when "google_gemini"
+        :chatbot_google_gemini_image_model
+      when "x_ai"
+        :chatbot_x_ai_image_model
+      else
+        :chatbot_support_picture_creation_model
+      end
+    SiteSetting.public_send(setting)
   end
 
   def progress_debug_message(message)
@@ -134,6 +165,8 @@ module ::DiscourseChatbot
   module_function :latest_chatbot_escalation_at
   module_function :chatbot_escalation_cooldown_elapsed?
   module_function :embedding_model_name
+  module_function :vision_model_name
+  module_function :image_model_name
   module_function :progress_debug_message
 end
 

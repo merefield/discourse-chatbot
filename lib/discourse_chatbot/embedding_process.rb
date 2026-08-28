@@ -3,20 +3,36 @@ require "openai"
 
 module ::DiscourseChatbot
   class EmbeddingProcess
-    def setup_api
-      config = {
-        access_token: SiteSetting.chatbot_open_ai_token,
-        uri_base:
-          SiteSetting.chatbot_open_ai_embeddings_model_custom_url.presence ||
-            OpenAI::Configuration::DEFAULT_URI_BASE,
-        log_errors: SiteSetting.chatbot_enable_verbose_rails_logging != "off",
-      }
-      if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
-        config[:api_type] = :azure
-        config[:api_version] = SiteSetting.chatbot_open_ai_model_custom_api_version
+    def self.request_parameters(input)
+      { model: ::DiscourseChatbot.embedding_model_name, input: input }
+    end
+
+    def self.client_config
+      ::DiscourseChatbot::LlmClient.client_config(
+        provider: SiteSetting.chatbot_embeddings_provider,
+        custom_uri_base: SiteSetting.chatbot_open_ai_embeddings_model_custom_url,
+        azure:
+          SiteSetting.chatbot_embeddings_provider == "open_ai" &&
+            SiteSetting.chatbot_open_ai_model_custom_api_type == "azure",
+      )
+    end
+
+    def self.build_client
+      if SiteSetting.chatbot_embeddings_provider == "google_gemini" &&
+           SiteSetting.chatbot_open_ai_embeddings_model_custom_url.blank?
+        return(
+          ::DiscourseChatbot::GeminiEmbeddingClient.new(
+            access_token: SiteSetting.chatbot_google_gemini_token,
+          )
+        )
       end
+
+      ::OpenAI::Client.new(client_config)
+    end
+
+    def setup_api
       @model_name = ::DiscourseChatbot.embedding_model_name
-      @client = ::OpenAI::Client.new(config)
+      @client = self.class.build_client
     end
 
     def upsert(id)
@@ -31,7 +47,7 @@ module ::DiscourseChatbot
       begin
         self.setup_api
 
-        response = @client.embeddings(parameters: { model: @model_name, input: text })
+        response = @client.embeddings(parameters: self.class.request_parameters(text))
 
         if response.dig("error")
           error_text = response.dig("error", "message")

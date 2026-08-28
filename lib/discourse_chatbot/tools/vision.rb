@@ -25,7 +25,7 @@ module DiscourseChatbot
         []
       end
 
-      def process(args, opts, client)
+      def process(args, opts, _chat_client)
         begin
           token_usage = 0
           super(args)
@@ -69,24 +69,17 @@ module DiscourseChatbot
           end
 
           if url.present?
-            res =
-              client.chat(
-                parameters: {
-                  model: SiteSetting.chatbot_open_ai_vision_model,
-                  messages: [
-                    {
-                      role: "user",
-                      content: [
-                        { type: "text", text: query },
-                        { type: "image_url", image_url: { url: url } },
-                      ],
-                    },
-                  ],
-                  max_tokens: 300,
-                },
+            provider = SiteSetting.chatbot_vision_provider
+            client =
+              ::DiscourseChatbot::LlmClient.build_client(
+                provider: provider,
+                custom_uri_base: SiteSetting.chatbot_vision_model_custom_url,
+                azure:
+                  provider == "open_ai" &&
+                    SiteSetting.chatbot_open_ai_model_custom_api_type == "azure",
               )
-
-            token_usage = res.dig("usage", "total_tokens")
+            res, description = vision_response(client, provider, query, url)
+            token_usage = res.dig("usage", "total_tokens") || 0
 
             if res.dig("error")
               error_text =
@@ -105,11 +98,7 @@ module DiscourseChatbot
           end
 
           {
-            answer:
-              I18n.t(
-                "chatbot.prompt.function.vision.answer",
-                description: res["choices"][0]["message"]["content"],
-              ),
+            answer: I18n.t("chatbot.prompt.function.vision.answer", description: description),
             token_usage: token_usage,
           }
         rescue => e
@@ -118,6 +107,53 @@ module DiscourseChatbot
             token_usage: token_usage,
           }
         end
+      end
+
+      private
+
+      def vision_response(client, provider, query, url)
+        if provider == "x_ai"
+          response =
+            client.responses.create(
+              parameters: {
+                model: ::DiscourseChatbot.vision_model_name,
+                input: [
+                  {
+                    role: "user",
+                    content: [
+                      { type: "input_image", image_url: url },
+                      { type: "input_text", text: query },
+                    ],
+                  },
+                ],
+                max_output_tokens: 300,
+              },
+            )
+          text =
+            Array(response["output"])
+              .flat_map { |output| Array(output["content"]) }
+              .filter_map { |content| content["text"] if content["type"] == "output_text" }
+              .join
+          return response, text
+        end
+
+        response =
+          client.chat(
+            parameters: {
+              model: ::DiscourseChatbot.vision_model_name,
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    { type: "text", text: query },
+                    { type: "image_url", image_url: { url: url } },
+                  ],
+                },
+              ],
+              max_tokens: 300,
+            },
+          )
+        [response, response.dig("choices", 0, "message", "content")]
       end
     end
   end

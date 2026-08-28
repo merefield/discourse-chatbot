@@ -10,46 +10,18 @@ plugins:
     client: false
     default: ''
     secret: true
-    depends_on:
-      - chatbot_llm_provider
-    depends_on_values:
-      chatbot_llm_provider:
-        - open_ai
-    depends_behavior: hidden
-    dependent_setting_display: inline
   chatbot_anthropic_token:
     client: false
     default: ''
     secret: true
-    depends_on:
-      - chatbot_llm_provider
-    depends_on_values:
-      chatbot_llm_provider:
-        - anthropic
-    depends_behavior: hidden
-    dependent_setting_display: inline
   chatbot_google_gemini_token:
     client: false
     default: ''
     secret: true
-    depends_on:
-      - chatbot_llm_provider
-    depends_on_values:
-      chatbot_llm_provider:
-        - google_gemini
-    depends_behavior: hidden
-    dependent_setting_display: inline
   chatbot_x_ai_token:
     client: false
     default: ''
     secret: true
-    depends_on:
-      - chatbot_llm_provider
-    depends_on_values:
-      chatbot_llm_provider:
-        - x_ai
-    depends_behavior: hidden
-    dependent_setting_display: inline
   chatbot_bot_user:
     client: true
     type: username
@@ -401,9 +373,21 @@ plugins:
       - high
       - xhigh
       - max
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+    depends_behavior: hidden
   chatbot_open_ai_include_reasoning_summaries:
     client: false
     default: true
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+    depends_behavior: hidden
   chatbot_open_ai_model_verbosity:
     client: false
     type: enum
@@ -412,6 +396,12 @@ plugins:
       - low
       - medium
       - high
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+    depends_behavior: hidden
   chatbot_open_ai_model_custom_api_type:
     client: false
     default: ''
@@ -445,21 +435,51 @@ plugins:
     default: 100
     min: 0
     max: 200
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+        - anthropic
+        - x_ai
+    depends_behavior: hidden
   chatbot_request_top_p:
     client: false
     default: 100
     min: 0
     max: 100
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+        - anthropic
+        - x_ai
+    depends_behavior: hidden
   chatbot_request_frequency_penalty:
     client: false
     default: 0
     min: -200
     max: 200
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+        - x_ai
+    depends_behavior: hidden
   chatbot_request_presence_penalty:
     client: false
     default: 0
     min: -200
     max: 200
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+        - x_ai
+    depends_behavior: hidden
   chatbot_max_response_tokens:
     client: false
     default: 200
@@ -489,6 +509,12 @@ plugins:
     client: false
     default: 25000
     min: 0
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+    depends_behavior: hidden
   chatbot_open_ai_max_chain_tokens:
     client: false
     default: 100000
@@ -515,6 +541,14 @@ plugins:
   chatbot_embeddings_enabled:
     default: false
     client: false
+  chatbot_embeddings_provider:
+    client: false
+    default: open_ai
+    enum: "DiscourseChatbot::EmbeddingProviderSiteSetting"
+    depends_on:
+      - chatbot_embeddings_enabled
+    depends_behavior: hidden
+    dependent_setting_display: inline
   chatbot_embeddings_strategy:
     default: benchmark_user
     client: false
@@ -557,15 +591,46 @@ plugins:
     choices:
       - text-embedding-ada-002
       - text-embedding-3-small
+    depends_on:
+      - chatbot_embeddings_enabled
+      - chatbot_embeddings_provider
+    depends_on_values:
+      chatbot_embeddings_provider:
+        - open_ai
+    depends_behavior: hidden
+  chatbot_google_gemini_embeddings_model:
+    client: false
+    type: enum
+    default: gemini-embedding-001
+    choices:
+      - gemini-embedding-2
+      - gemini-embedding-2-preview
+      - gemini-embedding-001
+    depends_on:
+      - chatbot_embeddings_enabled
+      - chatbot_embeddings_provider
+    depends_on_values:
+      chatbot_embeddings_provider:
+        - google_gemini
+    depends_behavior: hidden
   chatbot_open_ai_embeddings_model_custom_name:
     client: false
     default: ''
+    depends_on:
+      - chatbot_embeddings_enabled
+    depends_behavior: hidden
   chatbot_open_ai_embeddings_char_limit:
     client: false
     default: 11500
+    depends_on:
+      - chatbot_embeddings_enabled
+    depends_behavior: hidden
   chatbot_open_ai_embeddings_model_custom_url:
     client: false
     default: ''
+    depends_on:
+      - chatbot_embeddings_enabled
+    depends_behavior: hidden
   chatbot_forum_search_tool_max_results:
     client: false
     default: 10
@@ -779,6 +844,10 @@ plugins:
   chatbot_strip_quotes:
     default: true
     client: false
+  chatbot_vision_provider:
+    client: false
+    default: open_ai
+    enum: "DiscourseChatbot::VisionProviderSiteSetting"
   chatbot_open_ai_vision_model:
     client: false
     type: enum
@@ -804,9 +873,64 @@ plugins:
       - gpt-4.1
       - gpt-4.1-mini
       - gpt-4.1-nano
+    depends_on:
+      - chatbot_vision_provider
+    depends_on_values:
+      chatbot_vision_provider:
+        - open_ai
+    depends_behavior: hidden
+  chatbot_anthropic_vision_model:
+    client: false
+    type: enum
+    default: claude-sonnet-5
+    choices: *chatbot_anthropic_models
+    depends_on:
+      - chatbot_vision_provider
+    depends_on_values:
+      chatbot_vision_provider:
+        - anthropic
+    depends_behavior: hidden
+  chatbot_google_gemini_vision_model:
+    client: false
+    type: enum
+    default: gemini-3.7-flash
+    choices: *chatbot_google_gemini_models
+    depends_on:
+      - chatbot_vision_provider
+    depends_on_values:
+      chatbot_vision_provider:
+        - google_gemini
+    depends_behavior: hidden
+  chatbot_x_ai_vision_model:
+    client: false
+    type: enum
+    default: grok-4.6
+    choices: *chatbot_x_ai_models
+    depends_on:
+      - chatbot_vision_provider
+    depends_on_values:
+      chatbot_vision_provider:
+        - x_ai
+    depends_behavior: hidden
+  chatbot_vision_model_custom_name:
+    client: false
+    default: ''
+  chatbot_vision_model_custom_url:
+    client: false
+    default: ''
   chatbot_support_pdf:
     client: false
     default: false
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+    depends_behavior: hidden
+  chatbot_image_provider:
+    client: false
+    default: open_ai
+    enum: "DiscourseChatbot::ImageProviderSiteSetting"
   chatbot_support_picture_creation_model:
     client: false
     type: enum
@@ -817,6 +941,44 @@ plugins:
       - gpt-image-1-mini
       - gpt-image-1.5
       - gpt-image-2
+    depends_on:
+      - chatbot_image_provider
+    depends_on_values:
+      chatbot_image_provider:
+        - open_ai
+    depends_behavior: hidden
+  chatbot_google_gemini_image_model:
+    client: false
+    type: enum
+    default: gemini-2.5-flash-image
+    choices:
+      - gemini-3-pro-image-preview
+      - gemini-2.5-flash-image
+    depends_on:
+      - chatbot_image_provider
+    depends_on_values:
+      chatbot_image_provider:
+        - google_gemini
+    depends_behavior: hidden
+  chatbot_x_ai_image_model:
+    client: false
+    type: enum
+    default: grok-imagine-image-2.0
+    choices:
+      - grok-imagine-image-2.0
+      - grok-imagine-image-quality
+    depends_on:
+      - chatbot_image_provider
+    depends_on_values:
+      chatbot_image_provider:
+        - x_ai
+    depends_behavior: hidden
+  chatbot_image_model_custom_name:
+    client: false
+    default: ''
+  chatbot_image_model_custom_url:
+    client: false
+    default: ''
   chatbot_escalate_to_staff_groups:
     client: false
     type: group_list

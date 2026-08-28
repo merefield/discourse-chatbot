@@ -17,21 +17,12 @@ RSpec.describe SiteSetting do
   end
 
   it "serializes dependencies used to simplify the admin settings interface" do
-    {
-      chatbot_open_ai_token: "open_ai",
-      chatbot_anthropic_token: "anthropic",
-      chatbot_google_gemini_token: "google_gemini",
-      chatbot_x_ai_token: "x_ai",
-    }.each do |setting, provider|
-      expect(dependency_metadata.call(setting)).to eq(
-        depends_on: [:chatbot_llm_provider],
-        depends_on_values: {
-          chatbot_llm_provider: [provider],
-        },
-        depends_behavior: :hidden,
-        dependent_setting_display: "inline",
-      )
-    end
+    %i[
+      chatbot_open_ai_token
+      chatbot_anthropic_token
+      chatbot_google_gemini_token
+      chatbot_x_ai_token
+    ].each { |setting| expect(dependency_metadata.call(setting)).to eq(depends_on: []) }
 
     {
       open_ai: "chatbot_open_ai_model",
@@ -70,6 +61,41 @@ RSpec.describe SiteSetting do
       },
       depends_behavior: :hidden,
       dependent_setting_display: "inline",
+    )
+    expect(dependency_metadata.call(:chatbot_google_gemini_embeddings_model)).to eq(
+      depends_on: %i[chatbot_embeddings_enabled chatbot_embeddings_provider],
+      depends_on_values: {
+        chatbot_embeddings_provider: ["google_gemini"],
+      },
+      depends_behavior: :hidden,
+    )
+    expect(dependency_metadata.call(:chatbot_anthropic_vision_model)).to eq(
+      depends_on: [:chatbot_vision_provider],
+      depends_on_values: {
+        chatbot_vision_provider: ["anthropic"],
+      },
+      depends_behavior: :hidden,
+    )
+    expect(dependency_metadata.call(:chatbot_x_ai_image_model)).to eq(
+      depends_on: [:chatbot_image_provider],
+      depends_on_values: {
+        chatbot_image_provider: ["x_ai"],
+      },
+      depends_behavior: :hidden,
+    )
+    expect(dependency_metadata.call(:chatbot_request_frequency_penalty)).to eq(
+      depends_on: [:chatbot_llm_provider],
+      depends_on_values: {
+        chatbot_llm_provider: %w[open_ai x_ai],
+      },
+      depends_behavior: :hidden,
+    )
+    expect(dependency_metadata.call(:chatbot_open_ai_model_reasoning_level)).to eq(
+      depends_on: [:chatbot_llm_provider],
+      depends_on_values: {
+        chatbot_llm_provider: ["open_ai"],
+      },
+      depends_behavior: :hidden,
     )
     expect(dependency_metadata.call(:chatbot_permitted_categories)).to eq(
       depends_on: [:chatbot_permitted_all_categories],
@@ -131,9 +157,15 @@ RSpec.describe SiteSetting do
 
   it "selects the core tools by default at every trust level" do
     expected_tools = %w[calculate remaining_bot_quota local_forum_search]
+    configured_settings =
+      YAML.safe_load_file(
+        File.expand_path("../../config/settings.yml", __dir__),
+        aliases: true,
+      ).fetch("plugins")
 
     ::DiscourseChatbot::TRUST_LEVELS.each do |trust_level|
-      default_tools = SiteSetting.defaults["chatbot_tools_#{trust_level}_trust"].split("|")
+      default_tools =
+        configured_settings.fetch("chatbot_tools_#{trust_level}_trust").fetch("default").split("|")
 
       expect(default_tools).to include(*expected_tools)
     end
@@ -187,5 +219,15 @@ RSpec.describe SiteSetting do
       ],
     )
     expect(provider_setting[:translate_names]).to eq(true)
+
+    expect(settings.fetch(:chatbot_embeddings_provider)[:valid_values].pluck(:value)).to eq(
+      %w[open_ai google_gemini],
+    )
+    expect(settings.fetch(:chatbot_vision_provider)[:valid_values].pluck(:value)).to eq(
+      %w[open_ai anthropic google_gemini x_ai],
+    )
+    expect(settings.fetch(:chatbot_image_provider)[:valid_values].pluck(:value)).to eq(
+      %w[open_ai google_gemini x_ai],
+    )
   end
 end

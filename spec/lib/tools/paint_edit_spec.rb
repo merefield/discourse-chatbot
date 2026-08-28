@@ -26,4 +26,38 @@ describe ::DiscourseChatbot::Tools::PaintEdit do
       expect(paint_edit_tool.send(:resolved_aspect_ratio, "landscape", upload)).to eq("landscape")
     end
   end
+
+  describe "xAI image editing" do
+    it "uses xAI's JSON API with the shared xAI credential" do
+      SiteSetting.chatbot_x_ai_token = "x-ai-image-token"
+      SiteSetting.chatbot_image_model_custom_url = "https://images.example.com/v1/"
+      request =
+        stub_request(:post, "https://images.example.com/v1/images/edits")
+          .with do |http_request|
+            body = JSON.parse(http_request.body)
+            http_request.headers["Authorization"] == "Bearer x-ai-image-token" &&
+              body["model"] == "grok-imagine-image-2.0" &&
+              body.dig("image", "url").start_with?("data:image/png;base64,")
+          end
+          .to_return(body: JSON.generate("data" => [{ "b64_json" => "image-data" }]))
+
+      file = Tempfile.new(%w[image .png])
+      file.binmode
+      file.write("png-data")
+      file.close
+
+      response =
+        paint_edit_tool.send(
+          :x_ai_edit_response,
+          { model: "grok-imagine-image-2.0", prompt: "Make it blue" },
+          file.path,
+          "image/png",
+        )
+
+      expect(request).to have_been_requested
+      expect(response.dig("data", 0, "b64_json")).to eq("image-data")
+    ensure
+      file&.unlink
+    end
+  end
 end

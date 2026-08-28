@@ -32,6 +32,41 @@ module DiscourseChatbot
 
     attr_reader :client, :model_name, :provider
 
+    class << self
+      def client_config(provider:, custom_uri_base: nil, azure: false)
+        provider_config = PROVIDERS.fetch(provider)
+        config = {
+          access_token: SiteSetting.public_send(provider_config[:token_setting]),
+          uri_base: custom_uri_base.presence || provider_config[:uri_base],
+          log_errors: SiteSetting.chatbot_enable_verbose_rails_logging != "off",
+        }
+        if provider == "open_ai" && azure
+          config[:api_type] = :azure
+          config[:api_version] = SiteSetting.chatbot_open_ai_model_custom_api_version
+        end
+        config
+      end
+
+      def build_client(provider:, custom_uri_base: nil, azure: false)
+        OpenAI::Client.new(
+          client_config(provider: provider, custom_uri_base: custom_uri_base, azure: azure),
+        ) { |faraday| add_logging_middleware(faraday) }
+      end
+
+      private
+
+      def add_logging_middleware(faraday)
+        if SiteSetting.chatbot_enable_verbose_console_logging
+          faraday.response :logger, Logger.new($stdout), bodies: true, headers: false
+        end
+        return if SiteSetting.chatbot_enable_verbose_rails_logging == "off"
+
+        level =
+          SiteSetting.chatbot_verbose_rails_logging_destination_level == "warn" ? :warn : :info
+        faraday.response :logger, Rails.logger, bodies: true, headers: false, log_level: level
+      end
+    end
+
     def initialize(opts)
       @provider = SiteSetting.chatbot_llm_provider
       custom_api_url = custom_uri_base(opts).presence
@@ -40,19 +75,11 @@ module DiscourseChatbot
           SiteSetting.chatbot_open_ai_model_custom_api_type != "azure"
 
       @client =
-        OpenAI::Client.new(client_config(custom_api_url)) do |f|
-          if SiteSetting.chatbot_enable_verbose_console_logging
-            f.response :logger, Logger.new($stdout), bodies: true, headers: false
-          end
-          if SiteSetting.chatbot_enable_verbose_rails_logging != "off"
-            case SiteSetting.chatbot_verbose_rails_logging_destination_level
-            when "warn"
-              f.response :logger, Rails.logger, bodies: true, headers: false, log_level: :warn
-            else
-              f.response :logger, Rails.logger, bodies: true, headers: false, log_level: :info
-            end
-          end
-        end
+        self.class.build_client(
+          provider: provider,
+          custom_uri_base: custom_api_url,
+          azure: SiteSetting.chatbot_open_ai_model_custom_api_type == "azure",
+        )
 
       @model_name = get_model(opts)
       @model_reasoning_level = SiteSetting.chatbot_open_ai_model_reasoning_level
@@ -319,21 +346,6 @@ module DiscourseChatbot
     end
 
     private
-
-    def client_config(custom_api_url)
-      config = {
-        access_token: SiteSetting.public_send(PROVIDERS.fetch(provider)[:token_setting]),
-        uri_base: custom_api_url || PROVIDERS.fetch(provider)[:uri_base],
-        log_errors: SiteSetting.chatbot_enable_verbose_rails_logging != "off",
-      }
-
-      if provider == "open_ai" && SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
-        config[:api_type] = :azure
-        config[:api_version] = SiteSetting.chatbot_open_ai_model_custom_api_version
-      end
-
-      config
-    end
 
     def normalized_trust_level(trust_level)
       TRUST_LEVELS.include?(trust_level) ? trust_level : TRUST_LEVELS.first
