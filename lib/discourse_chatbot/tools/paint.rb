@@ -61,16 +61,19 @@ module DiscourseChatbot
           aspect_ratio = self.class.normalized_aspect_ratio(args[parameters[1][:name]])
 
           client =
-            OpenAI::Client.new do |f|
+            OpenAI::Client.new(
+              access_token: SiteSetting.chatbot_open_ai_token,
+              log_errors: SiteSetting.chatbot_enable_verbose_rails_logging != "off",
+            ) do |f|
               if SiteSetting.chatbot_enable_verbose_console_logging
-                f.response :logger, Logger.new($stdout), bodies: true
+                f.response :logger, Logger.new($stdout), bodies: true, headers: false
               end
               if SiteSetting.chatbot_enable_verbose_rails_logging != "off"
                 case SiteSetting.chatbot_verbose_rails_logging_destination_level
                 when "warn"
-                  f.response :logger, Rails.logger, bodies: true, log_level: :warn
+                  f.response :logger, Rails.logger, bodies: true, headers: false, log_level: :warn
                 else
-                  f.response :logger, Rails.logger, bodies: true, log_level: :info
+                  f.response :logger, Rails.logger, bodies: true, headers: false, log_level: :info
                 end
               end
             end

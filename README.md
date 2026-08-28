@@ -27,8 +27,7 @@ Our kind sponsors of this project:
 * PDF input support can be enabled with `chatbot_support_pdf`.
 * Uses the tool-calling capability of cutting-edge, industry-leading large language models through the OpenAI-compatible API.
 * Includes a special quota system to manage access to the bot: more trusted and/or paying members can have greater access to the bot!
-* Also supports Azure and proxy server connections
-  * Use third party proxy processes to translate the calls to support alternative LLMs like Gemini e.g. [this one](https://github.com/PublicAffairs/openai-gemini)
+* Supports OpenAI, Anthropic, Google Gemini, and xAI, plus Azure and OpenAI-compatible proxy connections.
 
 <sup>*sign-up for external (not affiliated) API services required. Links in settings.
 
@@ -57,8 +56,8 @@ You can see that this setup is a compromise.  In order to make the bot useful it
 
 # FYI's
 
-* OpenAI API responses can be slower for higher-capability and reasoning models. Choose the model for each trust level based on the quality, latency, and cost your community needs.
-* Chatbot natively supports OpenAI and OpenAI-compatible endpoints, including custom model names and URLs for each trust level. Proxy servers can provide access to other model providers without changing Chatbot code.
+* LLM API responses can be slower for higher-capability and reasoning models. Choose the model for each trust level based on the quality, latency, and cost your community needs.
+* Chatbot natively supports OpenAI, Anthropic, Google Gemini, and xAI through their OpenAI-compatible endpoints, including custom model names and URLs for each trust level. Proxy servers can provide access to other compatible services without changing Chatbot code.
 * Is extensible to support the searching of other content beyond just the current set provided.
 
 # Setup
@@ -274,9 +273,13 @@ Chatbot cannot directly control provider response time. Higher-capability models
 
 For Chatbot to work in Chat you must have Chat enabled.
 
-## OpenAI
+## LLM provider
 
-You must configure `chatbot_open_ai_token` with an [OpenAI API key](https://platform.openai.com/api-keys), or a token accepted by your OpenAI-compatible endpoint. The language model is selected independently for low-, medium-, and high-trust users. The built-in choices include current GPT-5 families and GPT-4.1 models; custom model settings allow other compatible model names and URLs.
+Select OpenAI, Anthropic, Google Gemini, or xAI with `chatbot_llm_provider`, then configure its API key in the provider-specific token setting shown below it. Existing OpenAI keys remain in `chatbot_open_ai_token`; the other providers use `chatbot_anthropic_token`, `chatbot_google_gemini_token`, and `chatbot_x_ai_token`. Each provider uses its official OpenAI-compatible endpoint.
+
+The language model is selected independently for low-, medium-, and high-trust users. Each trust level shows a model dropdown for the active provider and hides the other providers' dropdowns. The defaults are GPT-4.1 Mini, Claude Sonnet 5, Gemini 3.7 Flash, and Grok 4.6. Custom model settings override the active dropdown and custom URLs override the provider's default endpoint for the selected trust level. A custom endpoint must implement the selected provider's OpenAI-compatible API shape and receives that provider's key. Azure remains available through the custom OpenAI API settings.
+
+Embedding models and endpoints are configured separately and continue to use `chatbot_open_ai_token`. Anthropic does not provide an embedding API, and custom embedding providers must return 1,536-dimensional vectors to fit the existing embedding storage. Image generation and editing also continue to use the OpenAI key, independently of the selected chat provider.
 
 There is an automated part of the setup: upon addition to a Discourse, the plugin currently sets up an AI bot user with the following attributes
 

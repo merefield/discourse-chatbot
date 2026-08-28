@@ -4,20 +4,19 @@ require "openai"
 module ::DiscourseChatbot
   class EmbeddingProcess
     def setup_api
-      ::OpenAI.configure { |config| config.access_token = SiteSetting.chatbot_open_ai_token }
-      if SiteSetting.chatbot_open_ai_embeddings_model_custom_url.present?
-        ::OpenAI.configure do |config|
-          config.uri_base = SiteSetting.chatbot_open_ai_embeddings_model_custom_url
-        end
-      end
+      config = {
+        access_token: SiteSetting.chatbot_open_ai_token,
+        uri_base:
+          SiteSetting.chatbot_open_ai_embeddings_model_custom_url.presence ||
+            OpenAI::Configuration::DEFAULT_URI_BASE,
+        log_errors: SiteSetting.chatbot_enable_verbose_rails_logging != "off",
+      }
       if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
-        ::OpenAI.configure do |config|
-          config.api_type = :azure
-          config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
-        end
+        config[:api_type] = :azure
+        config[:api_version] = SiteSetting.chatbot_open_ai_model_custom_api_version
       end
       @model_name = ::DiscourseChatbot.embedding_model_name
-      @client = ::OpenAI::Client.new
+      @client = ::OpenAI::Client.new(config)
     end
 
     def upsert(id)

@@ -4,10 +4,15 @@ require_relative "../plugin_helper"
 
 RSpec.describe ::DiscourseChatbot::EmbeddingProcess do
   it "uses a custom embedding model name in preference to the model selector" do
+    SiteSetting.chatbot_llm_provider = "google_gemini"
+    SiteSetting.chatbot_open_ai_token = "embedding-token"
     SiteSetting.chatbot_open_ai_embeddings_model = "text-embedding-ada-002"
     SiteSetting.chatbot_open_ai_embeddings_model_custom_name = "provider-embedding-model"
     client = mock
-    OpenAI::Client.stubs(:new).returns(client)
+    OpenAI::Client
+      .expects(:new)
+      .with { |config| config[:access_token] == "embedding-token" }
+      .returns(client)
     client
       .expects(:embeddings)
       .with(parameters: { model: "provider-embedding-model", input: "A question to embed" })

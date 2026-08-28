@@ -17,6 +17,39 @@ RSpec.describe SiteSetting do
   end
 
   it "serializes dependencies used to simplify the admin settings interface" do
+    {
+      chatbot_open_ai_token: "open_ai",
+      chatbot_anthropic_token: "anthropic",
+      chatbot_google_gemini_token: "google_gemini",
+      chatbot_x_ai_token: "x_ai",
+    }.each do |setting, provider|
+      expect(dependency_metadata.call(setting)).to eq(
+        depends_on: [:chatbot_llm_provider],
+        depends_on_values: {
+          chatbot_llm_provider: [provider],
+        },
+        depends_behavior: :hidden,
+        dependent_setting_display: "inline",
+      )
+    end
+
+    {
+      open_ai: "chatbot_open_ai_model",
+      anthropic: "chatbot_anthropic_model",
+      google_gemini: "chatbot_google_gemini_model",
+      x_ai: "chatbot_x_ai_model",
+    }.each do |provider, setting_prefix|
+      ::DiscourseChatbot::TRUST_LEVELS.each do |trust_level|
+        expect(dependency_metadata.call("#{setting_prefix}_#{trust_level}_trust".to_sym)).to eq(
+          depends_on: [:chatbot_llm_provider],
+          depends_on_values: {
+            chatbot_llm_provider: [provider.to_s],
+          },
+          depends_behavior: :hidden,
+        )
+      end
+    end
+
     expect(dependency_metadata.call(:chatbot_open_ai_model_custom_name_high_trust)).to eq(
       depends_on: [:chatbot_open_ai_model_custom_high_trust],
       depends_behavior: :hidden,
@@ -96,5 +129,55 @@ RSpec.describe SiteSetting do
 
       expect(default_tools).to include(*expected_tools)
     end
+  end
+
+  it "lists current chat models for every provider" do
+    model_choices = lambda { |setting| settings.fetch(setting)[:valid_values].pluck(:value) }
+
+    expect(model_choices.call(:chatbot_open_ai_model_high_trust)).to include(
+      "gpt-5.6",
+      "gpt-4.1-mini",
+    )
+    expect(model_choices.call(:chatbot_anthropic_model_high_trust)).to eq(
+      %w[claude-fable-5 claude-opus-5 claude-sonnet-5 claude-haiku-4-5],
+    )
+    expect(model_choices.call(:chatbot_google_gemini_model_high_trust)).to eq(
+      %w[
+        gemini-3.7-flash
+        gemini-3.6-flash
+        gemini-3.5-flash
+        gemini-3.5-flash-lite
+        gemini-3.1-pro-preview
+        gemini-3.1-flash-lite
+        gemini-3-flash-preview
+        gemini-2.5-pro
+        gemini-2.5-flash
+        gemini-2.5-flash-lite
+      ],
+    )
+    expect(model_choices.call(:chatbot_x_ai_model_high_trust)).to eq(
+      %w[
+        grok-4.6
+        grok-4.5
+        grok-4.3
+        grok-build-0.1
+        grok-4.20-0309-reasoning
+        grok-4.20-0309-non-reasoning
+      ],
+    )
+  end
+
+  it "provides translated provider names" do
+    provider_setting = settings.fetch(:chatbot_llm_provider)
+
+    expect(provider_setting[:valid_values]).to eq(
+      [
+        { name: "chatbot.llm_provider.open_ai", value: "open_ai" },
+        { name: "chatbot.llm_provider.anthropic", value: "anthropic" },
+        { name: "chatbot.llm_provider.google_gemini", value: "google_gemini" },
+        { name: "chatbot.llm_provider.x_ai", value: "x_ai" },
+      ],
+    )
+    expect(provider_setting[:translate_names]).to eq(true)
   end
 end

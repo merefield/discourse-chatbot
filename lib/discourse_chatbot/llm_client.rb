@@ -4,38 +4,52 @@ require "openai"
 
 module DiscourseChatbot
   class LlmClient
+    PROVIDERS = {
+      "open_ai" => {
+        uri_base: OpenAI::Configuration::DEFAULT_URI_BASE,
+        token_setting: :chatbot_open_ai_token,
+        model_setting_prefix: "chatbot_open_ai_model",
+      },
+      "anthropic" => {
+        uri_base: "https://api.anthropic.com/v1/",
+        token_setting: :chatbot_anthropic_token,
+        model_setting_prefix: "chatbot_anthropic_model",
+      },
+      "google_gemini" => {
+        uri_base: "https://generativelanguage.googleapis.com/v1beta/openai/",
+        token_setting: :chatbot_google_gemini_token,
+        model_setting_prefix: "chatbot_google_gemini_model",
+      },
+      "x_ai" => {
+        uri_base: "https://api.x.ai/v1/",
+        token_setting: :chatbot_x_ai_token,
+        model_setting_prefix: "chatbot_x_ai_model",
+      },
+    }.freeze
+
     class ResponsesApiError < StandardError
     end
 
-    attr_reader :client, :model_name
+    attr_reader :client, :model_name, :provider
 
     def initialize(opts)
-      custom_api_url = custom_uri_base(opts)
+      @provider = SiteSetting.chatbot_llm_provider
+      custom_api_url = custom_uri_base(opts).presence
       @official_openai_endpoint =
-        custom_api_url.blank? && SiteSetting.chatbot_open_ai_model_custom_api_type != "azure"
-
-      ::OpenAI.configure do |config|
-        config.access_token = SiteSetting.chatbot_open_ai_token
-        config.uri_base = custom_api_url if custom_api_url.present?
-
-        if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
-          config.api_type = :azure
-          config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
-        end
-        config.log_errors = SiteSetting.chatbot_enable_verbose_rails_logging != "off"
-      end
+        provider == "open_ai" && custom_api_url.blank? &&
+          SiteSetting.chatbot_open_ai_model_custom_api_type != "azure"
 
       @client =
-        OpenAI::Client.new do |f|
+        OpenAI::Client.new(client_config(custom_api_url)) do |f|
           if SiteSetting.chatbot_enable_verbose_console_logging
-            f.response :logger, Logger.new($stdout), bodies: true
+            f.response :logger, Logger.new($stdout), bodies: true, headers: false
           end
           if SiteSetting.chatbot_enable_verbose_rails_logging != "off"
             case SiteSetting.chatbot_verbose_rails_logging_destination_level
             when "warn"
-              f.response :logger, Rails.logger, bodies: true, log_level: :warn
+              f.response :logger, Rails.logger, bodies: true, headers: false, log_level: :warn
             else
-              f.response :logger, Rails.logger, bodies: true, log_level: :info
+              f.response :logger, Rails.logger, bodies: true, headers: false, log_level: :info
             end
           end
         end
@@ -47,20 +61,13 @@ module DiscourseChatbot
     end
 
     def get_model(opts)
-      case opts[:trust_level]
-      when TRUST_LEVELS[0], TRUST_LEVELS[1], TRUST_LEVELS[2]
-        if SiteSetting.send("chatbot_open_ai_model_custom_" + opts[:trust_level] + "_trust")
-          SiteSetting.send("chatbot_open_ai_model_custom_name_" + opts[:trust_level] + "_trust")
-        else
-          SiteSetting.send("chatbot_open_ai_model_" + opts[:trust_level] + "_trust")
-        end
-      else
-        if SiteSetting.chatbot_open_ai_model_custom_low_trust
-          SiteSetting.chatbot_open_ai_model_custom_name_low_trust
-        else
-          SiteSetting.chatbot_open_ai_model_low_trust
-        end
+      trust_level = normalized_trust_level(opts[:trust_level])
+      if SiteSetting.send("chatbot_open_ai_model_custom_#{trust_level}_trust")
+        return SiteSetting.send("chatbot_open_ai_model_custom_name_#{trust_level}_trust")
       end
+
+      model_setting = "#{PROVIDERS.fetch(provider)[:model_setting_prefix]}_#{trust_level}_trust"
+      SiteSetting.public_send(model_setting)
     end
 
     def reasoning_model?
@@ -97,15 +104,38 @@ module DiscourseChatbot
       )
     end
 
+    def chat_completions_generation_parameters
+      parameters = {
+        temperature: SiteSetting.chatbot_request_temperature / 100.0,
+        top_p: SiteSetting.chatbot_request_top_p / 100.0,
+      }
+
+      if %w[open_ai x_ai].include?(provider)
+        parameters.merge!(
+          frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+          presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
+        )
+      end
+
+      parameters.clear if provider == "google_gemini"
+      parameters
+    end
+
     def explicit_prompt_caching?
       @official_openai_endpoint && @model_name.match?(/\Agpt-5\.6(?:-|\z)/)
     end
 
     def chat_completions_messages(messages)
+      messages =
+        messages.map do |message|
+          message = message.deep_symbolize_keys
+          message[:role] = "system" if provider == "google_gemini" && message[:role] == "developer"
+          message
+        end
+
       return messages if !explicit_prompt_caching?
 
       messages.map do |message|
-        message = message.deep_symbolize_keys
         next message.except(:prompt_cache_breakpoint) if !message[:prompt_cache_breakpoint]
 
         message.except(:prompt_cache_breakpoint).merge(
@@ -290,9 +320,27 @@ module DiscourseChatbot
 
     private
 
+    def client_config(custom_api_url)
+      config = {
+        access_token: SiteSetting.public_send(PROVIDERS.fetch(provider)[:token_setting]),
+        uri_base: custom_api_url || PROVIDERS.fetch(provider)[:uri_base],
+        log_errors: SiteSetting.chatbot_enable_verbose_rails_logging != "off",
+      }
+
+      if provider == "open_ai" && SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
+        config[:api_type] = :azure
+        config[:api_version] = SiteSetting.chatbot_open_ai_model_custom_api_version
+      end
+
+      config
+    end
+
+    def normalized_trust_level(trust_level)
+      TRUST_LEVELS.include?(trust_level) ? trust_level : TRUST_LEVELS.first
+    end
+
     def custom_uri_base(opts)
-      trust_level =
-        TRUST_LEVELS.include?(opts[:trust_level]) ? opts[:trust_level] : TRUST_LEVELS.first
+      trust_level = normalized_trust_level(opts[:trust_level])
       SiteSetting.send("chatbot_open_ai_model_custom_url_#{trust_level}_trust")
     end
 

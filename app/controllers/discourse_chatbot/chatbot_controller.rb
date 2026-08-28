@@ -49,10 +49,7 @@ module ::DiscourseChatbot
         else
           parameters =
             start_bot.chat_completions_parameters(messages).merge(
-              temperature: SiteSetting.chatbot_request_temperature / 100.0,
-              top_p: SiteSetting.chatbot_request_top_p / 100.0,
-              frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-              presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
+              start_bot.chat_completions_generation_parameters,
             )
           parameters.merge!(start_bot.completion_token_limit_parameters)
 
@@ -92,10 +89,7 @@ module ::DiscourseChatbot
         else
           parameters =
             start_bot.chat_completions_parameters(messages).merge(
-              temperature: SiteSetting.chatbot_request_temperature / 100.0,
-              top_p: SiteSetting.chatbot_request_top_p / 100.0,
-              frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-              presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
+              start_bot.chat_completions_generation_parameters,
             )
           parameters.merge!(start_bot.completion_token_limit_parameters)
           res = start_bot.client.chat(parameters: parameters)

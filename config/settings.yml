@@ -2,9 +2,54 @@ plugins:
   chatbot_enabled:
     default: true
     client: true
+  chatbot_llm_provider:
+    client: false
+    default: open_ai
+    enum: "DiscourseChatbot::LlmProviderSiteSetting"
   chatbot_open_ai_token:
     client: false
     default: ''
+    secret: true
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+    depends_behavior: hidden
+    dependent_setting_display: inline
+  chatbot_anthropic_token:
+    client: false
+    default: ''
+    secret: true
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - anthropic
+    depends_behavior: hidden
+    dependent_setting_display: inline
+  chatbot_google_gemini_token:
+    client: false
+    default: ''
+    secret: true
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - google_gemini
+    depends_behavior: hidden
+    dependent_setting_display: inline
+  chatbot_x_ai_token:
+    client: false
+    default: ''
+    secret: true
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - x_ai
+    depends_behavior: hidden
+    dependent_setting_display: inline
   chatbot_bot_user:
     client: true
     type: username
@@ -115,7 +160,7 @@ plugins:
     client: false
     type: enum
     default: gpt-4.1-mini
-    choices:
+    choices: &chatbot_open_ai_models
       - gpt-5.6
       - gpt-5.6-sol
       - gpt-5.6-terra
@@ -136,6 +181,65 @@ plugins:
       - gpt-4.1
       - gpt-4.1-mini
       - gpt-4.1-nano
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+    depends_behavior: hidden
+  chatbot_anthropic_model_high_trust:
+    client: false
+    type: enum
+    default: claude-sonnet-5
+    choices: &chatbot_anthropic_models
+      - claude-fable-5
+      - claude-opus-5
+      - claude-sonnet-5
+      - claude-haiku-4-5
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - anthropic
+    depends_behavior: hidden
+  chatbot_google_gemini_model_high_trust:
+    client: false
+    type: enum
+    default: gemini-3.7-flash
+    choices: &chatbot_google_gemini_models
+      - gemini-3.7-flash
+      - gemini-3.6-flash
+      - gemini-3.5-flash
+      - gemini-3.5-flash-lite
+      - gemini-3.1-pro-preview
+      - gemini-3.1-flash-lite
+      - gemini-3-flash-preview
+      - gemini-2.5-pro
+      - gemini-2.5-flash
+      - gemini-2.5-flash-lite
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - google_gemini
+    depends_behavior: hidden
+  chatbot_x_ai_model_high_trust:
+    client: false
+    type: enum
+    default: grok-4.6
+    choices: &chatbot_x_ai_models
+      - grok-4.6
+      - grok-4.5
+      - grok-4.3
+      - grok-build-0.1
+      - grok-4.20-0309-reasoning
+      - grok-4.20-0309-non-reasoning
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - x_ai
+    depends_behavior: hidden
   chatbot_open_ai_model_custom_high_trust:
     default: false
     client: false
@@ -160,27 +264,46 @@ plugins:
     client: false
     type: enum
     default: gpt-4.1-mini
-    choices:
-      - gpt-5.6
-      - gpt-5.6-sol
-      - gpt-5.6-terra
-      - gpt-5.6-luna
-      - gpt-5.5
-      - gpt-5.5-pro
-      - gpt-5.4
-      - gpt-5.4-pro
-      - gpt-5.4-mini
-      - gpt-5.4-nano
-      - gpt-5.2
-      - gpt-5.2-pro
-      - gpt-5.1
-      - gpt-5
-      - gpt-5-pro
-      - gpt-5-mini
-      - gpt-5-nano
-      - gpt-4.1
-      - gpt-4.1-mini
-      - gpt-4.1-nano
+    choices: *chatbot_open_ai_models
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+    depends_behavior: hidden
+  chatbot_anthropic_model_medium_trust:
+    client: false
+    type: enum
+    default: claude-sonnet-5
+    choices: *chatbot_anthropic_models
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - anthropic
+    depends_behavior: hidden
+  chatbot_google_gemini_model_medium_trust:
+    client: false
+    type: enum
+    default: gemini-3.7-flash
+    choices: *chatbot_google_gemini_models
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - google_gemini
+    depends_behavior: hidden
+  chatbot_x_ai_model_medium_trust:
+    client: false
+    type: enum
+    default: grok-4.6
+    choices: *chatbot_x_ai_models
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - x_ai
+    depends_behavior: hidden
   chatbot_open_ai_model_custom_medium_trust:
     default: false
     client: false
@@ -205,27 +328,46 @@ plugins:
     client: false
     type: enum
     default: gpt-4.1-mini
-    choices:
-      - gpt-5.6
-      - gpt-5.6-sol
-      - gpt-5.6-terra
-      - gpt-5.6-luna
-      - gpt-5.5
-      - gpt-5.5-pro
-      - gpt-5.4
-      - gpt-5.4-pro
-      - gpt-5.4-mini
-      - gpt-5.4-nano
-      - gpt-5.2
-      - gpt-5.2-pro
-      - gpt-5.1
-      - gpt-5
-      - gpt-5-pro
-      - gpt-5-mini
-      - gpt-5-nano
-      - gpt-4.1
-      - gpt-4.1-mini
-      - gpt-4.1-nano
+    choices: *chatbot_open_ai_models
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+    depends_behavior: hidden
+  chatbot_anthropic_model_low_trust:
+    client: false
+    type: enum
+    default: claude-sonnet-5
+    choices: *chatbot_anthropic_models
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - anthropic
+    depends_behavior: hidden
+  chatbot_google_gemini_model_low_trust:
+    client: false
+    type: enum
+    default: gemini-3.7-flash
+    choices: *chatbot_google_gemini_models
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - google_gemini
+    depends_behavior: hidden
+  chatbot_x_ai_model_low_trust:
+    client: false
+    type: enum
+    default: grok-4.6
+    choices: *chatbot_x_ai_models
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - x_ai
+    depends_behavior: hidden
   chatbot_open_ai_model_custom_low_trust:
     default: false
     client: false

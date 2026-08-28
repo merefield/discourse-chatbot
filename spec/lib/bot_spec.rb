@@ -964,6 +964,20 @@ describe ::DiscourseChatbot::Bot do
     expect(response[:inner_thoughts]).to be_empty
   end
 
+  it "preserves provider errors with array response bodies" do
+    SiteSetting.chatbot_llm_provider = "google_gemini"
+    error = RuntimeError.new("provider request failed")
+    error.stubs(:response).returns(
+      status: 400,
+      body: [{ "error" => { "message" => "Unsupported parameter" } }],
+    )
+    client.expects(:chat).raises(error)
+
+    expect { rag.get_response([{ role: "user", content: "Answer this" }], opts) }.to raise_error(
+      error,
+    )
+  end
+
   it "reviews and revises a Chat Completions answer" do
     SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
     SiteSetting.chatbot_advanced_local_reasoning = "verify_and_revise"
@@ -2109,6 +2123,17 @@ describe ::DiscourseChatbot::Bot, "#merge_tools" do
     tool_mapping = rag.instance_variable_get(:@tool_mapping)
 
     expect(tool_mapping).not_to have_key("paint_edit_picture")
+  end
+
+  it "keeps separately authenticated OpenAI image tools for another chat provider" do
+    enable_tools.call("paint_picture", "paint_edit_picture")
+    SiteSetting.chatbot_llm_provider = "google_gemini"
+    SiteSetting.chatbot_support_picture_creation_model = "gpt-image-1"
+
+    tool_mapping = described_class.new({}).instance_variable_get(:@tool_mapping)
+
+    expect(tool_mapping).to have_key("paint_picture")
+    expect(tool_mapping).to have_key("paint_edit_picture")
   end
 
   it "discovers external tools and honors their availability" do
