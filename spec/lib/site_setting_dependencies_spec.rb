@@ -63,6 +63,14 @@ RSpec.describe SiteSetting do
       depends_behavior: :hidden,
       dependent_setting_display: "inline",
     )
+    expect(dependency_metadata.call(:chatbot_api_supports_name_attribute)).to eq(
+      depends_on: [:chatbot_llm_provider],
+      depends_on_values: {
+        chatbot_llm_provider: ["open_ai"],
+      },
+      depends_behavior: :hidden,
+      dependent_setting_display: "inline",
+    )
     expect(dependency_metadata.call(:chatbot_permitted_categories)).to eq(
       depends_on: [:chatbot_permitted_all_categories],
       depends_on_values: {

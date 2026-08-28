@@ -14,7 +14,7 @@ module DiscourseChatbot
             role = (cm.user_id == bot_user_id ? "assistant" : "user")
             text =
               (
-                if SiteSetting.chatbot_api_supports_name_attribute || cm.user_id == bot_user_id
+                if use_name_attribute? || cm.user_id == bot_user_id
                   cm.message
                 else
                   I18n.t("chatbot.prompt.post", username: username, raw: cm.message)
@@ -39,7 +39,7 @@ module DiscourseChatbot
               end
             end
 
-            if SiteSetting.chatbot_api_supports_name_attribute
+            if use_name_attribute?
               { role: role, name: username, content: content }
             else
               { role: role, content: content }

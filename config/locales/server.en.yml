@@ -32,7 +32,7 @@ en:
     chatbot_open_ai_model_custom_url_high_trust: "Optional endpoint override for high-trust users. The endpoint must support the selected provider's OpenAI-compatible API shape and receives that provider's API key."
     chatbot_open_ai_model_custom_api_version: "Azure OpenAI REST API version used when {{setting:chatbot_open_ai_model_custom_api_type}} is <code>azure</code>. Refer to: <a target='_blank' rel='noopener' href='https://learn.microsoft.com/en-us/azure/ai-services/openai/reference'>Azure REST API reference</a>"
     chatbot_open_ai_model_custom_api_type: "Set to <code>azure</code> when {{setting:chatbot_llm_provider}} is OpenAI and a custom URL uses Azure OpenAI. Otherwise leave blank."
-    chatbot_api_supports_name_attribute: "Check to use API message prompt name attribute for usernames.  May not work for some locales and models.  Keep unchecked if unsure.  If checked may save a small amount of tokens."
+    chatbot_api_supports_name_attribute: "Use the OpenAI message <code>name</code> attribute for usernames when {{setting:chatbot_llm_provider}} is OpenAI. This may save a small number of tokens. Keep disabled for custom URLs unless the endpoint documents support for this attribute."
     chatbot_open_ai_vision_model: "OpenAI model used by the vision tool when it is selected in a trust-level tool setting."
     chatbot_support_pdf: "Support bot being able to read uploaded PDF documents in current conversation"
     chatbot_support_picture_creation_model: "Model used by the paint tools when selected in a trust-level tool setting. GPT Image models require a verified OpenAI account and support image editing."

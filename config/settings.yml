@@ -428,6 +428,13 @@ plugins:
   chatbot_api_supports_name_attribute:
     client: false
     default: false
+    depends_on:
+      - chatbot_llm_provider
+    depends_on_values:
+      chatbot_llm_provider:
+        - open_ai
+    depends_behavior: hidden
+    dependent_setting_display: inline
   chatbot_reply_job_time_delay:
     client: false
     default: 2
