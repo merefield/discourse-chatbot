@@ -6,7 +6,7 @@ module DiscourseChatbot
   class EmbeddingProviderSiteSetting < ::EnumSiteSetting
     def self.values
       @values ||=
-        %w[open_ai google_gemini].map do |provider|
+        %w[open_ai google_gemini x_ai].map do |provider|
           { name: "chatbot.llm_provider.#{provider}", value: provider }
         end
     end

@@ -56,7 +56,7 @@ module DiscourseChatbot
             },
           )
 
-        query_vector = response.dig("data", 0, "embedding")
+        query_vector = self.class.embedding_vector(response)
 
         begin
           threshold = SiteSetting.chatbot_forum_search_tool_similarity_threshold

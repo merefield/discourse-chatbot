@@ -611,6 +611,19 @@ plugins:
       chatbot_embeddings_provider:
         - google_gemini
     depends_behavior: hidden
+  chatbot_x_ai_embeddings_model:
+    client: false
+    type: enum
+    default: embed-latest
+    choices:
+      - embed-latest
+    depends_on:
+      - chatbot_embeddings_enabled
+      - chatbot_embeddings_provider
+    depends_on_values:
+      chatbot_embeddings_provider:
+        - x_ai
+    depends_behavior: hidden
   chatbot_open_ai_embeddings_model_custom_name:
     client: false
     default: ''

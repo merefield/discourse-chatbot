@@ -116,8 +116,11 @@ module ::DiscourseChatbot
     return custom_name if custom_name.present?
 
     setting =
-      if SiteSetting.chatbot_embeddings_provider == "google_gemini"
+      case SiteSetting.chatbot_embeddings_provider
+      when "google_gemini"
         :chatbot_google_gemini_embeddings_model
+      when "x_ai"
+        :chatbot_x_ai_embeddings_model
       else
         :chatbot_open_ai_embeddings_model
       end

@@ -69,6 +69,13 @@ RSpec.describe SiteSetting do
       },
       depends_behavior: :hidden,
     )
+    expect(dependency_metadata.call(:chatbot_x_ai_embeddings_model)).to eq(
+      depends_on: %i[chatbot_embeddings_enabled chatbot_embeddings_provider],
+      depends_on_values: {
+        chatbot_embeddings_provider: ["x_ai"],
+      },
+      depends_behavior: :hidden,
+    )
     expect(dependency_metadata.call(:chatbot_anthropic_vision_model)).to eq(
       depends_on: [:chatbot_vision_provider],
       depends_on_values: {
@@ -235,7 +242,7 @@ RSpec.describe SiteSetting do
     expect(provider_setting[:translate_names]).to eq(true)
 
     expect(settings.fetch(:chatbot_embeddings_provider)[:valid_values].pluck(:value)).to eq(
-      %w[open_ai google_gemini],
+      %w[open_ai google_gemini x_ai],
     )
     expect(settings.fetch(:chatbot_vision_provider)[:valid_values].pluck(:value)).to eq(
       %w[open_ai anthropic google_gemini x_ai],

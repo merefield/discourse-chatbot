@@ -3,6 +3,11 @@ require "openai"
 
 module ::DiscourseChatbot
   class EmbeddingProcess
+    EXPECTED_DIMENSIONS = 1536
+
+    class EmbeddingDimensionError < StandardError
+    end
+
     def self.request_parameters(input)
       { model: ::DiscourseChatbot.embedding_model_name, input: input }
     end
@@ -30,6 +35,15 @@ module ::DiscourseChatbot
       ::OpenAI::Client.new(client_config)
     end
 
+    def self.embedding_vector(response)
+      vector = response.dig("data", 0, "embedding")
+      actual_dimensions = vector.respond_to?(:length) ? vector.length : 0
+      return vector if actual_dimensions == EXPECTED_DIMENSIONS
+
+      raise EmbeddingDimensionError,
+            "Embedding provider returned #{actual_dimensions} dimensions; expected #{EXPECTED_DIMENSIONS}"
+    end
+
     def setup_api
       @model_name = ::DiscourseChatbot.embedding_model_name
       @client = self.class.build_client
@@ -55,12 +69,12 @@ module ::DiscourseChatbot
         end
       rescue StandardError => e
         Rails.logger.error(
-          "Chatbot: Error occurred while attempting to retrieve Embedding for post id '#{post_id}' in topic id '#{topic.id}': #{e.message}",
+          "Chatbot: Error occurred while attempting to retrieve an embedding: #{e.message}",
         )
-        raise e
+        raise
       end
 
-      embedding_vector = response.dig("data", 0, "embedding")
+      self.class.embedding_vector(response)
     end
 
     def semantic_search(query)
