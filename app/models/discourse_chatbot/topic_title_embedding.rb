@@ -16,6 +16,7 @@ end
 #  topic_id   :integer          not null
 #  embedding  :vector(1536)     not null
 #  model      :string
+#  provider   :string           default("open_ai"), not null
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #

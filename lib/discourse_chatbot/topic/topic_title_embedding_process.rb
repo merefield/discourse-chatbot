@@ -13,6 +13,7 @@ module DiscourseChatbot
               {
                 topic_id: topic_id,
                 model: ::DiscourseChatbot.embedding_model_name,
+                provider: SiteSetting.chatbot_embeddings_provider,
                 embedding: "#{embedding_vector}",
               },
               on_duplicate: :update,
@@ -141,6 +142,7 @@ module DiscourseChatbot
         topic = ::Topic.find_by(id: topic_id)
         embedding_record = ::DiscourseChatbot::TopicTitleEmbedding.find_by(topic_id: topic_id)
         return false if !embedding_record.present?
+        return false if embedding_record.provider != SiteSetting.chatbot_embeddings_provider
         return false if embedding_record.model != ::DiscourseChatbot.embedding_model_name
         return false if topic.updated_at > embedding_record.updated_at
         true
