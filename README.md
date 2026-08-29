@@ -357,6 +357,13 @@ The language model is selected independently for low-, medium-, and high-trust u
 
 Leave a custom URL blank to use Chatbot's built-in official endpoint for the selected provider. Generation controls for temperature, top-p, frequency penalty, and presence penalty are shown only for OpenAI and xAI, whose supported API shapes accept them. `chatbot_api_supports_name_attribute` is OpenAI-only and should remain disabled for custom endpoints unless they explicitly document support. OpenAI reasoning and Responses API settings are hidden for the other providers.
 
+### Quick OpenAI example
+
+1. Create an [OpenAI API key](https://platform.openai.com/api-keys) and ensure API billing is enabled.
+2. Set `chatbot_llm_provider` to OpenAI and paste the key into `chatbot_open_ai_token`.
+3. Leave the custom URL blank, choose an OpenAI model for each trust level you intend to use, and add your test group to the matching Chatbot access setting.
+4. Mention the bot in an allowed Topic, Personal Message, or Chat to test it.
+
 ### Custom endpoints, proxies, Azure, and local models
 
 Custom names and URLs let Chatbot use services that implement one of the supported providers' API shapes. Select the provider shape the service emulates, enable the custom model for each applicable trust level, enter the exact model name, and set the custom URL. The provider-specific key for the selected shape is sent to that endpoint.
