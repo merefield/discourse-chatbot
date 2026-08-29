@@ -55,29 +55,22 @@ RSpec.describe DiscourseChatbot::Post::PostEmbeddingProcess do
   end
 
   describe "validity" do
-    it "checks if a post embedding is valid" do
+    it "requires the stored provider and model to match the current configuration" do
+      SiteSetting.chatbot_embeddings_provider = "open_ai"
       SiteSetting.chatbot_open_ai_embeddings_model = "text-embedding-ada-002"
-      freeze_time(3.days.ago)
       post = Fabricate(:post)
-      freeze_time(2.days.ago)
       post_embedding =
         ::DiscourseChatbot::PostEmbedding.create!(
           post_id: post.id,
           model: "text-embedding-3-small",
+          provider: "open_ai",
           embedding: "[#{(1..1536).to_a.join(",")}]",
         )
       expect(embedding_process.is_valid(post.id)).to eq(false)
-      freeze_time(1.day.ago)
-      post_embedding =
-        ::DiscourseChatbot::PostEmbedding.upsert(
-          {
-            post_id: post.id,
-            model: "text-embedding-ada-002",
-            embedding: "[#{(1..1536).to_a.join(",")}]",
-          },
-          on_duplicate: :update,
-          unique_by: :post_id,
-        )
+      post_embedding.update!(model: "text-embedding-ada-002", provider: "google_gemini")
+      expect(embedding_process.is_valid(post.id)).to eq(false)
+
+      post_embedding.update!(provider: "open_ai")
       expect(embedding_process.is_valid(post.id)).to eq(true)
     end
   end

@@ -13,7 +13,7 @@ module DiscourseChatbot
         first_post_role = first_post.user.id == bot_user_id ? "assistant" : "user"
         messages =
           (
-            if SiteSetting.chatbot_api_supports_name_attribute || first_post.user.id == bot_user_id
+            if use_name_attribute?
               [
                 {
                   role: first_post_role,
@@ -43,35 +43,23 @@ module DiscourseChatbot
                category_id: category_id,
                name: "chatbot_auto_response_additional_prompt",
              ).present?
-          special_prompt_message =
-            if (
-                 SiteSetting.chatbot_api_supports_name_attribute ||
-                   first_post.user.id == bot_user_id
-               )
-              {
-                role: first_post_role,
-                name: first_post.user.username,
-                content:
-                  CategoryCustomField.find_by(
-                    category_id: category_id,
-                    name: "chatbot_auto_response_additional_prompt",
-                  ).value,
-              }
+          additional_prompt =
+            CategoryCustomField.find_by(
+              category_id: category_id,
+              name: "chatbot_auto_response_additional_prompt",
+            ).value
+          content =
+            if use_name_attribute? || first_post.user.id == bot_user_id
+              additional_prompt
             else
-              {
-                role: first_post_role,
-                content:
-                  I18n.t(
-                    "chatbot.prompt.post",
-                    username: first_post.user.username,
-                    raw:
-                      CategoryCustomField.find_by(
-                        category_id: category_id,
-                        name: "chatbot_auto_response_additional_prompt",
-                      ).value,
-                  ),
-              }
+              I18n.t(
+                "chatbot.prompt.post",
+                username: first_post.user.username,
+                raw: additional_prompt,
+              )
             end
+          special_prompt_message = { role: first_post_role, content: content }
+          special_prompt_message[:name] = first_post.user.username if use_name_attribute?
           messages << special_prompt_message
         end
 
@@ -91,7 +79,7 @@ module DiscourseChatbot
 
         text =
           (
-            if SiteSetting.chatbot_api_supports_name_attribute || p.user_id == bot_user_id
+            if use_name_attribute? || p.user_id == bot_user_id
               post_content
             else
               I18n.t("chatbot.prompt.post", username: username, raw: post_content)
@@ -104,7 +92,7 @@ module DiscourseChatbot
         upload_refs = UploadReference.where(target_id: p.id, target_type: "Post")
         upload_refs.each do |uf|
           upload = Upload.find(uf.upload_id)
-          if upload.extension == "pdf" && SiteSetting.chatbot_support_pdf
+          if upload.extension == "pdf" && supports_pdf_input?
             role = "user"
             file_path = Discourse.store.path_for(upload)
             base64_encoded_data = Base64.strict_encode64(File.binread(file_path))
@@ -119,7 +107,7 @@ module DiscourseChatbot
           end
         end
 
-        if SiteSetting.chatbot_api_supports_name_attribute
+        if use_name_attribute?
           { role: role, name: username, content: content }
         else
           { role: role, content: content }

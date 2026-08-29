@@ -68,6 +68,39 @@ RSpec.describe Jobs::ChatbotReply do
     )
   end
 
+  it "replies immediately when the provider rejects the request permanently" do
+    post = PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
+    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
+    opts[:trust_level] = "low"
+    provider_error =
+      Faraday::BadRequestError.new(
+        "provider rejected request",
+        { status: 400, body: { error: { message: "unsupported parameter" } } },
+      )
+
+    ::DiscourseChatbot::Bot.any_instance.stubs(:ask).raises(provider_error)
+
+    described_class.new.execute(opts)
+
+    expect(pm_topic.posts.order(:post_number).last.raw).to eq(
+      I18n.t("chatbot.errors.provider_request"),
+    )
+  end
+
+  it "retries provider rate limits" do
+    post = PostCreator.create!(requester, topic_id: pm_topic.id, raw: "Hello @#{bot_user.username}")
+    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
+    opts[:trust_level] = "low"
+    provider_error = Faraday::TooManyRequestsError.new("provider rate limited", { status: 429 })
+
+    ::DiscourseChatbot::Bot.any_instance.stubs(:ask).raises(provider_error)
+
+    expect { described_class.new.execute(opts) }.to raise_error(
+      Faraday::TooManyRequestsError,
+      "provider rate limited",
+    )
+  end
+
   it "returns a blocked-question response with RAG inner thoughts and no quota or title cost" do
     SiteSetting.chatbot_blocked_questions_enabled = true
     SiteSetting.chatbot_blocked_question_examples = [

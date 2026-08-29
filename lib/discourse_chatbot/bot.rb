@@ -127,6 +127,10 @@ module ::DiscourseChatbot
       @llm_client.chat_completions_parameters(messages)
     end
 
+    def chat_completions_generation_parameters
+      @llm_client.chat_completions_generation_parameters
+    end
+
     def responses_tools
       @llm_client.responses_tools(@tool_definitions)
     end
@@ -336,7 +340,7 @@ module ::DiscourseChatbot
       tools << ::DiscourseChatbot::Tools::Vision.new if tool_enabled?("vision")
       tools << ::DiscourseChatbot::Tools::Paint.new if tool_enabled?("paint_picture")
       if tool_enabled?("paint_edit_picture") &&
-           SiteSetting.chatbot_support_picture_creation_model.start_with?("gpt-image-")
+           ::DiscourseChatbot::Tools::Paint.image_edit_supported?
         tools << ::DiscourseChatbot::Tools::PaintEdit.new
       end
 
@@ -439,12 +443,7 @@ module ::DiscourseChatbot
           res = normalize_responses_response(raw_response)
         else
           parameters =
-            chat_completions_parameters(messages).merge(
-              temperature: SiteSetting.chatbot_request_temperature / 100.0,
-              top_p: SiteSetting.chatbot_request_top_p / 100.0,
-              frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-              presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
-            )
+            chat_completions_parameters(messages).merge(chat_completions_generation_parameters)
           parameters.merge!(completion_token_limit_parameters)
           include_logprobs = uncertainty_guided_reasoning? if include_logprobs.nil?
           parameters[:logprobs] = true if include_logprobs && @logprobs_supported != false
@@ -495,7 +494,7 @@ module ::DiscourseChatbot
       rescue => e
         if e.respond_to?(:response)
           status = e.response[:status]
-          message = e.response[:body]["error"]["message"]
+          message = provider_error_message(e)
           Rails.logger.error(
             "Chatbot: There was a problem with Chat Completion: status: #{status}, message: #{message}",
           )
@@ -889,6 +888,14 @@ module ::DiscourseChatbot
         end
 
       [400, 422].include?(status.to_i) && message.to_s.match?(/logprobs?/i)
+    end
+
+    def provider_error_message(error)
+      body = error.response[:body] || error.response["body"]
+      body = body.first if body.is_a?(Array)
+      return error.message if !body.is_a?(Hash)
+
+      body.dig("error", "message") || body.dig(:error, :message) || error.message
     end
 
     def append_responses_output(res)

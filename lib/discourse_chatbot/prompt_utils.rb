@@ -9,6 +9,15 @@ module ::DiscourseChatbot
       raise "Overwrite me!"
     end
 
+    def self.use_name_attribute?
+      SiteSetting.chatbot_llm_provider == "open_ai" &&
+        SiteSetting.chatbot_api_supports_name_attribute
+    end
+
+    def self.supports_pdf_input?
+      SiteSetting.chatbot_llm_provider == "open_ai" && SiteSetting.chatbot_support_pdf
+    end
+
     private
 
     def self.resolve_full_url(url)

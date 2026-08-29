@@ -76,6 +76,7 @@ module ::DiscourseChatbot
     def cache_key(examples)
       configuration = {
         version: CACHE_VERSION,
+        provider: SiteSetting.chatbot_embeddings_provider,
         model: ::DiscourseChatbot.embedding_model_name,
         char_limit: SiteSetting.chatbot_open_ai_embeddings_char_limit,
         custom_url: SiteSetting.chatbot_open_ai_embeddings_model_custom_url,
@@ -93,10 +94,7 @@ module ::DiscourseChatbot
         .flat_map do |batch|
           response =
             client.embeddings(
-              parameters: {
-                model: ::DiscourseChatbot.embedding_model_name,
-                input: batch,
-              },
+              parameters: ::DiscourseChatbot::EmbeddingProcess.request_parameters(batch),
             )
 
           raise StandardError, response.dig("error", "message") if response["error"]
@@ -113,20 +111,7 @@ module ::DiscourseChatbot
     def client
       @client ||=
         begin
-          azure = SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
-          config = {
-            access_token: SiteSetting.chatbot_open_ai_token,
-            uri_base:
-              SiteSetting.chatbot_open_ai_embeddings_model_custom_url.presence ||
-                OpenAI::Configuration::DEFAULT_URI_BASE,
-            log_errors: SiteSetting.chatbot_enable_verbose_rails_logging != "off",
-          }
-          if azure
-            config[:api_type] = :azure
-            config[:api_version] = SiteSetting.chatbot_open_ai_model_custom_api_version
-          end
-
-          OpenAI::Client.new(config)
+          ::DiscourseChatbot::EmbeddingProcess.build_client
         end
     end
 

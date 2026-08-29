@@ -40,20 +40,8 @@ module DiscourseChatbot
 
           description = args[parameters[0][:name]]
 
-          client =
-            OpenAI::Client.new do |f|
-              if SiteSetting.chatbot_enable_verbose_console_logging
-                f.response :logger, Logger.new($stdout), bodies: true
-              end
-              if SiteSetting.chatbot_enable_verbose_rails_logging != "off"
-                case SiteSetting.chatbot_verbose_rails_logging_destination_level
-                when "warn"
-                  f.response :logger, Rails.logger, bodies: true, log_level: :warn
-                else
-                  f.response :logger, Rails.logger, bodies: true, log_level: :info
-                end
-              end
-            end
+          provider = SiteSetting.chatbot_image_provider
+          model_name = ::DiscourseChatbot.image_model_name
 
           type = opts[:type]
 
@@ -76,42 +64,26 @@ module DiscourseChatbot
           end
 
           aspect_ratio = resolved_aspect_ratio(args[parameters[1][:name]], last_image_upload)
-          size = Paint.size_for(SiteSetting.chatbot_support_picture_creation_model, aspect_ratio)
-          quality = "auto"
-
-          options = {
-            model: SiteSetting.chatbot_support_picture_creation_model,
-            prompt: description,
-            size: size,
-            quality: quality,
-          }
+          size = Paint.size_for(model_name, aspect_ratio)
+          options = edit_options(provider, model_name, description, aspect_ratio, size)
 
           file_path = Discourse.store.path_for(last_image_upload)
           extension = last_image_upload.extension
           mime_type = MiniMime.lookup_by_extension(extension).content_type
 
-          f = Tempfile.new(["e1_image", ".#{extension}"])
-          f.binmode
-          f.write(File.binread(file_path))
-          f.rewind
-
-          # Specify the file with MIME type
-          upload_io = Faraday::Multipart::FilePart.new(f, mime_type)
-
-          options[:image] = upload_io
-          begin
-            response = client.images.edit(parameters: options)
-          ensure
-            f.close
-            f.unlink
-          end
+          response =
+            if provider == "x_ai"
+              x_ai_edit_response(options, file_path, mime_type)
+            else
+              open_ai_edit_response(options, file_path, extension, mime_type)
+            end
 
           if response.dig("error")
             error_text = "ERROR when trying to call paint API: #{response.dig("error", "message")}"
             raise StandardError, error_text
           end
 
-          tokens_used = response.dig("usage", "total_tokens")
+          tokens_used = response.dig("usage", "total_tokens") || TOKEN_COST
 
           artifacts = response.dig("data").to_a.map { |art| art["b64_json"] }
 
@@ -141,6 +113,59 @@ module DiscourseChatbot
       end
 
       private
+
+      def edit_options(provider, model_name, description, aspect_ratio, size)
+        options = { model: model_name, prompt: description }
+
+        if provider == "x_ai"
+          options.merge!(
+            aspect_ratio: Paint::X_AI_ASPECT_RATIOS.fetch(aspect_ratio),
+            response_format: "b64_json",
+          )
+        else
+          options.merge!(size: size, quality: "auto")
+        end
+
+        options
+      end
+
+      def open_ai_edit_response(options, file_path, extension, mime_type)
+        client =
+          ::DiscourseChatbot::LlmClient.build_client(
+            provider: "open_ai",
+            custom_uri_base: SiteSetting.chatbot_image_model_custom_url,
+            azure: SiteSetting.chatbot_open_ai_model_custom_api_type == "azure",
+          )
+        file = Tempfile.new(["e1_image", ".#{extension}"])
+        file.binmode
+        file.write(File.binread(file_path))
+        file.rewind
+        options[:image] = Faraday::Multipart::FilePart.new(file, mime_type)
+        client.images.edit(parameters: options)
+      ensure
+        file&.close
+        file&.unlink
+      end
+
+      def x_ai_edit_response(options, file_path, mime_type)
+        config =
+          ::DiscourseChatbot::LlmClient.client_config(
+            provider: "x_ai",
+            custom_uri_base: SiteSetting.chatbot_image_model_custom_url,
+          )
+        endpoint = "#{config[:uri_base].delete_suffix("/")}/images/edits"
+        image_data = Base64.strict_encode64(File.binread(file_path))
+        parameters =
+          options.merge(image: { type: "image_url", url: "data:#{mime_type};base64,#{image_data}" })
+        response =
+          Faraday.post(endpoint) do |request|
+            request.headers["Authorization"] = "Bearer #{config[:access_token]}"
+            request.headers["Content-Type"] = "application/json"
+            request.body = JSON.generate(parameters)
+          end
+
+        JSON.parse(response.body)
+      end
 
       def base64_to_image(artifacts, description, user_id)
         attribution = description

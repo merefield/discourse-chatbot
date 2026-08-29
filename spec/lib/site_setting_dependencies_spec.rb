@@ -17,6 +17,30 @@ RSpec.describe SiteSetting do
   end
 
   it "serializes dependencies used to simplify the admin settings interface" do
+    %i[
+      chatbot_open_ai_token
+      chatbot_anthropic_token
+      chatbot_google_gemini_token
+      chatbot_x_ai_token
+    ].each { |setting| expect(dependency_metadata.call(setting)).to eq(depends_on: []) }
+
+    {
+      open_ai: "chatbot_open_ai_model",
+      anthropic: "chatbot_anthropic_model",
+      google_gemini: "chatbot_google_gemini_model",
+      x_ai: "chatbot_x_ai_model",
+    }.each do |provider, setting_prefix|
+      ::DiscourseChatbot::TRUST_LEVELS.each do |trust_level|
+        expect(dependency_metadata.call("#{setting_prefix}_#{trust_level}_trust".to_sym)).to eq(
+          depends_on: [:chatbot_llm_provider],
+          depends_on_values: {
+            chatbot_llm_provider: [provider.to_s],
+          },
+          depends_behavior: :hidden,
+        )
+      end
+    end
+
     expect(dependency_metadata.call(:chatbot_open_ai_model_custom_name_high_trust)).to eq(
       depends_on: [:chatbot_open_ai_model_custom_high_trust],
       depends_behavior: :hidden,
@@ -29,6 +53,63 @@ RSpec.describe SiteSetting do
       },
       depends_behavior: :hidden,
       dependent_setting_display: "inline",
+    )
+    expect(dependency_metadata.call(:chatbot_api_supports_name_attribute)).to eq(
+      depends_on: [:chatbot_llm_provider],
+      depends_on_values: {
+        chatbot_llm_provider: ["open_ai"],
+      },
+      depends_behavior: :hidden,
+      dependent_setting_display: "inline",
+    )
+    expect(dependency_metadata.call(:chatbot_google_gemini_embeddings_model)).to eq(
+      depends_on: %i[chatbot_embeddings_enabled chatbot_embeddings_provider],
+      depends_on_values: {
+        chatbot_embeddings_provider: ["google_gemini"],
+      },
+      depends_behavior: :hidden,
+    )
+    expect(dependency_metadata.call(:chatbot_x_ai_embeddings_model)).to eq(
+      depends_on: %i[chatbot_embeddings_enabled chatbot_embeddings_provider],
+      depends_on_values: {
+        chatbot_embeddings_provider: ["x_ai"],
+      },
+      depends_behavior: :hidden,
+    )
+    expect(dependency_metadata.call(:chatbot_anthropic_vision_model)).to eq(
+      depends_on: [:chatbot_vision_provider],
+      depends_on_values: {
+        chatbot_vision_provider: ["anthropic"],
+      },
+      depends_behavior: :hidden,
+    )
+    expect(dependency_metadata.call(:chatbot_x_ai_image_model)).to eq(
+      depends_on: [:chatbot_image_provider],
+      depends_on_values: {
+        chatbot_image_provider: ["x_ai"],
+      },
+      depends_behavior: :hidden,
+    )
+    %i[
+      chatbot_request_temperature
+      chatbot_request_top_p
+      chatbot_request_frequency_penalty
+      chatbot_request_presence_penalty
+    ].each do |setting|
+      expect(dependency_metadata.call(setting)).to eq(
+        depends_on: [:chatbot_llm_provider],
+        depends_on_values: {
+          chatbot_llm_provider: %w[open_ai x_ai],
+        },
+        depends_behavior: :hidden,
+      )
+    end
+    expect(dependency_metadata.call(:chatbot_open_ai_model_reasoning_level)).to eq(
+      depends_on: [:chatbot_llm_provider],
+      depends_on_values: {
+        chatbot_llm_provider: ["open_ai"],
+      },
+      depends_behavior: :hidden,
     )
     expect(dependency_metadata.call(:chatbot_permitted_categories)).to eq(
       depends_on: [:chatbot_permitted_all_categories],
@@ -90,11 +171,84 @@ RSpec.describe SiteSetting do
 
   it "selects the core tools by default at every trust level" do
     expected_tools = %w[calculate remaining_bot_quota local_forum_search]
+    configured_settings =
+      YAML.safe_load_file(
+        File.expand_path("../../config/settings.yml", __dir__),
+        aliases: true,
+      ).fetch("plugins")
 
     ::DiscourseChatbot::TRUST_LEVELS.each do |trust_level|
-      default_tools = SiteSetting.defaults["chatbot_tools_#{trust_level}_trust"].split("|")
+      default_tools =
+        configured_settings.fetch("chatbot_tools_#{trust_level}_trust").fetch("default").split("|")
 
       expect(default_tools).to include(*expected_tools)
     end
+  end
+
+  it "lists current chat models for every provider" do
+    model_choices = lambda { |setting| settings.fetch(setting)[:valid_values].pluck(:value) }
+
+    expect(model_choices.call(:chatbot_open_ai_model_high_trust)).to include(
+      "gpt-5.6",
+      "gpt-4.1-mini",
+    )
+    expect(model_choices.call(:chatbot_anthropic_model_high_trust)).to eq(
+      %w[claude-fable-5 claude-opus-5 claude-sonnet-5 claude-haiku-4-5],
+    )
+    expect(model_choices.call(:chatbot_google_gemini_model_high_trust)).to eq(
+      %w[
+        gemini-3.7-flash
+        gemini-3.6-flash
+        gemini-3.5-flash
+        gemini-3.5-flash-lite
+        gemini-3.1-pro-preview
+        gemini-3.1-flash-lite
+        gemini-3-flash-preview
+        gemini-2.5-pro
+        gemini-2.5-flash
+        gemini-2.5-flash-lite
+      ],
+    )
+    expect(model_choices.call(:chatbot_x_ai_model_high_trust)).to eq(
+      %w[grok-4.6 grok-4.5 grok-4.3 grok-build-0.1 grok-4.20-reasoning grok-4.20-non-reasoning],
+    )
+  end
+
+  it "does not list dated model snapshots" do
+    model_choices =
+      settings
+        .select { |name, setting| name.to_s.include?("model") && setting[:valid_values].present? }
+        .values
+        .flat_map { |setting| setting[:valid_values].pluck(:value) }
+
+    expect(model_choices).not_to include(
+      a_string_matching(
+        /(?:-\d{8}\z|-\d{4}-\d{2}-\d{2}\z|-\d{2}-\d{4}\z|-\d{4}-(?:non-)?reasoning\z)/,
+      ),
+    )
+  end
+
+  it "provides translated provider names" do
+    provider_setting = settings.fetch(:chatbot_llm_provider)
+
+    expect(provider_setting[:valid_values]).to eq(
+      [
+        { name: "chatbot.llm_provider.open_ai", value: "open_ai" },
+        { name: "chatbot.llm_provider.anthropic", value: "anthropic" },
+        { name: "chatbot.llm_provider.google_gemini", value: "google_gemini" },
+        { name: "chatbot.llm_provider.x_ai", value: "x_ai" },
+      ],
+    )
+    expect(provider_setting[:translate_names]).to eq(true)
+
+    expect(settings.fetch(:chatbot_embeddings_provider)[:valid_values].pluck(:value)).to eq(
+      %w[open_ai google_gemini x_ai],
+    )
+    expect(settings.fetch(:chatbot_vision_provider)[:valid_values].pluck(:value)).to eq(
+      %w[open_ai anthropic google_gemini x_ai],
+    )
+    expect(settings.fetch(:chatbot_image_provider)[:valid_values].pluck(:value)).to eq(
+      %w[open_ai google_gemini x_ai],
+    )
   end
 end

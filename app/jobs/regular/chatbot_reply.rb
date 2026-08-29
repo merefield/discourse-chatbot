@@ -2,6 +2,8 @@
 
 # Job is triggered to respond to Message or Post appropriately, checking user's quota.
 class ::Jobs::ChatbotReply < Jobs::Base
+  TRANSIENT_PROVIDER_HTTP_STATUSES = [408, 409, 425, 429].freeze
+
   sidekiq_options retry: 5, dead: false
 
   sidekiq_retries_exhausted do |msg, ex|
@@ -161,8 +163,19 @@ class ::Jobs::ChatbotReply < Jobs::Base
           reply_and_thoughts[:usage_statistics] = bot.usage_statistics
         end
       rescue => e
-        Rails.logger.error("Chatbot: There was a problem, but will retry til limit: #{e}")
-        fail e
+        if non_retryable_provider_error?(e)
+          Rails.logger.error("Chatbot: Provider rejected the request; not retrying: #{e}")
+          reply_and_thoughts[:reply] = I18n.t("chatbot.errors.provider_request")
+          reply_and_thoughts[:inner_thoughts] = bot.inner_thoughts if bot.respond_to?(
+            :inner_thoughts,
+          )
+          if bot.respond_to?(:usage_statistics)
+            reply_and_thoughts[:usage_statistics] = bot.usage_statistics
+          end
+        else
+          Rails.logger.error("Chatbot: There was a problem, but will retry til limit: #{e}")
+          fail e
+        end
       end
     end
     opts.merge!(reply_and_thoughts)
@@ -175,6 +188,13 @@ class ::Jobs::ChatbotReply < Jobs::Base
   end
 
   private
+
+  def non_retryable_provider_error?(error)
+    return false if !error.respond_to?(:response) || !error.response.is_a?(Hash)
+
+    status = (error.response[:status] || error.response["status"]).to_i
+    status.between?(400, 499) && !TRANSIENT_PROVIDER_HTTP_STATUSES.include?(status)
+  end
 
   def blocked_question_audit(evaluation)
     details = {

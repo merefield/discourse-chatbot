@@ -3,21 +3,50 @@ require "openai"
 
 module ::DiscourseChatbot
   class EmbeddingProcess
+    EXPECTED_DIMENSIONS = 1536
+
+    class EmbeddingDimensionError < StandardError
+    end
+
+    def self.request_parameters(input)
+      { model: ::DiscourseChatbot.embedding_model_name, input: input }
+    end
+
+    def self.client_config
+      ::DiscourseChatbot::LlmClient.client_config(
+        provider: SiteSetting.chatbot_embeddings_provider,
+        custom_uri_base: SiteSetting.chatbot_open_ai_embeddings_model_custom_url,
+        azure:
+          SiteSetting.chatbot_embeddings_provider == "open_ai" &&
+            SiteSetting.chatbot_open_ai_model_custom_api_type == "azure",
+      )
+    end
+
+    def self.build_client
+      if SiteSetting.chatbot_embeddings_provider == "google_gemini" &&
+           SiteSetting.chatbot_open_ai_embeddings_model_custom_url.blank?
+        return(
+          ::DiscourseChatbot::GeminiEmbeddingClient.new(
+            access_token: SiteSetting.chatbot_google_gemini_token,
+          )
+        )
+      end
+
+      ::OpenAI::Client.new(client_config)
+    end
+
+    def self.embedding_vector(response)
+      vector = response.dig("data", 0, "embedding")
+      actual_dimensions = vector.respond_to?(:length) ? vector.length : 0
+      return vector if actual_dimensions == EXPECTED_DIMENSIONS
+
+      raise EmbeddingDimensionError,
+            "Embedding provider returned #{actual_dimensions} dimensions; expected #{EXPECTED_DIMENSIONS}"
+    end
+
     def setup_api
-      ::OpenAI.configure { |config| config.access_token = SiteSetting.chatbot_open_ai_token }
-      if SiteSetting.chatbot_open_ai_embeddings_model_custom_url.present?
-        ::OpenAI.configure do |config|
-          config.uri_base = SiteSetting.chatbot_open_ai_embeddings_model_custom_url
-        end
-      end
-      if SiteSetting.chatbot_open_ai_model_custom_api_type == "azure"
-        ::OpenAI.configure do |config|
-          config.api_type = :azure
-          config.api_version = SiteSetting.chatbot_open_ai_model_custom_api_version
-        end
-      end
       @model_name = ::DiscourseChatbot.embedding_model_name
-      @client = ::OpenAI::Client.new
+      @client = self.class.build_client
     end
 
     def upsert(id)
@@ -32,7 +61,7 @@ module ::DiscourseChatbot
       begin
         self.setup_api
 
-        response = @client.embeddings(parameters: { model: @model_name, input: text })
+        response = @client.embeddings(parameters: self.class.request_parameters(text))
 
         if response.dig("error")
           error_text = response.dig("error", "message")
@@ -40,12 +69,12 @@ module ::DiscourseChatbot
         end
       rescue StandardError => e
         Rails.logger.error(
-          "Chatbot: Error occurred while attempting to retrieve Embedding for post id '#{post_id}' in topic id '#{topic.id}': #{e.message}",
+          "Chatbot: Error occurred while attempting to retrieve an embedding: #{e.message}",
         )
-        raise e
+        raise
       end
 
-      embedding_vector = response.dig("data", 0, "embedding")
+      self.class.embedding_vector(response)
     end
 
     def semantic_search(query)

@@ -100,4 +100,63 @@ describe ::DiscourseChatbot::Post::PostPromptUtils do
 
     expect(prompt.count).to eq(2)
   end
+
+  it "uses the name attribute for OpenAI when enabled" do
+    SiteSetting.chatbot_llm_provider = "open_ai"
+    SiteSetting.chatbot_api_supports_name_attribute = true
+
+    message = described_class.create_message(post_1, bot_user_id: bot_user.id)
+
+    expect(message).to include(name: post_1.user.username)
+    expect(message[:content]).to eq([{ type: "text", text: post_1.raw }])
+  end
+
+  it "embeds the username in content for providers without name attribute support" do
+    SiteSetting.chatbot_api_supports_name_attribute = true
+
+    %w[anthropic google_gemini x_ai].each do |provider|
+      SiteSetting.chatbot_llm_provider = provider
+
+      message = described_class.create_message(post_1, bot_user_id: bot_user.id)
+
+      expect(message).not_to have_key(:name)
+      expect(message[:content]).to eq(
+        [
+          {
+            type: "text",
+            text: I18n.t("chatbot.prompt.post", username: post_1.user.username, raw: post_1.raw),
+          },
+        ],
+      )
+    end
+  end
+
+  it "omits the name attribute from bot-authored prompts for unsupported providers" do
+    SiteSetting.chatbot_llm_provider = "google_gemini"
+    SiteSetting.chatbot_api_supports_name_attribute = true
+    bot_topic = Fabricate(:topic, user: bot_user)
+    bot_post = Fabricate(:post, topic: bot_topic, user: bot_user)
+
+    prompt =
+      described_class.create_prompt(
+        reply_to_message_or_post_id: bot_post.id,
+        bot_user_id: bot_user.id,
+        category_id: bot_topic.category_id,
+        original_post_number: 1,
+      )
+
+    expect(prompt).to all(satisfy { |message| !message.key?(:name) })
+  end
+
+  it "only enables PDF input for OpenAI-compatible language models" do
+    SiteSetting.chatbot_support_pdf = true
+
+    SiteSetting.chatbot_llm_provider = "open_ai"
+    expect(described_class.supports_pdf_input?).to eq(true)
+
+    %w[anthropic google_gemini x_ai].each do |provider|
+      SiteSetting.chatbot_llm_provider = provider
+      expect(described_class.supports_pdf_input?).to eq(false)
+    end
+  end
 end

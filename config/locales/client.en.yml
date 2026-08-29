@@ -3,6 +3,11 @@ en:
     discourse_chatbot:
       title: "Chatbot"
     chatbot:
+      llm_provider:
+        open_ai: "OpenAI"
+        anthropic: "Anthropic"
+        google_gemini: "Google Gemini"
+        x_ai: "xAI"
       category:
         settings_label: "Chatbot"
         auto_response_additional_prompt: "Hidden text fed to bot to influence its auto-response if set.\nIn scope Categories are set <a href='/admin/site_settings/category/plugins?filter=chatbot_auto_respond_categories'>here.</a>"
@@ -15,4 +20,3 @@ en:
       user_prefs:
         title: "Chatbot User Preferences"
         prefer_no_quickchat_pm_popup: "Disable Composer popup on mobile when using Quickchat in PMs (e.g. when using a very small mobile phone)"
-

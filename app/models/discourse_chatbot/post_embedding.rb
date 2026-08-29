@@ -15,6 +15,7 @@ end
 #  id         :bigint           not null, primary key
 #  post_id    :integer          not null
 #  embedding  :vector(1536)     not null
+#  provider   :string           default("open_ai"), not null
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #  model      :string
