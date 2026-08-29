@@ -59,6 +59,13 @@ Provider-specific model dropdowns are shown only when that provider is active. T
 
 [Read the full provider and custom-endpoint guide](https://github.com/merefield/discourse-chatbot#model-providers).
 
+### Quick OpenAI example
+
+1. Create an [OpenAI API key](https://platform.openai.com/api-keys) and ensure API billing is enabled.
+2. Set `chatbot_llm_provider` to OpenAI and paste the key into `chatbot_open_ai_token`.
+3. Leave the custom URL blank, choose an OpenAI model for each trust level you intend to use, and add your test group to the matching Chatbot access setting.
+4. Mention the bot in an allowed Topic, Personal Message, or Chat to test it.
+
 ## Access, quotas, and tools
 
 Nobody has access until you assign groups to Chatbot's low-, medium-, or high-trust group settings. Users inherit the quota, model, and tool allowlist of their highest matching Chatbot trust level. Quotas can be measured by queries or tokens.
