@@ -1,6 +1,8 @@
 # discourse-chatbot
 
-## Project Sponsors
+This README is the canonical reference for installing, configuring, operating, and troubleshooting Chatbot.
+
+## Project sponsors
 
 Our kind sponsors of this project:
 
@@ -11,25 +13,28 @@ Our kind sponsors of this project:
 # What is it?
 
 * The original Discourse AI Chatbot!
-* Converse with the bot in any Post or Chat Channel, one to one or with others!
+* Can provide customer-support answers grounded in your community content; see [Building a technical support chatbot](https://meta.discourse.org/t/building-a-technical-support-chatbot/319825?u=merefield).
+* Converse with the bot in Topics, Personal Messages, Chat channels, and Chat threads, one-to-one or with others!
 * Customise the character of your bot to suit your forum!
   * want it to sound like William Shakespeare, or Winston Churchill? can do!
 * Configurable tools let the bot:
-  * Search your whole* forum for answers so the bot can be an expert on the subject of your forum.
+  * Search your forum for answers so the bot can be an expert on the subject of your community.
     * not just be aware of the information on the current Topic or Channel.
   * Search Wikipedia
   * Search current news*
   * Search Google*
   * Return current End Of Day market data for stocks.*
   * Evaluate mathematical expressions with Dentaku, including common aliases for PI and E.
+  * Collect outstanding editable User Fields in private conversations.
+  * Escalate a private Chat conversation to configured staff groups.
 * Vision support - select the `vision` tool for the relevant trust levels to let the bot answer questions about uploaded images.
 * Image generation and editing support - select the paint tools and choose a supported image model.
-* PDF input support can be enabled with `chatbot_support_pdf`.
-* Uses the tool-calling capability of cutting-edge, industry-leading large language models through the OpenAI-compatible API.
+* OpenAI PDF input support can be enabled with `chatbot_support_pdf`.
+* Uses the tool-calling capabilities of OpenAI, Anthropic, Google Gemini, and xAI models through their OpenAI-compatible APIs.
 * Includes a special quota system to manage access to the bot: more trusted and/or paying members can have greater access to the bot!
 * Supports OpenAI, Anthropic, Google Gemini, and xAI, plus Azure and OpenAI-compatible proxy connections.
 
-<sup>*sign-up for external (not affiliated) API services required. Links in settings.
+<sup>*Sign-up for external, unaffiliated API services is required. Links are provided in the settings.</sup>
 
 
 The bot has one implementation with a separate built-in tool allowlist for each trust level. Leave
@@ -38,7 +43,7 @@ local search and other capabilities. Tools that require credentials or supportin
 are only exposed when those requirements are also met. Extension tools supplied by other plugins
 are independent of these allowlists.
 
-### :biohazard: **Bot access and privacy :biohazard:
+### :biohazard: **Bot access and privacy** :biohazard:
 
 This bot can be used in public spaces on your forum. Local forum search is controlled separately for each bot trust level through the tool settings.
 
@@ -48,21 +53,41 @@ For local forum search, make sure you have a benchmark user at the configured tr
 
 Alternatively:
 
-* Switch `chatbot embeddings strategy` to `categories` and populate `chatbot embeddings categories` with Categories you wish the bot to know about.  (Be aware that if you add any private Categories, it should know about those and anything the bot says in public, anywhere might leak to less privileged users so just be a bit careful on what you add).
-* remove `local_forum_search` from the tool settings for trust levels that should not search embedded posts
-* mitigate with moderation
+* Set `chatbot_embeddings_strategy` to `categories` and populate `chatbot_embeddings_categories` with only the Categories the bot may search. Including private Categories means their matching content could be returned to less-privileged users elsewhere.
+* Remove `local_forum_search` from any trust-level tool allowlist that should not search embedded content.
+* Use moderation and carefully scoped groups as additional safeguards.
 
-You can see that this setup is a compromise.  In order to make the bot useful it needs to be knowledgeable about the content on your site.  Currently it is not possible for the bot to selectively read members only content and share that only with members which some admins might find limiting but there is no way to easily solve the that whilst the bot is able to talk in public. Contact me if you have special needs and would like to sponsor some work in this space. Bot permissioning with semantic search is a non-trivial problem.  The system is currently optimised for speed.  NB Private Messages are never read by the bot.
+This is a deliberate compromise: semantic search is optimised for speed and does not perform a fresh per-request visibility check for the person asking the bot. Private Messages are never embedded. Contact me if you need a more restrictive permission model and would like to sponsor that work.
 
-# FYI's
+# Notes
 
 * LLM API responses can be slower for higher-capability and reasoning models. Choose the model for each trust level based on the quality, latency, and cost your community needs.
 * Chatbot natively supports OpenAI, Anthropic, Google Gemini, and xAI through their OpenAI-compatible endpoints, including custom model names and URLs for each trust level. Proxy servers can provide access to other compatible services without changing Chatbot code.
-* Is extensible to support the searching of other content beyond just the current set provided.
+* Other plugins can extend the toolset without maintaining a fork of Chatbot.
 
 # Setup
 
-## Creating the Embeddings
+For a new installation, configure [model providers](#model-providers), [access and quotas](#access-and-quotas), and [trust-level tools](#tools-by-trust-level) first. Stored forum embeddings are optional and are needed for local forum search. Blocked-question matching uses the configured embeddings provider without requiring the stored forum index.
+
+## Prerequisites
+
+Install the plugin using the [standard self-hosted plugin procedure](https://meta.discourse.org/t/install-plugins-on-a-self-hosted-site/19157).
+
+Local forum search requires PostgreSQL's `pgvector` extension, version 0.5.1 or newer. Most supported Discourse installations already provide it. If a rebuild fails with `PG::UndefinedObject: ERROR: access method "hnsw" does not exist`, enter the running container and update the extension:
+
+```text
+./launcher enter app
+su postgres -c 'psql discourse'
+\dx
+ALTER EXTENSION vector UPDATE;
+\dx
+\q
+exit
+```
+
+Then leave the container and rebuild the app.
+
+## Creating the embeddings
 
 If you wish Chatbot to know about the content on your site, turn this setting ON:
 
@@ -70,19 +95,19 @@ If you wish Chatbot to know about the content on your site, turn this setting ON
 
 This is only necessary when at least one trust level has the `local_forum_search` tool and the bot should know about content beyond the current Topic.
 
-Initially, we need to create the embeddings for all in-scope posts, so the bot can find forum information.  This now happens in the background once this setting is enabled and you do not need to do anything.
+Initially, Chatbot creates embeddings for all in-scope Posts and Topic titles so the bot can find forum information. This happens in the background after the setting is enabled.
 
 This seeding job can take a period of days for very big sites.
 
-### Embeddings Scope
+### Embeddings scope
 
 This is determined by several settings:
 
-* `chatbot_embeddings_strategy` which can be either "benchmark_user" or "categories"
-* `chatbot_embeddings_benchmark_user_trust_level` sets the relevant trust level for the former
-* `chatbot_embeddings_categories` if the `categories` strategy is set, gives the bot access to consider all posts in specified Categories.
+* `chatbot_embeddings_strategy`, which can be either `benchmark_user` or `categories`;
+* `chatbot_embeddings_benchmark_user_trust_level`, which sets the relevant trust level for `benchmark_user`;
+* `chatbot_embeddings_categories`, which identifies the Categories included by the `categories` strategy.
 
-If you change these settings, over time, the population of Embeddings will morph.
+When these settings change, background jobs gradually bring the stored embeddings into the new scope.
 
 ### To speed population up
 
@@ -90,19 +115,15 @@ Enter the container:
 
 `./launcher enter app`
 
-and run the following rake command:
+and run the following rake command to fill missing embeddings:
 
 `rake chatbot:refresh_embeddings[1]`
 
-which at present will run twice due to unknown reason (sorry! feel free to PR) but the `[1]` ensures the second time it will only add missing embeddings (ie none immediately after first run) so is somewhat moot.
-
-In the unlikely event you get rate limited by OpenAI (unlikely!) you can complete the embeddings by doing this:
+If the selected provider rate-limits requests, add a one-second delay:
 
 `rake chatbot:refresh_embeddings[1,1]`
 
-which will fill in the missing ones (so nothing lost from the error) but will continue more cautiously putting a 1 second delay between each call to OpenAI.
-
-Compared to bot interactions, embeddings are not expensive to create, but do watch your usage on your OpenAI dashboard in any case.
+Embedding costs vary by provider and model. Monitor usage and billing in the dashboard for your selected embeddings provider.
 
 Embeddings are created only for Posts in the scope selected above. The `benchmark_user` strategy uses the configured trust level, while `categories` uses the explicitly selected Categories. Personal Messages are never embedded.
 
@@ -112,57 +133,84 @@ Embeddings are created only for Posts in the scope selected above. The `benchmar
 
 ```
 SELECT e.id, e.post_id AS post, p.topic_id AS topic, p.post_number,
-       p.topic_id, e.created_at, e.updated_at, p.deleted_at AS post_deleted
+       e.provider, e.model, e.created_at, e.updated_at,
+       p.deleted_at AS post_deleted
 FROM chatbot_post_embeddings e LEFT JOIN posts p ON e.post_id = p.id
 ```
 
-### Error when you are trying to get an embedding for too many characters.
+### Embedding input is too long
 
 You might get an error like this:
 
 ```
 OpenAI HTTP Error (spotted in ruby-openai 6.3.1): {"error"=>{"message"=>"This model's maximum context length is 8192 tokens, however you requested 8528 tokens (8528 in your prompt; 0 for the completion). Please reduce your prompt; or completion length.", "type"=>"invalid_request_error", "param"=>nil, "code"=>nil}}
 ```
-This is how you resolve it ...
-
-As per your error message, the embedding model has a limit of:
+In this example, the embedding model has a limit of:
 
 `8192 tokens`
 
 `however you requested 8528`
 
-You need to drop the current value of this setting:
+Reduce the current value of this legacy-named setting, which applies to every embeddings provider:
 
-`chatbot_open_ai_embeddings_char_limit:`
+`chatbot_open_ai_embeddings_char_limit`
 
-by about 4 x the diff and see if it works (a token is *roughly* 4 characters).
+As a starting point for English text, multiply the token difference by roughly four characters.
 
 So, in this example, 4 x (8528 - 8192) = 1344
 
-So drop `chatbot_open_ai_embeddings_char_limit` current value by 1500 to be safe. However, the default value was set according to a lot of testing for English Posts, but for other languages it may need lowering.
+Dropping `chatbot_open_ai_embeddings_char_limit` by about 1,500 would therefore be a cautious first adjustment. Tokenisation varies by provider, model, and language, so lower it further if the error continues.
 
-This will then cut off more text and request tokens and hopefully the embedding will go through. If not you will need to confirm the difference and reduce it further accordingly. Eventually it will be low enough so you don’t need to look at it again.
+### Switching embeddings provider or model
 
-### How To Switch Embeddings model
+Select `chatbot_embeddings_provider`, then choose the model shown for that provider. OpenAI, Google Gemini, and xAI are supported; Anthropic does not provide an embeddings API. The selected provider reuses its provider-specific API key.
 
-You don't need to do anything but change the setting: the background job will take care of things, if gradually.
+Changing the embeddings provider or model automatically makes older Post and Topic-title vectors invalid. Background jobs gradually regenerate them with the new configuration, so you do not need to delete them manually.
 
-For an OpenAI-compatible embedding provider, set
-`chatbot_open_ai_embeddings_model_custom_name` to override the built-in model selection and set
-`chatbot_open_ai_embeddings_model_custom_url` when the provider uses a different API base URL. The
-custom model must return 1,536-dimensional vectors to fit the existing embedding storage.
+For a custom embeddings service, set `chatbot_open_ai_embeddings_model_custom_name` and, when required, `chatbot_open_ai_embeddings_model_custom_url`. The endpoint must implement the selected provider's embeddings API shape and return exactly 1,536 dimensions.
 
-If you really want to speed the process up, do:
+To refresh every in-scope embedding immediately, enter the container and run:
 
-* Change the setting `chatbot_open_ai_embeddings_model` to your new preferred model
-* It's best to first delete all your current embeddings:
-  * go into the container `./launcher enter app`
-  * enter the rails console `rails c`
-  * run `::DiscourseChatbot::PostEmbedding.delete_all`
-  * `exit` (to return to root within container)
-* run `rake chatbot:refresh_embeddings[1]`
-* if for any OpenAI-side reason that fails part way through, run it again until you get to 100%
-* the new model is known to be more accurate, so you might have to drop `chatbot_forum_search_tool_similarity_threshold` or you might get no results :).  I dropped my default value from `0.8` to `0.6`, but your mileage may vary.
+```text
+rake chatbot:refresh_embeddings
+```
+
+Use `rake chatbot:refresh_embeddings[1]` only to fill missing rows. Add a positive delay as the second argument, for example `rake chatbot:refresh_embeddings[1,1]`, if the provider rate-limits requests.
+
+### Tuning local forum search
+
+`chatbot_forum_search_tool_similarity_threshold` controls the minimum semantic similarity and
+`chatbot_forum_search_tool_max_results` limits the result count. If a new embeddings model returns
+few useful results, retune the threshold rather than assuming scores are directly comparable with
+the previous model.
+
+Search can return individual Posts or Topics, optionally include Topic-title embeddings, and blend
+Discourse keyword search with semantic search. Group and Tag promotion settings can promote matches
+from preferred authors or Topics without restricting the embedding scope to them. These controls affect relevance;
+they do not add per-request permissions beyond the configured embedding scope.
+
+## How to get the bot to respond
+
+The bot supports Topic Posts, Personal Messages, Chat channels, and Chat threads when those surfaces are enabled in Discourse and allowed in Chatbot settings.
+
+* Subject to permissions and quota, the bot responds when it is @mentioned.
+* In a Topic or Chat conversation containing only the bot and one other user, it can respond without an @mention.
+* Replying directly to the bot can invoke it.
+* `chatbot_max_look_behind` controls how much prior conversation context is sent, which affects cost.
+* `chatbot_permitted_all_categories` and `chatbot_permitted_categories` control Topic availability.
+* `chatbot_permitted_in_private_messages` and `chatbot_permitted_in_chat` control those surfaces.
+
+### Category auto-responder
+
+Categories listed in `chatbot_auto_respond_categories` can receive an automatic reply to each new Topic. Configure the Category-specific additional prompt in that Category's settings.
+
+Write that prompt as the user's request, not as a replacement system prompt. For example:
+
+> Welcome me, introduce yourself, and use local forum search to share five relevant forum Topics with links.
+
+### Optional User Fields collection
+
+Add `user_information` to the relevant trust-level tool allowlist to let the bot collect outstanding editable User Fields in private conversations. Text, dropdown, and confirmation fields are supported; multi-select fields are not.
 
 ## Blocked questions
 
@@ -191,6 +239,21 @@ The defaults are:
 Runtime requirements still take precedence over these defaults. For example,
 `local_forum_search` is exposed only when embeddings are enabled, and tools backed by external
 services are exposed only when the required credentials are configured.
+
+The `user_information` tool is available only in private conversations. The `escalate_to_staff`
+tool is available only in private Chat and creates a staff Personal Message containing the
+configured amount of conversation history. More tools can improve grounding and task coverage,
+but tool loops may add latency and provider cost.
+
+External tools use separate service credentials:
+
+* `news` requires `chatbot_news_api_token`;
+* `web_crawler` uses Firecrawl or Jina;
+* `web_search` uses SerpAPI or Jina; and
+* `stock_data` requires a Marketstack key.
+
+The relevant key and notional quota-cost settings are hidden from the model and documented in the
+admin settings UI.
 
 The `calculate` tool uses Dentaku expression syntax. It accepts constants such as `PI` and `E`,
 normalizes common model-generated forms such as `Math::PI`, and returns correction guidance for
@@ -260,10 +323,10 @@ This is governed mostly by a setting: `‎chatbot_reply_job_time_delay‎` over 
 
 The intention of having this setting is to:
 
-* protect you from reaching rate limits of OpenAI
+* protect you from reaching the selected provider's rate limits
 * protect your site from users that would like to spam the bot and cost you money.
 
-It is now default '1' second and can now be reduced to zero :racing_car: , but be aware of the above risks.
+It defaults to two seconds and can be reduced to zero :racing_car:, but be aware of the above risks.
 
 Setting this to zero can make the bot, including tool-enabled conversations, feel much more responsive.
 
@@ -273,39 +336,54 @@ Chatbot cannot directly control provider response time. Higher-capability models
 
 For Chatbot to work in Chat you must have Chat enabled.
 
-## LLM provider
+## Model providers
 
-Select OpenAI, Anthropic, Google Gemini, or xAI with `chatbot_llm_provider`, then configure its API key in the provider-specific token setting shown below it. Existing OpenAI keys remain in `chatbot_open_ai_token`; the other providers use `chatbot_anthropic_token`, `chatbot_google_gemini_token`, and `chatbot_x_ai_token`. Each provider uses its official OpenAI-compatible endpoint.
+Choose providers independently for language-model replies, embeddings, vision, and image generation. Each capability uses the API key belonging to its selected provider.
 
-The language model is selected independently for low-, medium-, and high-trust users. Each trust level shows a model dropdown for the active provider and hides the other providers' dropdowns. The defaults are GPT-4.1 Mini, Claude Sonnet 5, Gemini 3.7 Flash, and Grok 4.6. Custom model settings override the active dropdown and custom URLs override the provider's default endpoint for the selected trust level. A custom endpoint must implement the selected provider's OpenAI-compatible API shape and receives that provider's key. Azure remains available through the custom OpenAI API settings.
+| Capability | OpenAI | Anthropic | Google Gemini | xAI |
+| --- | --- | --- | --- | --- |
+| LLM replies and tools | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Embeddings | :white_check_mark: | — | :white_check_mark: | :white_check_mark: |
+| Vision | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Image generation | :white_check_mark: | — | :white_check_mark: | :white_check_mark: |
+| Image editing | GPT Image models | — | — | :white_check_mark: |
+| PDF conversation input | :white_check_mark: | — | — | — |
 
-Embedding, vision, and image models are configured independently from the language model. Each capability uses the API key for its selected provider: `chatbot_open_ai_token`, `chatbot_anthropic_token`, `chatbot_google_gemini_token`, or `chatbot_x_ai_token`. Anthropic does not provide an embedding API, and custom embedding providers must return 1,536-dimensional vectors to fit the existing embedding storage.
+Select the reply provider with `chatbot_llm_provider`, then enter its key in `chatbot_open_ai_token`, `chatbot_anthropic_token`, `chatbot_google_gemini_token`, or `chatbot_x_ai_token`. Keys are available from [OpenAI](https://platform.openai.com/api-keys), [Anthropic](https://console.anthropic.com/settings/keys), [Google AI Studio](https://aistudio.google.com/app/apikey), and the [xAI Console](https://console.x.ai). Provider-specific keys are intentionally retained, so changing one capability's provider does not require copying credentials into a generic key.
 
-There is an automated part of the setup: upon addition to a Discourse, the plugin currently sets up an AI bot user with the following attributes
+The language model is selected independently for low-, medium-, and high-trust users. The settings UI displays only the active provider's model dropdowns. The lists contain stable model names rather than dated snapshot variants; use the custom-model option when you need another model.
+
+`chatbot_embeddings_provider`, `chatbot_vision_provider`, and `chatbot_image_provider` select providers for those capabilities independently of the reply provider. Their model settings are likewise shown only for the selected provider.
+
+Leave a custom URL blank to use Chatbot's built-in official endpoint for the selected provider. Generation controls for temperature, top-p, frequency penalty, and presence penalty are shown only for OpenAI and xAI, whose supported API shapes accept them. `chatbot_api_supports_name_attribute` is OpenAI-only and should remain disabled for custom endpoints unless they explicitly document support. OpenAI reasoning and Responses API settings are hidden for the other providers.
+
+### Custom endpoints, proxies, Azure, and local models
+
+Custom names and URLs let Chatbot use services that implement one of the supported providers' API shapes. Select the provider shape the service emulates, enable the custom model for each applicable trust level, enter the exact model name, and set the custom URL. The provider-specific key for the selected shape is sent to that endpoint.
+
+This supports OpenAI-compatible services such as many proxies and local model servers, including Ollama when its OpenAI-compatible endpoint is enabled. Endpoint paths differ between services, so use the base URL documented by that service—commonly a URL ending in `/v1/`—rather than assuming one universal Ollama or proxy URL.
+
+Azure OpenAI remains available through the OpenAI custom URL, API type, and API version settings. Custom embeddings, vision, and image endpoints have separate URL overrides. Compatibility depends on the endpoint implementing the request and response fields used by the selected capability.
+
+## Bot user
+
+When installed, the plugin creates an AI bot user with these initial attributes:
 
 * Name: 'Chatbot'
-* User Id: -4
+* User ID: -4
 * Bio: "Hi, I’m not a real person. I’m a bot that can discuss things with you. Don't take me too seriously.  Sometimes, I'm even right about stuff!"
 * Group Name: "ai_bot_group"
 * Group Full Name: "AI Bots"
 
 You can edit the name, avatar and bio (see locale string in admin -> customize -> text) as you wish but make it easy to mention.
 
-## It's not free, so there's a quota system, and you have to set this up
+## Access and quotas
 
-Initially **no-one** will have access to the bot, not even staff.
+Initially **no one** has access to the bot, including staff. Assign groups to the low-, medium-, or high-trust Chatbot group settings. A user receives the model, tools, and quota associated with their highest matching Chatbot trust level.
 
-Calling the OpenAI API is not free after an initial free allocation has expired! So, I've implemented a quota system to keep this under control, keep costs down and prevent abuse.  The cost is not crazy with these small interactions, but it may add up if it gets popular. You can read more about OpenAI pricing [on their pricing page](https://openai.com/pricing).
+Hosted model APIs are generally metered services, so Chatbot includes quotas to control access, cost, and abuse. Set `chatbot_quota_basis` to enforce either query or token quotas, then configure the allowance for each trust level. Check the pricing documentation for every provider and model you enable.
 
-In order to interact with the bot you must belong to a group that has been added to one of the three levels of trusted sets of groups, low, medium & high trust group sets. You can modify each of the number of allowed interactions per week per trusted group sets in the corresponding settings.
-
-You must populate the groups too. That configuration is entirely up to you. They start out blank,
-so initially **no-one** will have access to the bot. Set `chatbot_quota_basis` to enforce either
-query or token quotas, then configure the corresponding quota for each trust level.
-
-Note the user gets the quota based on the highest trusted group they are a member of.
-
-## "Prompt Engineering"
+## Prompt engineering
 
 There are several locale text "settings" that influence what the bot receives and how the bot responds.
 
@@ -313,13 +391,15 @@ The most important one you should consider changing is the bot's `system` prompt
 
 For example, you can try a system prompt like:
 
-’You are an extreme Formula One fan, you love everything to do with motorsport and its high octane levels of excitement’ instead of the default.
+> You are an extreme Formula One fan. You love everything to do with motorsport and its high-octane excitement.
 
 Keep the tool-use instructions after "You are a helpful assistant." when tools are selected, or you may break agent behaviour. Reset the prompt if you run into problems.
 
 Try one that is most appropriate for the subject matter of your forum.  Be creative!
 
-Changing these locale strings can make the bot behave very differently but cannot be amended on the fly.  I would recommend changing only the system prompt as the others play an important role in agent behaviour or providing information on who said what to the bot.
+Changing these locale strings can make the bot behave very differently. They apply globally to future requests rather than acting as per-conversation controls. I recommend changing only the system prompts because the other prompt strings play important roles in tool behavior and conversation attribution.
+
+There are separate `open` and `private` system prompts. The open prompt is used in public Topics and Chat channels; the private prompt is used in Personal Messages and direct-message Chat. Keep the tool-use instructions intact whenever the corresponding trust level has tools enabled.
 
 NB In Topics, the first Post and Topic Title are sent in addition to the window of Posts (determined by the lookback setting) to give the bot more context.
 
@@ -327,30 +407,62 @@ You can edit these strings in Admin -> Customize -> Text under `chatbot.prompt.`
 
 [View the chatbot prompt text in the server locale file.](config/locales/server.en.yml)
 
-# Supports both Posts & Chat Messages!
+# Posts and Chat messages
 
 The bot supports Chat Messages and Topic Posts, including Private Messages (if configured).
 
 You can prompt the bot to respond by replying to it, or @ mentioning it. You can set how far the bot looks behind to get context for a response. The bigger the value the more costly will be each call.
 
-There's a floating quick chat button that connects you immediately to the bot. This can be disabled in settings. You can choose whether to load the bot into a 1 to 1 chat or a Personal Message.
-
-Now you can choose your preferred icon (default :robot: ) or if setting left blank, will pick up the bot user's avatar! :sunglasses: 
+There's a floating quick-access button that connects you immediately to the bot. Configure it with `chatbot_quick_access_talk_button`, choose whether the bot starts the conversation with `chatbot_quick_access_bot_kicks_off`, and optionally choose an icon with `chatbot_quick_access_talk_button_bot_icon`. If the icon is blank, Chatbot uses the bot user's avatar.
 
 And remember, you can also customise the text that appears when it is expanded by editing the locale text using Admin -> Customize -> Text `chatbot.`
 
+# Debugging
+
+For temporary diagnostics:
+
+* enable `chatbot_include_inner_thoughts_in_private_messages` when testing privately;
+* set `chatbot_enable_verbose_rails_logging` to `api_calls_only` or `all`;
+* choose the warning log destination if you need entries to appear in the Discourse `/logs` interface;
+* reproduce the request, then inspect the Sidekiq job exception and Rails logs immediately;
+* never publish API keys or unredacted request headers.
+
+The provider's HTTP status and response body are usually more useful than the final Ruby stack trace. Custom endpoints should be checked against the API shape selected in Chatbot.
+
+# Extending Chatbot's toolset with plugins
+
+Other plugins can add tools without maintaining a fork of Chatbot. See the [function-extension example](https://github.com/merefield/discourse-chatbot-function-extension-example) and the [original extension pull request](https://github.com/merefield/discourse-chatbot/pull/117).
+
+Extension tools subclass `DiscourseChatbot::Tool`. They may implement `self.available?(opts)` for request-time availability. Trust-level allowlists control built-in tools; an extension plugin remains responsible for the permissions and configuration of its own tools.
+
+# Known limitations and possible roadmap
+
+* Semantic search permissions are based on the configured embedding scope, not on each person asking the bot.
+* User Fields collection does not support multi-select fields.
+* Custom endpoints vary in their support for tools and optional request attributes.
+* Bot typing indicators and streamed responses remain potential future improvements.
+* Responding to edits that add a missing @mention remains potential future work.
+
+# Credits
+
+* Thanks to @MarcP for enthusiastic support and detailed testing feedback.
+* Thanks to contributors to [ruby-openai](https://github.com/alexrudall/ruby-openai), which provides the shared OpenAI-compatible client.
+* The floating button design was based on Discourse's [Material Design Stock Theme](https://github.com/discourse/material-design-stock-theme).
+* The original fixtures code was based on work from [discourse-autobot](https://github.com/VinkasHQ/discourse-autobot).
+* Thanks to @P16, whose early chatbot work helped inspire this plugin.
+
 # Uninstalling the plugin
 
-The only step necessary to remove it is to delete the clone statement from your `app.yml`.
+Remove the plugin's clone statement from `app.yml`, then rebuild the Discourse container. Plugin database tables are retained unless you remove them separately.
 
 # Disclaimer
 
-I'm *not* responsible for what the bot responds with. Consider the plugin to be at Beta stage and things could go wrong. It will improve with feedback.  But not necessarily the bots response :rofl:  Please understand the pro's and con's of a LLM and what they are and aren't capable of and their limitations.  They are very good at creating convincing text but can often be factually wrong.
+I'm *not* responsible for the bot's responses. Consider the plugin to be at beta stage; things can go wrong. Understand the strengths, limitations, and risks of LLMs before enabling it. They can generate convincing text that is factually wrong.
 
-# Privacy Note
+# Privacy note
 
-Whatever you write on your forum may be forwarded to OpenAI or your configured model provider as part of the conversation context or a tool request. Local forum search may also provide matching embedded Posts within the configured scope. **Be sure to cover this in your forum's terms of service and privacy statements.** Related links: https://openai.com/policies/terms-of-use, https://openai.com/policies/privacy-policy, https://platform.openai.com/docs/data-usage-policies
+Conversation content, uploaded media, and tool results may be sent to the providers selected for LLM replies, vision, images, embeddings, or external tools. Local forum search may send matching embedded Posts from the configured scope to the reply provider. Review every selected provider's retention and data-use terms, and disclose this processing in your forum's terms of service and privacy notice.
 
 # Copyright
 
-OpenAI made a statement about Copyright here: https://help.openai.com/en/articles/5008634-will-openai-claim-copyright-over-what-outputs-i-generate-with-the-api
+Generated-output terms differ by provider and jurisdiction. Review the terms for every provider you enable. OpenAI's related guidance is available in [Will OpenAI claim copyright over what outputs I generate with the API?](https://help.openai.com/en/articles/5008634-will-openai-claim-copyright-over-what-outputs-i-generate-with-the-api)
