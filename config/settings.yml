@@ -440,7 +440,6 @@ plugins:
     depends_on_values:
       chatbot_llm_provider:
         - open_ai
-        - anthropic
         - x_ai
     depends_behavior: hidden
   chatbot_request_top_p:
@@ -453,7 +452,6 @@ plugins:
     depends_on_values:
       chatbot_llm_provider:
         - open_ai
-        - anthropic
         - x_ai
     depends_behavior: hidden
   chatbot_request_frequency_penalty:

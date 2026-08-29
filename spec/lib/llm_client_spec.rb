@@ -38,7 +38,7 @@ describe ::DiscourseChatbot::LlmClient do
       expect(llm_client.client.uri_base).to eq("https://api.anthropic.com/v1/")
       expect(llm_client.client.access_token).to eq("anthropic-token")
       expect(llm_client.model_name).to eq("claude-sonnet-5")
-      expect(llm_client.chat_completions_generation_parameters).to eq(temperature: 1.0, top_p: 1.0)
+      expect(llm_client.chat_completions_generation_parameters).to eq({})
     end
   end
 

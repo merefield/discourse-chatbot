@@ -132,20 +132,14 @@ module DiscourseChatbot
     end
 
     def chat_completions_generation_parameters
-      parameters = {
+      return {} if !%w[open_ai x_ai].include?(provider)
+
+      {
         temperature: SiteSetting.chatbot_request_temperature / 100.0,
         top_p: SiteSetting.chatbot_request_top_p / 100.0,
+        frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
+        presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
       }
-
-      if %w[open_ai x_ai].include?(provider)
-        parameters.merge!(
-          frequency_penalty: SiteSetting.chatbot_request_frequency_penalty / 100.0,
-          presence_penalty: SiteSetting.chatbot_request_presence_penalty / 100.0,
-        )
-      end
-
-      parameters.clear if provider == "google_gemini"
-      parameters
     end
 
     def explicit_prompt_caching?

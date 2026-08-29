@@ -83,13 +83,20 @@ RSpec.describe SiteSetting do
       },
       depends_behavior: :hidden,
     )
-    expect(dependency_metadata.call(:chatbot_request_frequency_penalty)).to eq(
-      depends_on: [:chatbot_llm_provider],
-      depends_on_values: {
-        chatbot_llm_provider: %w[open_ai x_ai],
-      },
-      depends_behavior: :hidden,
-    )
+    %i[
+      chatbot_request_temperature
+      chatbot_request_top_p
+      chatbot_request_frequency_penalty
+      chatbot_request_presence_penalty
+    ].each do |setting|
+      expect(dependency_metadata.call(setting)).to eq(
+        depends_on: [:chatbot_llm_provider],
+        depends_on_values: {
+          chatbot_llm_provider: %w[open_ai x_ai],
+        },
+        depends_behavior: :hidden,
+      )
+    end
     expect(dependency_metadata.call(:chatbot_open_ai_model_reasoning_level)).to eq(
       depends_on: [:chatbot_llm_provider],
       depends_on_values: {
