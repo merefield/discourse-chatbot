@@ -203,14 +203,21 @@ RSpec.describe SiteSetting do
       ],
     )
     expect(model_choices.call(:chatbot_x_ai_model_high_trust)).to eq(
-      %w[
-        grok-4.6
-        grok-4.5
-        grok-4.3
-        grok-build-0.1
-        grok-4.20-0309-reasoning
-        grok-4.20-0309-non-reasoning
-      ],
+      %w[grok-4.6 grok-4.5 grok-4.3 grok-build-0.1 grok-4.20-reasoning grok-4.20-non-reasoning],
+    )
+  end
+
+  it "does not list dated model snapshots" do
+    model_choices =
+      settings
+        .select { |name, setting| name.to_s.include?("model") && setting[:valid_values].present? }
+        .values
+        .flat_map { |setting| setting[:valid_values].pluck(:value) }
+
+    expect(model_choices).not_to include(
+      a_string_matching(
+        /(?:-\d{8}\z|-\d{4}-\d{2}-\d{2}\z|-\d{2}-\d{4}\z|-\d{4}-(?:non-)?reasoning\z)/,
+      ),
     )
   end
 
