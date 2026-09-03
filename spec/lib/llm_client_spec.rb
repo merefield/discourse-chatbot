@@ -84,7 +84,7 @@ describe ::DiscourseChatbot::LlmClient do
         "https://generativelanguage.googleapis.com/v1beta/openai/",
       )
       expect(llm_client.client.access_token).to eq("gemini-token")
-      expect(llm_client.model_name).to eq("gemini-3.7-flash")
+      expect(llm_client.model_name).to eq("gemini-3.8-flash")
       expect(llm_client.chat_completions_generation_parameters).to eq({})
       expect(parameters[:messages]).to eq([{ role: "system", content: "You are helpful" }])
     end
