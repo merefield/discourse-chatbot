@@ -75,6 +75,27 @@ RSpec.describe ::DiscourseChatbot::EmbeddingProcess do
     expect(described_class.new.get_embedding_from_api("A question to embed")).to eq(embedding)
   end
 
+  it "requests a storable vector size when OpenAI's large model uses a custom deployment name" do
+    SiteSetting.chatbot_embeddings_provider = "open_ai"
+    SiteSetting.chatbot_open_ai_embeddings_model = "text-embedding-3-large"
+    SiteSetting.chatbot_open_ai_embeddings_model_custom_name = "large-embedding-deployment"
+    embedding = Array.new(described_class::EXPECTED_DIMENSIONS, 0.1)
+    client = mock
+    OpenAI::Client.stubs(:new).returns(client)
+    client
+      .expects(:embeddings)
+      .with(
+        parameters: {
+          model: "large-embedding-deployment",
+          input: "A question to embed",
+          dimensions: described_class::EXPECTED_DIMENSIONS,
+        },
+      )
+      .returns({ "data" => [{ "embedding" => embedding }] })
+
+    expect(described_class.new.get_embedding_from_api("A question to embed")).to eq(embedding)
+  end
+
   it "rejects vectors that cannot be stored in the existing embedding columns" do
     client = mock
     OpenAI::Client.stubs(:new).returns(client)
