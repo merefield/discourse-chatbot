@@ -43,6 +43,7 @@ module ::DiscourseChatbot
   NON_POST_URL_REGEX = %r{\bhttps?:\/\/[^\s\/$.?#].[^\s)]*}
 
   REASONING_MODELS = %w[
+    gpt-6-astra
     o1
     o1-mini
     o3

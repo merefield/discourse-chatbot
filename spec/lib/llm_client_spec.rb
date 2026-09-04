@@ -29,6 +29,12 @@ describe ::DiscourseChatbot::LlmClient do
     end
   end
 
+  it "uses the reasoning-model request path for GPT-6 Astra" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-6-astra"
+
+    expect(described_class.new(trust_level: "low")).to be_reasoning_model
+  end
+
   it "uses Anthropic's compatibility endpoint and default model" do
     SiteSetting.chatbot_llm_provider = "anthropic"
 

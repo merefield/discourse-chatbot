@@ -190,6 +190,7 @@ RSpec.describe SiteSetting do
 
     expect(model_choices.call(:chatbot_open_ai_model_high_trust)).to eq(
       %w[
+        gpt-6-astra
         gpt-5.6
         gpt-5.6-sol
         gpt-5.6-terra
