@@ -167,6 +167,8 @@ Select `chatbot_embeddings_provider`, then choose the model shown for that provi
 
 Changing the embeddings provider or model automatically makes older Post and Topic-title vectors invalid. Background jobs gradually regenerate them with the new configuration, so you do not need to delete them manually.
 
+Embedding records and their search indexes use a shared 1,536-dimension storage contract. When `text-embedding-3-large` is selected, Chatbot uses OpenAI's `dimensions` parameter to request a shortened 1,536-dimension vector rather than storing the model's native 3,072-dimension output.
+
 For a custom embeddings service, set `chatbot_open_ai_embeddings_model_custom_name` and, when required, `chatbot_open_ai_embeddings_model_custom_url`. The endpoint must implement the selected provider's embeddings API shape and return exactly 1,536 dimensions.
 
 To refresh every in-scope embedding immediately, enter the container and run:

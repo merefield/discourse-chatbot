@@ -47,17 +47,8 @@ module DiscourseChatbot
       end
 
       def semantic_search(query)
-        self.setup_api
-
-        response =
-          @client.embeddings(
-            parameters: {
-              model: @model_name,
-              input: query[0..SiteSetting.chatbot_open_ai_embeddings_char_limit],
-            },
-          )
-
-        query_vector = self.class.embedding_vector(response)
+        query_vector =
+          get_embedding_from_api(query[0..SiteSetting.chatbot_open_ai_embeddings_char_limit])
 
         begin
           threshold = SiteSetting.chatbot_forum_search_tool_similarity_threshold

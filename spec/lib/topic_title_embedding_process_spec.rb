@@ -23,4 +23,13 @@ RSpec.describe DiscourseChatbot::Topic::TopicTitleEmbeddingProcess do
 
     expect(embedding_process.is_valid(topic.id)).to eq(true)
   end
+
+  it "uses the dimension-aware embedding request path for semantic search" do
+    SiteSetting.chatbot_open_ai_embeddings_char_limit = 10
+    embedding = Array.new(::DiscourseChatbot::EmbeddingProcess::EXPECTED_DIMENSIONS, 0.1)
+    embedding_process.expects(:get_embedding_from_api).with("A long sear").returns(embedding)
+    DB.expects(:query).returns([])
+
+    expect(embedding_process.semantic_search("A long search query")).to eq([])
+  end
 end

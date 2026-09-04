@@ -74,4 +74,16 @@ RSpec.describe DiscourseChatbot::Post::PostEmbeddingProcess do
       expect(embedding_process.is_valid(post.id)).to eq(true)
     end
   end
+
+  describe "semantic search" do
+    it "uses the dimension-aware embedding request path" do
+      SiteSetting.chatbot_forum_search_tool_hybrid_search = false
+      SiteSetting.chatbot_open_ai_embeddings_char_limit = 10
+      embedding = Array.new(::DiscourseChatbot::EmbeddingProcess::EXPECTED_DIMENSIONS, 0.1)
+      embedding_process.expects(:get_embedding_from_api).with("A long sear").returns(embedding)
+      DB.expects(:query).returns([])
+
+      expect(embedding_process.semantic_search("A long search query")).to eq([])
+    end
+  end
 end
