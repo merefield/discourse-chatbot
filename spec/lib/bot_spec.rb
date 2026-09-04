@@ -2103,7 +2103,7 @@ describe ::DiscourseChatbot::Bot, "#merge_tools" do
     expect(tool_mapping).to have_key("escalate_to_staff")
   end
 
-  %w[gpt-image-1 gpt-image-1-mini gpt-image-1.5 gpt-image-2].each do |model_name|
+  %w[gpt-image-1-mini gpt-image-1.5 gpt-image-2].each do |model_name|
     it "includes paint_edit_picture for #{model_name}" do
       enable_tools.call("paint_edit_picture")
       SiteSetting.chatbot_support_picture_creation_model = model_name
@@ -2117,7 +2117,7 @@ describe ::DiscourseChatbot::Bot, "#merge_tools" do
 
   it "does not include paint_edit_picture for dall-e-3" do
     enable_tools.call("paint_edit_picture")
-    SiteSetting.chatbot_support_picture_creation_model = "dall-e-3"
+    SiteSetting.stubs(:chatbot_support_picture_creation_model).returns("dall-e-3")
 
     rag = described_class.new({})
     tool_mapping = rag.instance_variable_get(:@tool_mapping)
@@ -2128,7 +2128,7 @@ describe ::DiscourseChatbot::Bot, "#merge_tools" do
   it "keeps separately authenticated OpenAI image tools for another chat provider" do
     enable_tools.call("paint_picture", "paint_edit_picture")
     SiteSetting.chatbot_llm_provider = "google_gemini"
-    SiteSetting.chatbot_support_picture_creation_model = "gpt-image-1"
+    SiteSetting.chatbot_support_picture_creation_model = "gpt-image-2"
 
     tool_mapping = described_class.new({}).instance_variable_get(:@tool_mapping)
 

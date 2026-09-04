@@ -133,6 +133,7 @@ plugins:
     type: enum
     default: gpt-4.1-mini
     choices: &chatbot_open_ai_models
+      - gpt-6-astra
       - gpt-5.6
       - gpt-5.6-sol
       - gpt-5.6-terra
@@ -164,6 +165,7 @@ plugins:
     type: enum
     default: claude-sonnet-5
     choices: &chatbot_anthropic_models
+      - claude-fable-5-1
       - claude-fable-5
       - claude-opus-5
       - claude-sonnet-5
@@ -177,8 +179,9 @@ plugins:
   chatbot_google_gemini_model_high_trust:
     client: false
     type: enum
-    default: gemini-3.7-flash
+    default: gemini-3.8-flash
     choices: &chatbot_google_gemini_models
+      - gemini-3.8-flash
       - gemini-3.7-flash
       - gemini-3.6-flash
       - gemini-3.5-flash
@@ -257,7 +260,7 @@ plugins:
   chatbot_google_gemini_model_medium_trust:
     client: false
     type: enum
-    default: gemini-3.7-flash
+    default: gemini-3.8-flash
     choices: *chatbot_google_gemini_models
     depends_on:
       - chatbot_llm_provider
@@ -321,7 +324,7 @@ plugins:
   chatbot_google_gemini_model_low_trust:
     client: false
     type: enum
-    default: gemini-3.7-flash
+    default: gemini-3.8-flash
     choices: *chatbot_google_gemini_models
     depends_on:
       - chatbot_llm_provider
@@ -589,6 +592,7 @@ plugins:
     choices:
       - text-embedding-ada-002
       - text-embedding-3-small
+      - text-embedding-3-large
     depends_on:
       - chatbot_embeddings_enabled
       - chatbot_embeddings_provider
@@ -602,7 +606,6 @@ plugins:
     default: gemini-embedding-001
     choices:
       - gemini-embedding-2
-      - gemini-embedding-2-preview
       - gemini-embedding-001
     depends_on:
       - chatbot_embeddings_enabled
@@ -904,7 +907,7 @@ plugins:
   chatbot_google_gemini_vision_model:
     client: false
     type: enum
-    default: gemini-3.7-flash
+    default: gemini-3.8-flash
     choices: *chatbot_google_gemini_models
     depends_on:
       - chatbot_vision_provider
@@ -945,13 +948,11 @@ plugins:
   chatbot_support_picture_creation_model:
     client: false
     type: enum
-    default: dall-e-3
+    default: gpt-image-2
     choices:
-      - dall-e-3
-      - gpt-image-1
-      - gpt-image-1-mini
-      - gpt-image-1.5
       - gpt-image-2
+      - gpt-image-1.5
+      - gpt-image-1-mini
     depends_on:
       - chatbot_image_provider
     depends_on_values:
@@ -961,10 +962,11 @@ plugins:
   chatbot_google_gemini_image_model:
     client: false
     type: enum
-    default: gemini-2.5-flash-image
+    default: gemini-3.1-flash-image
     choices:
-      - gemini-3-pro-image-preview
-      - gemini-2.5-flash-image
+      - gemini-3.1-flash-image
+      - gemini-3.1-flash-lite-image
+      - gemini-3-pro-image
     depends_on:
       - chatbot_image_provider
     depends_on_values:

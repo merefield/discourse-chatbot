@@ -185,18 +185,46 @@ RSpec.describe SiteSetting do
     end
   end
 
-  it "lists current chat models for every provider" do
+  it "lists current models for every provider" do
     model_choices = lambda { |setting| settings.fetch(setting)[:valid_values].pluck(:value) }
 
-    expect(model_choices.call(:chatbot_open_ai_model_high_trust)).to include(
-      "gpt-5.6",
-      "gpt-4.1-mini",
+    expect(model_choices.call(:chatbot_open_ai_model_high_trust)).to eq(
+      %w[
+        gpt-6-astra
+        gpt-5.6
+        gpt-5.6-sol
+        gpt-5.6-terra
+        gpt-5.6-luna
+        gpt-5.5
+        gpt-5.5-pro
+        gpt-5.4
+        gpt-5.4-pro
+        gpt-5.4-mini
+        gpt-5.4-nano
+        gpt-5.2
+        gpt-5.2-pro
+        gpt-5.1
+        gpt-5
+        gpt-5-pro
+        gpt-5-mini
+        gpt-5-nano
+        gpt-4.1
+        gpt-4.1-mini
+        gpt-4.1-nano
+      ],
+    )
+    expect(model_choices.call(:chatbot_open_ai_embeddings_model)).to eq(
+      %w[text-embedding-ada-002 text-embedding-3-small text-embedding-3-large],
+    )
+    expect(model_choices.call(:chatbot_support_picture_creation_model)).to eq(
+      %w[gpt-image-2 gpt-image-1.5 gpt-image-1-mini],
     )
     expect(model_choices.call(:chatbot_anthropic_model_high_trust)).to eq(
-      %w[claude-fable-5 claude-opus-5 claude-sonnet-5 claude-haiku-4-5],
+      %w[claude-fable-5-1 claude-fable-5 claude-opus-5 claude-sonnet-5 claude-haiku-4-5],
     )
     expect(model_choices.call(:chatbot_google_gemini_model_high_trust)).to eq(
       %w[
+        gemini-3.8-flash
         gemini-3.7-flash
         gemini-3.6-flash
         gemini-3.5-flash
@@ -209,8 +237,35 @@ RSpec.describe SiteSetting do
         gemini-2.5-flash-lite
       ],
     )
+    expect(model_choices.call(:chatbot_google_gemini_embeddings_model)).to eq(
+      %w[gemini-embedding-2 gemini-embedding-001],
+    )
+    expect(model_choices.call(:chatbot_google_gemini_image_model)).to eq(
+      %w[gemini-3.1-flash-image gemini-3.1-flash-lite-image gemini-3-pro-image],
+    )
     expect(model_choices.call(:chatbot_x_ai_model_high_trust)).to eq(
       %w[grok-4.6 grok-4.5 grok-4.3 grok-build-0.1 grok-4.20-reasoning grok-4.20-non-reasoning],
+    )
+  end
+
+  it "uses current provider model defaults" do
+    defaults =
+      %i[
+        chatbot_google_gemini_model_high_trust
+        chatbot_google_gemini_model_medium_trust
+        chatbot_google_gemini_model_low_trust
+        chatbot_google_gemini_vision_model
+        chatbot_google_gemini_image_model
+        chatbot_support_picture_creation_model
+      ].to_h { |setting| [setting, settings.fetch(setting)[:default]] }
+
+    expect(defaults).to eq(
+      chatbot_google_gemini_model_high_trust: "gemini-3.8-flash",
+      chatbot_google_gemini_model_medium_trust: "gemini-3.8-flash",
+      chatbot_google_gemini_model_low_trust: "gemini-3.8-flash",
+      chatbot_google_gemini_vision_model: "gemini-3.8-flash",
+      chatbot_google_gemini_image_model: "gemini-3.1-flash-image",
+      chatbot_support_picture_creation_model: "gpt-image-2",
     )
   end
 

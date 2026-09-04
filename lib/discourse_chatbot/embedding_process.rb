@@ -9,7 +9,13 @@ module ::DiscourseChatbot
     end
 
     def self.request_parameters(input)
-      { model: ::DiscourseChatbot.embedding_model_name, input: input }
+      model_name = ::DiscourseChatbot.embedding_model_name
+      parameters = { model: model_name, input: input }
+      if SiteSetting.chatbot_embeddings_provider == "open_ai" &&
+           SiteSetting.chatbot_open_ai_embeddings_model == "text-embedding-3-large"
+        parameters[:dimensions] = EXPECTED_DIMENSIONS
+      end
+      parameters
     end
 
     def self.client_config

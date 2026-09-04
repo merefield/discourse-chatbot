@@ -44,7 +44,7 @@ describe ::DiscourseChatbot::Tools::Paint do
   describe ".image_edit_supported?" do
     it "supports OpenAI GPT Image and xAI, but not Gemini image models" do
       SiteSetting.chatbot_image_provider = "open_ai"
-      SiteSetting.chatbot_support_picture_creation_model = "gpt-image-1"
+      SiteSetting.chatbot_support_picture_creation_model = "gpt-image-2"
       expect(described_class.image_edit_supported?).to eq(true)
 
       SiteSetting.chatbot_image_provider = "x_ai"
