@@ -219,7 +219,7 @@ RSpec.describe SiteSetting do
       %w[gpt-image-2 gpt-image-1.5 gpt-image-1-mini],
     )
     expect(model_choices.call(:chatbot_anthropic_model_high_trust)).to eq(
-      %w[claude-fable-5-1 claude-opus-5 claude-sonnet-5 claude-haiku-4-5],
+      %w[claude-fable-5-1 claude-fable-5 claude-opus-5 claude-sonnet-5 claude-haiku-4-5],
     )
     expect(model_choices.call(:chatbot_google_gemini_model_high_trust)).to eq(
       %w[

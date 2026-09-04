@@ -165,6 +165,7 @@ plugins:
     default: claude-sonnet-5
     choices: &chatbot_anthropic_models
       - claude-fable-5-1
+      - claude-fable-5
       - claude-opus-5
       - claude-sonnet-5
       - claude-haiku-4-5
