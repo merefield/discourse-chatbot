@@ -217,7 +217,7 @@ RSpec.describe SiteSetting do
       %w[text-embedding-ada-002 text-embedding-3-small text-embedding-3-large],
     )
     expect(model_choices.call(:chatbot_support_picture_creation_model)).to eq(
-      %w[gpt-image-2 gpt-image-1.5 gpt-image-1-mini],
+      %w[gpt-image-2.5-sunburst gpt-image-2.5-flare gpt-image-2 gpt-image-1.5 gpt-image-1-mini],
     )
     expect(model_choices.call(:chatbot_anthropic_model_high_trust)).to eq(
       %w[claude-fable-5-1 claude-fable-5 claude-opus-5 claude-sonnet-5 claude-haiku-4-5],
