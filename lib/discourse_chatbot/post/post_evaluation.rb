@@ -16,6 +16,14 @@ module DiscourseChatbot
         end
       end
 
+      def on_edit(post, previous_raw)
+        bot_username = SiteSetting.chatbot_bot_user
+        return false unless mentions_bot?(post.raw, bot_username)
+        return false if mentions_bot?(previous_raw, bot_username)
+
+        on_submission(post)
+      end
+
       def trigger_response(submission)
         post = submission
 
@@ -31,7 +39,7 @@ module DiscourseChatbot
         bot_username = SiteSetting.chatbot_bot_user
         bot_user = ::User.find_by(username: bot_username)
 
-        mentions_bot_name = post_contents.downcase =~ /@#{bot_username.downcase}\b/
+        mentions_bot_name = mentions_bot?(post_contents, bot_username)
 
         explicit_reply_to_bot = false
         prior_user_was_bot = false
@@ -107,6 +115,15 @@ module DiscourseChatbot
         else
           false
         end
+      end
+
+      private
+
+      def mentions_bot?(raw, bot_username)
+        raw
+          .to_s
+          .gsub(%r{\[quote.*?\](.*?)\[/quote\]}m, "")
+          .match?(/@#{Regexp.escape(bot_username)}\b/i)
       end
     end
   end
