@@ -119,6 +119,14 @@ RSpec.describe SiteSetting do
       depends_behavior: :hidden,
       dependent_setting_display: "inline",
     )
+    expect(dependency_metadata.call(:chatbot_auto_reply_up_to_post_count)).to eq(
+      depends_on: [:chatbot_unlimited_topic_auto_replies],
+      depends_on_values: {
+        chatbot_unlimited_topic_auto_replies: ["false"],
+      },
+      depends_behavior: :hidden,
+      dependent_setting_display: "inline",
+    )
     expect(dependency_metadata.call(:chatbot_quick_access_bot_kicks_off)).to eq(
       depends_on: [:chatbot_quick_access_talk_button],
       depends_on_values: {
