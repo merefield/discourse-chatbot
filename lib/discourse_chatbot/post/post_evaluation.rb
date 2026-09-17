@@ -39,7 +39,16 @@ module DiscourseChatbot
         bot_username = SiteSetting.chatbot_bot_user
         bot_user = ::User.find_by(username: bot_username)
 
+        return false unless bot_user
+
         mentions_bot_name = mentions_bot?(post_contents, bot_username)
+
+        automatic_replies_allowed =
+          topic.private_message? || SiteSetting.chatbot_unlimited_topic_auto_replies ||
+            (
+              SiteSetting.chatbot_auto_reply_up_to_post_count > 0 &&
+                topic.posts_count <= SiteSetting.chatbot_auto_reply_up_to_post_count
+            )
 
         explicit_reply_to_bot = false
         prior_user_was_bot = false
@@ -51,6 +60,7 @@ module DiscourseChatbot
               .order(created_at: :desc)
               .limit(5)
               .where.not(user_id: user.id)
+              .where("user_id > 0")
               .first
               &.user_id
           prior_user_was_bot = last_other_posting_user_id == bot_user.id
@@ -68,10 +78,8 @@ module DiscourseChatbot
                  )
              ) ||
                (
-                 Array(SiteSetting.chatbot_auto_respond_categories.split("|")).include? post
-                              .topic
-                              .category_id
-                              .to_s
+                 automatic_replies_allowed &&
+                   SiteSetting.chatbot_auto_respond_categories.split("|").include?(category_id.to_s)
                )
             explicit_reply_to_bot = true
           end
@@ -83,8 +91,9 @@ module DiscourseChatbot
           ::TopicUser
             .where(topic_id: topic.id)
             .where(posted: true)
-            .where("user_id not in (?)", [bot_user.id])
-            .uniq(&:user_id)
+            .where.not(user_id: bot_user.id)
+            .where("user_id > 0")
+            .distinct
             .pluck(:user_id)
 
         human_participants_count = (existing_human_participants << user.id).uniq.count
@@ -96,7 +105,7 @@ module DiscourseChatbot
         if bot_user && (user.id > 0) &&
              (
                mentions_bot_name || explicit_reply_to_bot ||
-                 (prior_user_was_bot && human_participants_count == 1)
+                 (automatic_replies_allowed && prior_user_was_bot && human_participants_count == 1)
              )
           opts = {
             type: POST,
@@ -110,6 +119,8 @@ module DiscourseChatbot
             over_quota: over_quota(user.id),
             trust_level: trust_level(user.id),
             human_participants_count: human_participants_count,
+            automatic_topic_reply:
+              !topic.private_message? && !mentions_bot_name && post.reply_to_user_id != bot_user.id,
             message_body: post_contents.gsub(bot_username.downcase, "").gsub(bot_username, ""),
           }
         else

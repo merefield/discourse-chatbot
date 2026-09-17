@@ -65,6 +65,20 @@ plugins:
     default: ''
     type: category_list
     list_type: "compact"
+  chatbot_unlimited_topic_auto_replies:
+    default: true
+    client: false
+  chatbot_auto_reply_up_to_post_count:
+    default: 0
+    min: 0
+    client: false
+    depends_on:
+      - chatbot_unlimited_topic_auto_replies
+    depends_on_values:
+      chatbot_unlimited_topic_auto_replies:
+        - false
+    depends_behavior: hidden
+    dependent_setting_display: inline
   chatbot_quick_access_talk_button:
     client: true
     default: chat

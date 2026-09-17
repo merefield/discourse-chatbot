@@ -61,6 +61,8 @@ en:
     chatbot_can_trigger_from_whisper: "Allow Chatbot to be triggered from a whisper (get creative!)"
     chatbot_permitted_all_categories: "Allow Chatbot to interact in any Category"
     chatbot_permitted_categories: "Categories where Chatbot can interact when {{setting:chatbot_permitted_all_categories}} is disabled."
+    chatbot_unlimited_topic_auto_replies: "Allow automatic follow-up replies in topics without a post-count limit while only one human is participating. Disable to configure a limit. Private messages and Chat are unaffected."
+    chatbot_auto_reply_up_to_post_count: "Allow automatic replies while the topic's total post count is at or below this number, including human and bot posts. Follow-ups require the bot to have participated and only one human participant. Set to 0 to require an @mention or a direct reply to the bot, including in auto-response categories. Explicit mentions and direct replies work above the limit. Private messages and Chat are unaffected."
     chatbot_auto_respond_categories: "Categories where Chatbot should reply to every first Post.  See each Category's Settings to inject a special prompt"
     chatbot_bot_user: "The Chatbot User"
     chatbot_quick_access_talk_button: "Display floating button which links to direct discussion one-to-one with the bot on specified channel type"
@@ -134,6 +136,7 @@ en:
     chatbot_enable_verbose_rails_logging: "Enable response retrieval progress logging to rails logs to help debug issues. 'api_calls_only' restricts this to just API calls, 'all' logs all progress"
     chatbot_verbose_rails_logging_destination_level: "Log level used when {{setting:chatbot_enable_verbose_rails_logging}} is <code>api_calls_only</code> or <code>all</code>. <code>warn</code> is useful in production because <code>info</code> logs are not exposed at <code>/logs</code>."
   chatbot:
+    topic_auto_reply_limit_reached: "To continue, reply directly to this message or mention @%{username}."
     bio: "Hi, I'm not a real person. I'm a bot that can discuss things with you. Don't take me too seriously. Sometimes, I'm even right about stuff!"
     pm_prefix: "A Discussion with Chatbot"
     quick_access_kick_off:

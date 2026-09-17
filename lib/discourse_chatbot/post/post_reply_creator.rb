@@ -52,7 +52,12 @@ module DiscourseChatbot
           unless SiteSetting.chatbot_can_trigger_from_whisper
             default_opts.merge!(reply_to_post_number: @reply_to_post_number)
           end
-          default_opts.merge!(raw: @message_body)
+          message_body = @message_body
+          if final_automatic_topic_reply?
+            message_body =
+              "#{message_body}\n\n#{I18n.t("chatbot.topic_auto_reply_limit_reached", username: @author.username)}"
+          end
+          default_opts.merge!(raw: message_body)
 
           new_post = PostCreator.create!(@author, default_opts)
 
@@ -99,6 +104,20 @@ module DiscourseChatbot
           ::DiscourseChatbot.progress_debug_message("Problem with the bot Post: #{e}")
           Rails.logger.error("Chatbot: There was a problem: #{e}")
         end
+      end
+
+      private
+
+      def final_automatic_topic_reply?
+        return false unless @options[:automatic_topic_reply]
+        return false if SiteSetting.chatbot_unlimited_topic_auto_replies
+
+        limit = SiteSetting.chatbot_auto_reply_up_to_post_count
+        return false if limit <= 0
+
+        topic = ::Topic.find(@topic_or_channel_id)
+        # Include this answer and the next human post in the next invocation's count.
+        !topic.private_message? && topic.posts_count + 2 > limit
       end
     end
   end

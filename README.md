@@ -202,6 +202,21 @@ The bot supports Topic Posts, Personal Messages, Chat channels, and Chat threads
 * `chatbot_permitted_all_categories` and `chatbot_permitted_categories` control Topic availability.
 * `chatbot_permitted_in_private_messages` and `chatbot_permitted_in_chat` control those surfaces.
 
+### Automatic replies in topics
+
+`chatbot_unlimited_topic_auto_replies` is enabled by default. Once the bot has participated, it can keep replying without a mention while only one human is participating. The system user and built-in bot accounts do not count as humans.
+
+Disable unlimited replies to use `chatbot_auto_reply_up_to_post_count`:
+
+* **0:** require an @mention or a direct reply to a bot post, including in auto-response categories.
+* **A positive number:** allow automatic replies while the topic's total post count is at or below that number. Follow-ups still require previous bot participation and only one human participant.
+
+The count includes human and bot posts, not just questions or bot replies. For example, with a limit of 3, a human question, bot answer, and human follow-up total 3 posts, so the bot can answer that follow-up. The next human post exceeds the limit and needs a mention or direct reply.
+
+The final automatic reply includes a reminder to reply directly or @mention the bot to continue.
+
+Explicit mentions and direct replies work above the limit, subject to the usual permissions and quotas. These settings do not affect Personal Messages or Chat.
+
 ### Category auto-responder
 
 Categories listed in `chatbot_auto_respond_categories` can receive an automatic reply to each new Topic. Configure the Category-specific additional prompt in that Category's settings.
