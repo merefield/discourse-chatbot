@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Chat, Topics and Private Messages
-# version: 3.0.2
+# version: 3.0.3
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -184,6 +184,8 @@ register_svg_icon "robot"
 DiscoursePluginRegistry.serialized_current_user_fields << "chatbot_user_prefs_disable_quickchat_pm_composer_popup_mobile"
 
 after_initialize do
+  reloadable_patch { ::PostRevisor.prepend ::DiscourseChatbot::PostRevisorExtension }
+
   # Allow user to disable quickchat Composer popup on mobile PMs
   User.register_custom_field_type(
     "chatbot_user_prefs_disable_quickchat_pm_composer_popup_mobile",
@@ -292,7 +294,7 @@ after_initialize do
   end
 
   on(:post_edited) do |*params|
-    post, topic_changed, opts = params
+    post, topic_changed, revisor = params
 
     if SiteSetting.chatbot_enabled && post.post_type == 1
       job_class = ::Jobs::ChatbotPostEmbedding
@@ -301,6 +303,18 @@ after_initialize do
       if post.is_first_post? && topic_changed
         job_class = ::Jobs::ChatbotTopicTitleEmbedding
         job_class.perform_async({ id: post.topic.id }.stringify_keys)
+      end
+    end
+
+    if SiteSetting.chatbot_enabled &&
+         (
+           post.post_type == 1 ||
+             post.post_type == 4 && SiteSetting.chatbot_can_trigger_from_whisper
+         )
+      bot_user = User.find_by(username: SiteSetting.chatbot_bot_user)
+
+      if bot_user && post.user_id != bot_user.id
+        ::DiscourseChatbot::Post::PostEvaluation.new.on_edit(post, revisor.chatbot_previous_raw)
       end
     end
   end
