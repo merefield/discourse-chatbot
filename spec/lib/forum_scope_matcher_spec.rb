@@ -68,14 +68,26 @@ RSpec.describe DiscourseChatbot::BlockedQuestionMatcher, "#evaluate" do
     expect(request).to have_been_requested.once
   end
 
-  it "sends category metadata and only preceding regular posts from the same topic" do
+  it "sends category metadata and fills all history slots with visible, undeleted regular posts" do
     category =
       Fabricate(:category, name: "Boat maintenance", description: "Care and repair of boats")
     topic = Fabricate(:topic, category: category)
-    preceding = Fabricate(:post, topic: topic, post_number: 1, raw: "How do I repair a sail?")
-    Fabricate(:post, topic: topic, post_number: 2, post_type: Post.types[:whisper])
-    current = Fabricate(:post, topic: topic, post_number: 3, raw: "How much does that cost?")
-    Fabricate(:post, topic: topic, post_number: 4)
+    preceding =
+      (1..4).map do |post_number|
+        Fabricate(
+          :post,
+          topic: topic,
+          post_number: post_number,
+          raw: "Sail repair question #{post_number}",
+        )
+      end
+    (5..8).each do |post_number|
+      Fabricate(:post, topic: topic, post_number: post_number, deleted_at: Time.now)
+    end
+    Fabricate(:post, topic: topic, post_number: 9, hidden: true)
+    Fabricate(:post, topic: topic, post_number: 10, post_type: Post.types[:whisper])
+    current = Fabricate(:post, topic: topic, post_number: 11, raw: "How much does that cost?")
+    Fabricate(:post, topic: topic, post_number: 12)
     request =
       stub_request(:post, url)
         .with do |http_request|
@@ -87,7 +99,7 @@ RSpec.describe DiscourseChatbot::BlockedQuestionMatcher, "#evaluate" do
                 "name" => category.name,
                 "description" => category.description_text,
               },
-              "preceding_messages" => [preceding.raw],
+              "preceding_messages" => preceding.map(&:raw),
             }
         end
         .to_return(status: 200, body: response.to_json)

@@ -77,7 +77,7 @@ module DiscourseChatbot
           topic
             .posts
             .where("post_number < ?", submission.post_number)
-            .where(post_type: ::Post.types[:regular], hidden: false)
+            .where(post_type: ::Post.types[:regular], hidden: false, deleted_at: nil)
             .order(post_number: :desc)
             .limit(HISTORY_LENGTH)
             .pluck(:raw)
