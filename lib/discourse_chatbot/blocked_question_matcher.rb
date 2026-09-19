@@ -8,9 +8,27 @@ module ::DiscourseChatbot
     CACHE_VERSION = 1
     EXAMPLE_BATCH_SIZE = 100
 
-    def evaluate(question)
+    def evaluate(question, submission: nil)
       return unless SiteSetting.chatbot_blocked_questions_enabled
 
+      if question.present? && SystemOneClient.configured?
+        begin
+          return ForumScopeMatcher.new.evaluate(question, submission: submission)
+        rescue StandardError => error
+          # Provider errors can contain credentials or request text; only record the error class.
+          Rails.logger.warn(
+            "Chatbot: System One failed (#{error.class}); falling back to example matching",
+          )
+          return evaluate_examples(question).merge(system_one_fallback: error.class.name)
+        end
+      end
+
+      evaluate_examples(question)
+    end
+
+    private
+
+    def evaluate_examples(question)
       evaluation = {
         blocked: false,
         threshold: SiteSetting.chatbot_blocked_questions_similarity_threshold,
@@ -45,8 +63,6 @@ module ::DiscourseChatbot
         embedding_model: ::DiscourseChatbot.embedding_model_name,
       }
     end
-
-    private
 
     def configured_examples
       examples = SiteSetting.chatbot_blocked_question_examples.presence || []

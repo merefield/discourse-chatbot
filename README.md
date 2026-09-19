@@ -67,7 +67,7 @@ This is a deliberate compromise: semantic search is optimised for speed and does
 
 # Setup
 
-For a new installation, configure [model providers](#model-providers), [access and quotas](#access-and-quotas), and [trust-level tools](#tools-by-trust-level) first. Stored forum embeddings are optional and are needed for local forum search. Blocked-question matching uses the configured embeddings provider without requiring the stored forum index.
+For a new installation, configure [model providers](#model-providers), [access and quotas](#access-and-quotas), and [trust-level tools](#tools-by-trust-level) first. Stored forum embeddings are optional and are needed for local forum search. Blocked-question matching can use System One forum-scope judgments or example-based embeddings without requiring the stored forum index.
 
 ## Prerequisites
 
@@ -231,13 +231,21 @@ Add `user_information` to the relevant trust-level tool allowlist to let the bot
 
 ## Blocked questions
 
-Enable `chatbot_blocked_questions_enabled` to compare each incoming question with configured
-examples before sending it to the full language model. Add examples and subject labels in
-`chatbot_blocked_question_examples`, then tune
-`chatbot_blocked_questions_similarity_threshold` to control how closely a question must match.
-Matching questions receive a canned decline response containing the configured subject label. If
-the semantic check fails, normal bot processing continues. This feature uses the configured
-embedding model and endpoint.
+Enable `chatbot_blocked_questions_enabled` to check requests before calling the full language model, in Topics, Personal Messages, and Chat.
+
+When all three settings below are populated, System One evaluates whether the question relates to this community:
+
+| Setting | Default |
+| --- | --- |
+| `chatbot_system_one_model` | `jev-latest` |
+| `chatbot_system_one_url` | `https://api.typesafe.ai/v1/systemone` (full evaluation endpoint) |
+| `chatbot_system_one_key` | Empty; stored as a secret |
+
+The endpoint must implement the [TypeSafe System One API](https://docs.typesafe.ai/api). This path sends the forum title and descriptions, category description when available, the question, and up to four preceding conversation messages. It does **not** require or consult `chatbot_blocked_question_examples`. Category descriptions can explicitly permit off-topic discussion. Keep descriptions accurate: they define the scope used by the model.
+
+The model chooses in scope, out of scope, or unclear. Only an out-of-scope decision with at least 0.9 probability for that option produces a fixed reminder to ask about the community. Unclear and lower-probability results proceed normally. This is an initial conservative threshold, not an accuracy guarantee; validate it against your forum's questions. The embedding similarity setting does not affect System One. Model decisions and token usage appear in the existing optional inner-thoughts audit.
+
+If any connection setting is blank, the existing embedding matcher compares questions against `chatbot_blocked_question_examples`, using `chatbot_blocked_questions_similarity_threshold`. Matching questions receive a canned decline containing the configured subject label. System One timeouts, HTTP errors, and invalid responses also fall back to this matcher. Keep examples if you want this fallback to block questions; without examples, requests proceed normally. Embedding failures also allow normal processing.
 
 ## Tools by trust level
 

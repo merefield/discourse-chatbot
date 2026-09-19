@@ -123,7 +123,10 @@ class ::Jobs::ChatbotReply < Jobs::Base
 
     if create_bot_reply
       blocked_question_evaluation =
-        ::DiscourseChatbot::BlockedQuestionMatcher.new.evaluate(opts[:message_body])
+        ::DiscourseChatbot::BlockedQuestionMatcher.new.evaluate(
+          opts[:message_body],
+          submission: post || message,
+        )
 
       if blocked_question_evaluation
         audit_entry = blocked_question_audit(blocked_question_evaluation)
@@ -131,15 +134,19 @@ class ::Jobs::ChatbotReply < Jobs::Base
       end
 
       if blocked_question_evaluation&.dig(:blocked)
-        reply_and_thoughts[:reply] = I18n.t(
-          "chatbot.errors.blocked_question",
-          category: blocked_question_evaluation[:category],
-        )
+        reply_and_thoughts[:reply] = if blocked_question_evaluation[:strategy] == "system_one"
+          I18n.t("chatbot.errors.out_of_scope_question")
+        else
+          I18n.t(
+            "chatbot.errors.blocked_question",
+            category: blocked_question_evaluation[:category],
+          )
+        end
         reply_and_thoughts[:inner_thoughts] = opts[:initial_inner_thoughts]
         opts[:blocked_question] = true
         create_bot_reply = false
         ::DiscourseChatbot.progress_debug_message(
-          "4. Declining a question matching the '#{blocked_question_evaluation[:category]}' blocked category",
+          "4. Declining a question: #{blocked_question_evaluation[:outcome]}",
         )
       end
     end
@@ -198,6 +205,13 @@ class ::Jobs::ChatbotReply < Jobs::Base
 
   def blocked_question_audit(evaluation)
     details = {
+      strategy: evaluation[:strategy],
+      model: evaluation[:model],
+      decision: evaluation[:decision],
+      probability: evaluation[:probability],
+      confidence: evaluation[:confidence],
+      usage: evaluation[:usage],
+      system_one_fallback: evaluation[:system_one_fallback],
       category: evaluation[:category],
       example_question: evaluation[:question],
       similarity: evaluation[:similarity]&.round(4),
