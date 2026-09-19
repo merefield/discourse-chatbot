@@ -149,6 +149,71 @@ RSpec.describe Jobs::ChatbotReply do
     expect(quota.reload.value).to eq("10")
   end
 
+  it "declines off-topic questions through System One without examples or generative-model quota" do
+    SiteSetting.chatbot_blocked_questions_enabled = true
+    SiteSetting.chatbot_system_one_key = "test-system-one-key"
+    SiteSetting.chatbot_blocked_question_examples = "[]"
+    SiteSetting.chatbot_private_message_auto_title = true
+    SiteSetting.chatbot_include_inner_thoughts_in_private_messages = true
+    SiteSetting.site_description = "A sailing community"
+    response = {
+      model: "jev-1.13.0",
+      answers: {
+        forum_scope: {
+          type: "choice",
+          choice: "out_of_scope",
+          probabilities: {
+            in_scope: 0.01,
+            out_of_scope: 0.98,
+            unclear: 0.01,
+          },
+          confidence: 0.95,
+        },
+      },
+      usage: {
+        input_tokens: 300,
+        output_tokens: 30,
+      },
+    }
+    request =
+      stub_request(:post, "https://api.typesafe.ai/v1/systemone")
+        .with do |http_request|
+          state = JSON.parse(http_request.body).fetch("state")
+          state.dig("conversation", "title") == pm_topic.title &&
+            state.dig("forum", "description") == SiteSetting.site_description
+        end
+        .to_return(status: 200, body: response.to_json)
+    original_title = pm_topic.title
+    quota =
+      UserCustomField.create!(
+        user_id: requester.id,
+        name: ::DiscourseChatbot::CHATBOT_REMAINING_QUOTA_QUERIES_CUSTOM_FIELD,
+        value: "10",
+      )
+    post =
+      PostCreator.create!(
+        requester,
+        topic_id: pm_topic.id,
+        raw: "Recommend a games console, @#{bot_user.username}",
+      )
+    opts = ::DiscourseChatbot::Post::PostEvaluation.new.trigger_response(post)
+    opts[:trust_level] = "low"
+
+    described_class.new.execute(opts)
+
+    replies = pm_topic.posts.order(:post_number).last(2)
+    expect(replies.first.raw).to include(
+      '"strategy": "system_one"',
+      '"outcome": "system_one_blocked"',
+      '"model": "jev-1.13.0"',
+      '"input_tokens": 300',
+    )
+    expect(replies.last.raw).to eq(I18n.t("chatbot.errors.out_of_scope_question"))
+    expect(pm_topic.reload.title).to eq(original_title)
+    expect(quota.reload.value).to eq("10")
+    expect(request).to have_been_requested.once
+  end
+
   it "records an insufficient blocked-question match before the RAG response" do
     SiteSetting.chatbot_blocked_questions_enabled = true
     SiteSetting.chatbot_blocked_question_examples = [

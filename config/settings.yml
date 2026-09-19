@@ -772,6 +772,16 @@ plugins:
     depends_on:
       - chatbot_embeddings_enabled
     depends_behavior: hidden
+  chatbot_system_one_model:
+    client: false
+    default: 'jev-latest'
+  chatbot_system_one_url:
+    client: false
+    default: 'https://api.typesafe.ai/v1/systemone'
+  chatbot_system_one_key:
+    client: false
+    default: ''
+    secret: true
   chatbot_blocked_questions_enabled:
     client: false
     default: false
