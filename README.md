@@ -217,6 +217,8 @@ The final automatic reply includes a reminder to reply directly or @mention the 
 
 Explicit mentions and direct replies work above the limit, subject to the usual permissions and quotas. These settings do not affect Personal Messages or Chat.
 
+In a Personal Message whose only recipients are you and the configured bot (with no recipient groups), new posts invoke the bot without an @mention, including before its first reply. Normal permission, quota, and question-blocking checks still apply.
+
 ### Category auto-responder
 
 Categories listed in `chatbot_auto_respond_categories` can receive an automatic reply to each new Topic. Configure the Category-specific additional prompt in that Category's settings.
