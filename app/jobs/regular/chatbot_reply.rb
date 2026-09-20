@@ -208,6 +208,8 @@ class ::Jobs::ChatbotReply < Jobs::Base
       strategy: evaluation[:strategy],
       model: evaluation[:model],
       decision: evaluation[:decision],
+      reason: evaluation[:reason],
+      probabilities: evaluation[:probabilities],
       probability: evaluation[:probability],
       confidence: evaluation[:confidence],
       usage: evaluation[:usage],
@@ -227,6 +229,9 @@ class ::Jobs::ChatbotReply < Jobs::Base
         I18n.t(
           "chatbot.inner_thoughts.blocked_question_evaluation.#{evaluation[:outcome]}",
           **details,
+          explanation:
+            evaluation[:reason] &&
+              I18n.t("chatbot.inner_thoughts.system_one_reasons.#{evaluation[:reason]}"),
         ),
       **details,
     }

@@ -105,6 +105,7 @@ en:
     chatbot_open_ai_embeddings_char_limit: "Maximum number of Post characters sent to the selected embeddings provider. Keep this as high as possible without experiencing an error."
     chatbot_open_ai_embeddings_model_custom_url: "Optional embeddings endpoint override. The endpoint must support the selected provider's OpenAI-compatible embeddings API and receives that provider's shared API key."
     chatbot_system_one_model: "System One model for semantic judgments. Defaults to TypeSafe AI's jev-latest. The model, URL, and key must all be populated to enable System One question blocking."
+    chatbot_system_one_out_of_scope_threshold: "Minimum out-of-scope probability required to decline a question when System One classifies it as out of scope. Lower values block more readily. In-scope and unclear decisions always proceed. Does not affect example-based embedding matching."
     chatbot_system_one_url: "Full evaluation endpoint implementing TypeSafe AI's System One API. Defaults to https://api.typesafe.ai/v1/systemone."
     chatbot_system_one_key: "Secret API key for the System One endpoint. When configured with a model and URL, enabled question blocking sends forum/category descriptions, the question, and up to four preceding messages to this service."
     chatbot_blocked_questions_enabled: "Check questions before calling the full language model. When all System One settings are populated, decline clearly off-topic questions using forum/category descriptions and conversation context, without examples. Otherwise use example-based embedding matching. System One failures fall back to example matching; embedding failures allow normal processing."
@@ -352,9 +353,14 @@ en:
         call_function:
           error: "There was something wrong with your tool arguments"
     inner_thoughts:
+      system_one_reasons:
+        in_scope: "The question was classified as relevant to the community."
+        unclear: "Relevance was unclear, so normal answering was allowed."
+        below_threshold: "The question was classified as out of scope, but its probability was below the blocking threshold."
+        out_of_scope: "The question was classified as out of scope and met the blocking threshold."
       blocked_question_evaluation:
         system_one_blocked: "Declined an off-topic question using %{model}. Decision: %{decision}; out-of-scope probability %{probability}, threshold %{threshold}."
-        system_one_allowed: "Allowed the request after forum-scope evaluation using %{model}. Decision: %{decision}; out-of-scope probability %{probability}, threshold %{threshold}."
+        system_one_allowed: "Allowed the request after forum-scope evaluation using %{model}. %{explanation} Decision: %{decision}; out-of-scope probability %{probability}, threshold %{threshold}."
         blocked: "Blocked the request as %{category}. The closest configured example was “%{example_question}” with cosine similarity %{similarity}, exceeding the %{threshold} threshold using %{embedding_model}."
         below_threshold: "Allowed the request to continue. The closest blocked-question area was %{category}, represented by “%{example_question}”, but its cosine similarity of %{similarity} did not exceed the %{threshold} threshold using %{embedding_model}."
         no_examples: "Allowed the request to continue because no blocked-question examples were configured."
@@ -372,5 +378,5 @@ en:
       forbiddenoutsidethesecategories: "Public use of Chatbot has only been permitted in these Categories: "
       forbiddenanycategory: "Public use of Chatbot has not been enabled in any Category, please contact your admin"
       overquota: "I'm afraid you've reached this week's quota for bot interactions"
-      out_of_scope_question: "Please ask me about this community or the subjects discussed here."
+      out_of_scope_question: "I can't help with this question because it appears unrelated to this forum's subject matter. Please ask a question about this community or its topics."
       blocked_question: "I'm afraid I can't talk about %{category}. Please ask me something else."

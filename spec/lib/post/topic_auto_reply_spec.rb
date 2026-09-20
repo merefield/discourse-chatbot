@@ -120,16 +120,44 @@ describe ::DiscourseChatbot::Post::PostEvaluation, "#trigger_response" do
   end
 
   it "preserves private-message invitations and follow-ups when the topic limit is zero" do
+    SiteSetting.chatbot_reply_job_time_delay = 0
+    Jobs::ChatbotReply.jobs.clear
     SiteSetting.chatbot_unlimited_topic_auto_replies = false
     SiteSetting.chatbot_auto_reply_up_to_post_count = 0
     topic.update!(archetype: Archetype.private_message, category_id: nil)
     topic.topic_allowed_users.create!(user: user)
     topic.topic_allowed_users.create!(user: bot_user)
-    Fabricate(:topic_user, topic: topic, user: bot_user, posted: false)
     first_post = create_post(user)
 
+    expect(TopicUser.exists?(topic: topic, user: bot_user)).to eq(false)
     expect(evaluation.trigger_response(first_post)).to be_present
+    expect(Jobs::ChatbotReply.jobs.size).to eq(1)
+    expect(evaluation.trigger_response(create_post(user))).to include(automatic_topic_reply: false)
+    expect(Jobs::ChatbotReply.jobs.size).to eq(2)
     create_post(bot_user)
     expect(evaluation.trigger_response(create_post(user))).to be_present
+  end
+
+  it "does not treat extra recipients or groups as a one-to-one PM" do
+    topic.update!(archetype: Archetype.private_message, category_id: nil)
+    topic.topic_allowed_users.create!(user: user)
+    topic.topic_allowed_users.create!(user: bot_user)
+    extra_recipient = topic.topic_allowed_users.create!(user: other_user)
+    create_post(user)
+    follow_up = create_post(user)
+
+    expect(evaluation.trigger_response(follow_up)).to eq(false)
+    extra_recipient.destroy!
+    topic.topic_allowed_groups.create!(group: Fabricate(:group))
+    expect(evaluation.trigger_response(follow_up)).to eq(false)
+  end
+
+  it "does not automatically join a PM between humans" do
+    topic.update!(archetype: Archetype.private_message, category_id: nil)
+    topic.topic_allowed_users.create!(user: user)
+    topic.topic_allowed_users.create!(user: other_user)
+
+    expect(evaluation.trigger_response(create_post(user))).to eq(false)
+    expect(evaluation.trigger_response(create_post(user))).to eq(false)
   end
 end

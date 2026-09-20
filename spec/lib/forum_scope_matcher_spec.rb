@@ -99,7 +99,8 @@ RSpec.describe DiscourseChatbot::BlockedQuestionMatcher, "#evaluate" do
                 "name" => category.name,
                 "description" => category.description_text,
               },
-              "preceding_messages" => preceding.map(&:raw),
+              "preceding_messages" =>
+                preceding.map { |post| { "role" => "user", "text" => post.raw } },
             }
         end
         .to_return(status: 200, body: response.to_json)
@@ -129,13 +130,52 @@ RSpec.describe DiscourseChatbot::BlockedQuestionMatcher, "#evaluate" do
       stub_request(:post, url)
         .with do |http_request|
           context = JSON.parse(http_request.body).dig("state", "conversation")
-          context["preceding_messages"] == [thread.original_message.message, preceding.message] &&
-            context.dig("category", "name") == channel.chatable.name
+          context["preceding_messages"] ==
+            [thread.original_message.message, preceding.message].map do |text|
+              { "role" => "user", "text" => text }
+            end && context.dig("category", "name") == channel.chatable.name
         end
         .to_return(status: 200, body: response.to_json)
 
     expect(described_class.new.evaluate(current.message, submission: current)[:strategy]).to eq(
       "system_one",
+    )
+    expect(request).to have_been_requested.once
+  end
+
+  it "includes the refused question and speaker roles for a plea to continue, excluding bot audits" do
+    user = Fabricate(:user)
+    bot = Fabricate(:user)
+    SiteSetting.chatbot_bot_user = bot.username
+    topic = Fabricate(:private_message_topic, user: user, recipient: bot)
+    original = Fabricate(:post, topic: topic, user: user, raw: question)
+    refusal =
+      Fabricate(:post, topic: topic, user: bot, raw: I18n.t("chatbot.errors.out_of_scope_question"))
+    4.times do
+      Fabricate(
+        :post,
+        topic: topic,
+        user: bot,
+        raw: "#{DiscourseChatbot::INNER_THOUGHTS_POST_PREFIX}[]\n```\n[/details]",
+      )
+    end
+    current = Fabricate(:post, topic: topic, user: user, raw: "Oh come on, help me!")
+    request =
+      stub_request(:post, url)
+        .with do |http_request|
+          payload = JSON.parse(http_request.body)
+          payload.dig("state", "question") == current.raw &&
+            payload.dig("state", "conversation", "preceding_messages") ==
+              [
+                { "role" => "user", "text" => original.raw },
+                { "role" => "assistant", "text" => refusal.raw },
+              ]
+        end
+        .to_return(status: 200, body: response.to_json)
+
+    expect(described_class.new.evaluate(current.raw, submission: current)).to include(
+      blocked: true,
+      reason: "out_of_scope",
     )
     expect(request).to have_been_requested.once
   end
@@ -158,16 +198,86 @@ RSpec.describe DiscourseChatbot::BlockedQuestionMatcher, "#evaluate" do
         strategy: "system_one",
         outcome: "system_one_allowed",
         decision: choice,
+        reason: choice == "out_of_scope" ? "below_threshold" : choice,
+        probabilities: probabilities.stringify_keys,
       )
     end
   end
 
-  it "blocks at the fixed System One probability threshold independently of cosine similarity" do
+  it "uses the configurable System One threshold independently of cosine similarity" do
     SiteSetting.chatbot_blocked_questions_similarity_threshold = 1
-    answer[:probabilities] = { in_scope: 0.05, out_of_scope: 0.9, unclear: 0.05 }
+    answer[:probabilities] = { in_scope: 0.13, out_of_scope: 0.77, unclear: 0.1 }
     stub_request(:post, url).to_return(status: 200, body: response.to_json)
 
-    expect(described_class.new.evaluate(question)).to include(blocked: true, threshold: 0.9)
+    expect(described_class.new.evaluate(question)).to include(blocked: false, threshold: 0.9)
+    SiteSetting.chatbot_system_one_out_of_scope_threshold = 0.77
+    expect(described_class.new.evaluate(question)).to include(
+      blocked: true,
+      threshold: 0.77,
+      reason: "out_of_scope",
+    )
+    SiteSetting.chatbot_system_one_out_of_scope_threshold = 1
+    expect(described_class.new.evaluate(question)).to include(blocked: false, threshold: 1)
+    SiteSetting.chatbot_system_one_out_of_scope_threshold = 0
+    expect(described_class.new.evaluate(question)).to include(blocked: true, threshold: 0)
+  end
+
+  it "allows in-scope and unclear classifications even with a zero threshold" do
+    SiteSetting.chatbot_system_one_out_of_scope_threshold = 0
+    stub_request(:post, url).to_return { { status: 200, body: response.to_json } }
+    %w[in_scope unclear].each do |choice|
+      answer[:choice] = choice
+      answer[:probabilities] = { in_scope: 0.1, out_of_scope: 0.1, unclear: 0.1 }.merge(
+        choice.to_sym => 0.8,
+      )
+      expect(described_class.new.evaluate(question)).to include(blocked: false, reason: choice)
+    end
+  end
+
+  it "logs correlated request and response bodies only when verbose logging is enabled" do
+    SiteSetting.chatbot_system_one_key = 'test-"system\\one"-key'
+    output = StringIO.new
+    Rails.stubs(:logger).returns(Logger.new(output))
+    response[:echoed_key] = SiteSetting.chatbot_system_one_key
+    response[:nested] = [
+      { SiteSetting.chatbot_system_one_key => "Bearer #{SiteSetting.chatbot_system_one_key}" },
+    ]
+    stub_request(:post, url).to_return(status: 200, body: response.to_json)
+
+    described_class.new.evaluate(question)
+    expect(output.string).to be_empty
+
+    SiteSetting.chatbot_enable_verbose_rails_logging = "api_calls_only"
+    described_class.new.evaluate(question)
+    entries = output.string.lines.map { |line| JSON.parse(line[line.index("{")..]) }
+    expect(entries.map { |entry| entry["event"] }).to eq(%w[request response])
+    expect(entries.map { |entry| entry["request_id"] }.uniq.size).to eq(1)
+    expect(entries.first.dig("body", "state", "question")).to eq(question)
+    expect(entries.last).to include("status" => 200, "elapsed_ms" => be >= 0)
+    expect(JSON.parse(entries.last["body"])).to include(
+      "echoed_key" => "[REDACTED]",
+      "nested" => [{ "[REDACTED]" => "Bearer [REDACTED]" }],
+      "model" => response[:model],
+    )
+    expect(output.string).not_to include(SiteSetting.chatbot_system_one_key)
+  end
+
+  it "omits non-JSON response bodies while retaining HTTP failure diagnostics" do
+    SiteSetting.chatbot_system_one_key = 'test-"system\\one"-key'
+    SiteSetting.chatbot_enable_verbose_rails_logging = "api_calls_only"
+    output = StringIO.new
+    Rails.stubs(:logger).returns(Logger.new(output))
+    body = "Invalid key: #{SiteSetting.chatbot_system_one_key.to_json}"
+    stub_request(:post, url).to_return(status: 401, body: body)
+
+    expect(described_class.new.evaluate(question)).to include(system_one_fallback: "RuntimeError")
+    entries =
+      output.string.lines.filter_map do |line|
+        JSON.parse(line[line.index("{")..]) if line.include?("Chatbot: System One {")
+      end
+    expect(entries.map { |entry| entry["event"] }).to eq(%w[request response error])
+    expect(entries.second).to include("status" => 401, "body" => "[Non-JSON response body omitted]")
+    expect(output.string).not_to include(body, SiteSetting.chatbot_system_one_key)
   end
 
   it "uses a custom System One endpoint and model" do

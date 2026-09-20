@@ -217,6 +217,8 @@ The final automatic reply includes a reminder to reply directly or @mention the 
 
 Explicit mentions and direct replies work above the limit, subject to the usual permissions and quotas. These settings do not affect Personal Messages or Chat.
 
+In a Personal Message whose only recipients are you and the configured bot (with no recipient groups), new posts invoke the bot without an @mention, including before its first reply. Normal permission, quota, and question-blocking checks still apply.
+
 ### Category auto-responder
 
 Categories listed in `chatbot_auto_respond_categories` can receive an automatic reply to each new Topic. Configure the Category-specific additional prompt in that Category's settings.
@@ -243,7 +245,11 @@ When all three settings below are populated, System One evaluates whether the qu
 
 The endpoint must implement the [TypeSafe System One API](https://docs.typesafe.ai/api). This path sends the forum title and descriptions, category description when available, the question, and up to four preceding conversation messages. It does **not** require or consult `chatbot_blocked_question_examples`. Category descriptions can explicitly permit off-topic discussion. Keep descriptions accurate: they define the scope used by the model.
 
-The model chooses in scope, out of scope, or unclear. Only an out-of-scope decision with at least 0.9 probability for that option produces a fixed reminder to ask about the community. Unclear and lower-probability results proceed normally. This is an initial conservative threshold, not an accuracy guarantee; validate it against your forum's questions. The embedding similarity setting does not affect System One. Model decisions and token usage appear in the existing optional inner-thoughts audit.
+The model chooses in scope, out of scope, or unclear. Only an out-of-scope decision meeting `chatbot_system_one_out_of_scope_threshold` (default **0.9**, range **0–1**) produces an explicit refusal explaining that the question appears unrelated to the forum and inviting a community-related question. Lower values block more readily; for example, **0.75** blocks an out-of-scope result of **0.77**. Unclear and lower-probability results proceed normally. This is an initial conservative threshold, not an accuracy guarantee; validate it against your forum's questions. The embedding similarity setting does not affect System One. Model decisions, all three probabilities, the applied threshold, the reason for allowing or declining, and token usage appear in the existing optional inner-thoughts audit.
+
+The check includes up to four preceding visible messages from the same topic or Chat thread, labelled by speaker role and limited to 2,000 characters each. Bot diagnostic dumps are excluded before applying that limit. Short follow-ups and pleas to continue are interpreted against this context, including earlier refused questions. This bounded context cannot guarantee detection of references to older or truncated messages.
+
+System One request and response bodies are logged when verbose console logging is enabled or verbose Rails logging is set to `api_calls_only` or `all`. Entries include a correlation ID, response HTTP status and elapsed time; failures include the exception class. Authorization headers are omitted and the configured API key is redacted from parsed JSON before log serialization. Non-JSON response bodies are omitted. These diagnostic bodies include question text and conversation context, including PM content, so enable verbose logging only when needed.
 
 If any connection setting is blank, the existing embedding matcher compares questions against `chatbot_blocked_question_examples`, using `chatbot_blocked_questions_similarity_threshold`. Matching questions receive a canned decline containing the configured subject label. System One timeouts, HTTP errors, and invalid responses also fall back to this matcher. Keep examples if you want this fallback to block questions; without examples, requests proceed normally. Embedding failures also allow normal processing.
 

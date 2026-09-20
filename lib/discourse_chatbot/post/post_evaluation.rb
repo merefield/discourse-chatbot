@@ -42,6 +42,9 @@ module DiscourseChatbot
         return false unless bot_user
 
         mentions_bot_name = mentions_bot?(post_contents, bot_username)
+        one_to_one_pm =
+          topic.private_message? && !topic.topic_allowed_groups.exists? &&
+            topic.topic_allowed_users.pluck(:user_id).sort == [user.id, bot_user.id].sort
 
         automatic_replies_allowed =
           topic.private_message? || SiteSetting.chatbot_unlimited_topic_auto_replies ||
@@ -67,16 +70,7 @@ module DiscourseChatbot
 
           explicit_reply_to_bot = post.reply_to_user_id == bot_user.id
         else
-          if (
-               topic.private_message? &&
-                 (
-                   ::TopicUser
-                     .where(topic_id: topic.id)
-                     .where(posted: false)
-                     .uniq(&:user_id)
-                     .pluck(:user_id).include? bot_user.id
-                 )
-             ) ||
+          if (topic.private_message? && topic.topic_allowed_users.exists?(user_id: bot_user.id)) ||
                (
                  automatic_replies_allowed &&
                    SiteSetting.chatbot_auto_respond_categories.split("|").include?(category_id.to_s)
@@ -101,10 +95,15 @@ module DiscourseChatbot
         ::DiscourseChatbot.progress_debug_message(
           "humans found in this convo: #{human_participants_count}",
         )
+        ::DiscourseChatbot.progress_debug_message(
+          "reply trigger for post #{post.id}: one_to_one_pm=#{one_to_one_pm}, " \
+            "mention=#{mentions_bot_name}, explicit_reply=#{explicit_reply_to_bot}, " \
+            "prior_user_was_bot=#{prior_user_was_bot}, automatic_replies_allowed=#{automatic_replies_allowed}",
+        )
 
         if bot_user && (user.id > 0) &&
              (
-               mentions_bot_name || explicit_reply_to_bot ||
+               one_to_one_pm || mentions_bot_name || explicit_reply_to_bot ||
                  (automatic_replies_allowed && prior_user_was_bot && human_participants_count == 1)
              )
           opts = {

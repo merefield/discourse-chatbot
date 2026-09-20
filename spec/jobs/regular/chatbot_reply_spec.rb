@@ -151,6 +151,7 @@ RSpec.describe Jobs::ChatbotReply do
 
   it "declines off-topic questions through System One without examples or generative-model quota" do
     SiteSetting.chatbot_blocked_questions_enabled = true
+    SiteSetting.chatbot_system_one_out_of_scope_threshold = 0.75
     SiteSetting.chatbot_system_one_key = "test-system-one-key"
     SiteSetting.chatbot_blocked_question_examples = "[]"
     SiteSetting.chatbot_private_message_auto_title = true
@@ -163,9 +164,9 @@ RSpec.describe Jobs::ChatbotReply do
           type: "choice",
           choice: "out_of_scope",
           probabilities: {
-            in_scope: 0.01,
-            out_of_scope: 0.98,
-            unclear: 0.01,
+            in_scope: 0.13,
+            out_of_scope: 0.77,
+            unclear: 0.1,
           },
           confidence: 0.95,
         },
@@ -205,6 +206,8 @@ RSpec.describe Jobs::ChatbotReply do
     expect(replies.first.raw).to include(
       '"strategy": "system_one"',
       '"outcome": "system_one_blocked"',
+      '"reason": "out_of_scope"',
+      '"threshold": 0.75',
       '"model": "jev-1.13.0"',
       '"input_tokens": 300',
     )
