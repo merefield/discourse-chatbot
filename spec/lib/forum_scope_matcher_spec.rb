@@ -235,9 +235,13 @@ RSpec.describe DiscourseChatbot::BlockedQuestionMatcher, "#evaluate" do
   end
 
   it "logs correlated request and response bodies only when verbose logging is enabled" do
+    SiteSetting.chatbot_system_one_key = 'test-"system\\one"-key'
     output = StringIO.new
     Rails.stubs(:logger).returns(Logger.new(output))
     response[:echoed_key] = SiteSetting.chatbot_system_one_key
+    response[:nested] = [
+      { SiteSetting.chatbot_system_one_key => "Bearer #{SiteSetting.chatbot_system_one_key}" },
+    ]
     stub_request(:post, url).to_return(status: 200, body: response.to_json)
 
     described_class.new.evaluate(question)
@@ -252,9 +256,28 @@ RSpec.describe DiscourseChatbot::BlockedQuestionMatcher, "#evaluate" do
     expect(entries.last).to include("status" => 200, "elapsed_ms" => be >= 0)
     expect(JSON.parse(entries.last["body"])).to include(
       "echoed_key" => "[REDACTED]",
+      "nested" => [{ "[REDACTED]" => "Bearer [REDACTED]" }],
       "model" => response[:model],
     )
     expect(output.string).not_to include(SiteSetting.chatbot_system_one_key)
+  end
+
+  it "omits non-JSON response bodies while retaining HTTP failure diagnostics" do
+    SiteSetting.chatbot_system_one_key = 'test-"system\\one"-key'
+    SiteSetting.chatbot_enable_verbose_rails_logging = "api_calls_only"
+    output = StringIO.new
+    Rails.stubs(:logger).returns(Logger.new(output))
+    body = "Invalid key: #{SiteSetting.chatbot_system_one_key.to_json}"
+    stub_request(:post, url).to_return(status: 401, body: body)
+
+    expect(described_class.new.evaluate(question)).to include(system_one_fallback: "RuntimeError")
+    entries =
+      output.string.lines.filter_map do |line|
+        JSON.parse(line[line.index("{")..]) if line.include?("Chatbot: System One {")
+      end
+    expect(entries.map { |entry| entry["event"] }).to eq(%w[request response error])
+    expect(entries.second).to include("status" => 401, "body" => "[Non-JSON response body omitted]")
+    expect(output.string).not_to include(body, SiteSetting.chatbot_system_one_key)
   end
 
   it "uses a custom System One endpoint and model" do

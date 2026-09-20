@@ -50,17 +50,36 @@ module DiscourseChatbot
         return
       end
 
-      message = "Chatbot: System One #{JSON.generate(details)}"
       key = SiteSetting.chatbot_system_one_key.strip
-      if key.present?
-        [JSON.generate(key)[1...-1], key].uniq.each do |secret|
-          message = message.gsub(secret, "[REDACTED]")
-        end
+      if details[:event] == "response"
+        details[:body] = response_body_for_logging(details[:body], key)
       end
+      message = "Chatbot: System One #{JSON.generate(redact_log_value(details, key))}"
       puts message if SiteSetting.chatbot_enable_verbose_console_logging
       if SiteSetting.chatbot_enable_verbose_rails_logging != "off"
         level = SiteSetting.chatbot_verbose_rails_logging_destination_level
         Rails.logger.public_send(level == "warn" ? :warn : :info, message)
+      end
+    end
+
+    def response_body_for_logging(body, key)
+      JSON.generate(redact_log_value(JSON.parse(body), key))
+    rescue JSON::ParserError
+      "[Non-JSON response body omitted]"
+    end
+
+    def redact_log_value(value, key)
+      return value if key.blank?
+
+      case value
+      when Hash
+        value.to_h { |name, content| [redact_log_value(name, key), redact_log_value(content, key)] }
+      when Array
+        value.map { |content| redact_log_value(content, key) }
+      when String
+        value.gsub(key, "[REDACTED]")
+      else
+        value
       end
     end
   end
