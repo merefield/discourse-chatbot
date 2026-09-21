@@ -46,6 +46,8 @@ module ::DiscourseChatbot
       @client = @llm_client.client
       @model_name = @llm_client.model_name
       @total_tokens = 0
+      @chain_tokens = 0
+      @tool_quota_tokens = 0
       @cached_tokens = 0
       @cache_write_tokens = 0
       @usage_totals = Hash.new(0)
@@ -96,6 +98,11 @@ module ::DiscourseChatbot
       statistics[:total_tokens] = @usage_totals[:total_tokens] if usage_field_reported?(
         :total_tokens,
       )
+      if @tool_quota_tokens.positive?
+        statistics[:tool_quota_tokens] = @tool_quota_tokens
+        statistics[:quota_tokens] = @total_tokens
+        statistics[:chain_tokens] = @chain_tokens
+      end
       statistics
     end
 
@@ -149,7 +156,7 @@ module ::DiscourseChatbot
 
     def ensure_chain_token_budget!
       chain_tokens = SiteSetting.chatbot_open_ai_max_chain_tokens
-      return if !chain_tokens.positive? || @total_tokens < chain_tokens
+      return if !chain_tokens.positive? || @chain_tokens < chain_tokens
 
       raise TokenBudgetError,
             "OpenAI response exceeded the configured chatbot_open_ai_max_chain_tokens budget"
@@ -615,6 +622,7 @@ module ::DiscourseChatbot
       record_usage_stat(:total_tokens, total_tokens)
 
       @total_tokens += total_tokens.to_i
+      @chain_tokens += total_tokens.to_i
       @cached_tokens += cached_tokens.to_i
       @cache_write_tokens += cache_write_tokens.to_i
 
@@ -1065,7 +1073,6 @@ module ::DiscourseChatbot
 
     def call_tool(tool_name, args_str, opts)
       begin
-        token_usage = 0
         args = JSON.parse(args_str)
         ::DiscourseChatbot.progress_debug_message <<~EOS
           +++++++++++++++++++++++++++++++++++++++
@@ -1076,16 +1083,20 @@ module ::DiscourseChatbot
         EOS
         tool = @tool_mapping[tool_name]
         if %w[escalate_to_staff remaining_bot_quota].include?(tool_name)
-          res, token_usage = tool.process(args, opts).values_at(:answer, :token_usage)
+          tool_result = tool.process(args, opts)
         elsif ["vision"].include?(tool_name)
-          res, token_usage = tool.process(args, opts, @client).values_at(:answer, :token_usage)
+          tool_result = tool.process(args, opts, @client)
         elsif ["paint_edit_picture"].include?(tool_name)
-          res, token_usage = tool.process(args, opts).values_at(:answer, :token_usage)
+          tool_result = tool.process(args, opts)
         else
-          res, token_usage = tool.process(args).values_at(:answer, :token_usage)
+          tool_result = tool.process(args)
         end
-        @total_tokens += token_usage.to_i
-        res
+        # Legacy token_usage is a quota charge; only explicit model usage belongs in the chain budget.
+        quota_tokens = tool_result[:token_usage].to_i
+        @total_tokens += quota_tokens
+        @tool_quota_tokens += quota_tokens
+        @chain_tokens += tool_result[:model_token_usage].to_i
+        tool_result[:answer]
       rescue => e
         Rails.logger.error("Chatbot: There was a problem with local tool arguments, message: #{e}")
         I18n.t("chatbot.prompt.rag.call_function.error")

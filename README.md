@@ -336,6 +336,15 @@ for Responses API requests. `chatbot_open_ai_max_chain_tokens`,
 overall tool loop. `chatbot_tool_response_char_limit` caps content returned by web tools before it
 is included in a later model request.
 
+The chain-token limit counts actual reported model usage, including model usage explicitly
+reported by tools. Token-based user quotas still include all notional tool charges, such as
+Jina response characters multiplied by the configured cost multiplier. These charges do not
+exhaust the chain-token limit. When tools incur a charge, Inner Thoughts also reports
+`tool_quota_tokens` (all tool charges), `quota_tokens` (the combined token quota cost), and
+`chain_tokens` (model usage counted against the chain limit). Query-based quotas still charge
+one query per request. Custom tools can return `model_token_usage` alongside the existing
+`token_usage` quota charge to include real model usage in the chain budget.
+
 When `chatbot_url_integrity_check` is enabled, Chatbot checks generated URLs against trusted URLs
 from the conversation and tool results. `chatbot_chain_of_thought_max_url_repair_attempts` controls
 how many times the model may repair an unsupported URL before the response is rejected.

@@ -64,9 +64,9 @@ module DiscourseChatbot
       end
 
       def process(args)
+        model_token_usage = 0
         begin
           super(args)
-          token_usage = 0
 
           description = args[parameters[0][:name]]
           aspect_ratio = self.class.normalized_aspect_ratio(args[parameters[1][:name]])
@@ -87,6 +87,8 @@ module DiscourseChatbot
           options = generation_options(provider, model_name, description, aspect_ratio, size)
 
           response = client.images.generate(parameters: options)
+
+          model_token_usage = response.dig("usage", "total_tokens").to_i
 
           if response.dig("error")
             error_text = "ERROR when trying to call paint API: #{response.dig("error", "message")}"
@@ -115,7 +117,7 @@ module DiscourseChatbot
               fallback_size: size,
             )
 
-          { answer: markdown, token_usage: tokens_used }
+          { answer: markdown, token_usage: tokens_used, model_token_usage: model_token_usage }
         rescue => e
           Rails.logger.error("Chatbot: Error in paint tool: #{e}")
           if e.respond_to?(:response)
@@ -125,7 +127,11 @@ module DiscourseChatbot
               "Chatbot: There was a problem with Image call: status: #{status}, message: #{message}",
             )
           end
-          { answer: I18n.t("chatbot.prompt.function.paint.error"), token_usage: TOKEN_COST }
+          {
+            answer: I18n.t("chatbot.prompt.function.paint.error"),
+            token_usage: TOKEN_COST,
+            model_token_usage: model_token_usage,
+          }
         end
       end
 

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require_relative "../../plugin_helper"
+require "openai"
 
 describe ::DiscourseChatbot::Tools::Paint do
   subject(:paint_tool) { described_class.new }
@@ -163,6 +164,36 @@ describe ::DiscourseChatbot::Tools::Paint do
           fallback_size: "1536x1024",
         ),
       ).to eq("![portrait image|1024x1536](upload://portrait.png)")
+    end
+  end
+  describe "#process" do
+    it "retains reported model usage when image post-processing fails" do
+      bot_user = Fabricate(:user)
+      SiteSetting.chatbot_bot_user = bot_user.username
+      SiteSetting.chatbot_image_provider = "open_ai"
+      SiteSetting.chatbot_support_picture_creation_model = "gpt-image-2"
+      images = mock
+      client = mock(images: images)
+      OpenAI::Client.stubs(:new).returns(client)
+      images.expects(:generate).returns({ "usage" => { "total_tokens" => 123 }, "data" => [] })
+
+      result = paint_tool.process({ "description" => "A lighthouse" })
+
+      expect(result).to eq(
+        answer: I18n.t("chatbot.prompt.function.paint.error"),
+        token_usage: described_class::TOKEN_COST,
+        model_token_usage: 123,
+      )
+    end
+
+    it "reports zero model usage when validation fails before an API response" do
+      result = paint_tool.process({})
+
+      expect(result).to eq(
+        answer: I18n.t("chatbot.prompt.function.paint.error"),
+        token_usage: described_class::TOKEN_COST,
+        model_token_usage: 0,
+      )
     end
   end
 end

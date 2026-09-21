@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require_relative "../../plugin_helper"
+require "openai"
 
 describe ::DiscourseChatbot::Tools::PaintEdit do
   subject(:paint_edit_tool) { described_class.new }
@@ -104,6 +105,42 @@ describe ::DiscourseChatbot::Tools::PaintEdit do
       expect(response.dig("data", 0, "b64_json")).to eq("image-data")
     ensure
       file&.unlink
+    end
+  end
+  describe "#process" do
+    it "retains reported model usage when image post-processing fails" do
+      bot_user = Fabricate(:user)
+      SiteSetting.chatbot_bot_user = bot_user.username
+      SiteSetting.chatbot_image_provider = "open_ai"
+      SiteSetting.chatbot_support_picture_creation_model = "gpt-image-2"
+      images = mock
+      client = mock(images: images)
+      OpenAI::Client.stubs(:new).returns(client)
+      images.expects(:edit).returns({ "usage" => { "total_tokens" => 123 }, "data" => [] })
+      upload = UploadCreator.new(file_from_fixtures("logo.png"), "logo.png").create_for(bot_user.id)
+      post = Fabricate(:post, post_number: 2, reply_to_post_number: 1, image_upload_id: upload.id)
+
+      result =
+        paint_edit_tool.process(
+          { "description" => "Make it blue" },
+          { type: DiscourseChatbot::POST, reply_to_message_or_post_id: post.id },
+        )
+
+      expect(result).to eq(
+        answer: I18n.t("chatbot.prompt.function.paint_edit.error"),
+        token_usage: described_class::TOKEN_COST,
+        model_token_usage: 123,
+      )
+    end
+
+    it "reports zero model usage when validation fails before an API response" do
+      result = paint_edit_tool.process({}, {})
+
+      expect(result).to eq(
+        answer: I18n.t("chatbot.prompt.function.paint_edit.error"),
+        token_usage: described_class::TOKEN_COST,
+        model_token_usage: 0,
+      )
     end
   end
 end
