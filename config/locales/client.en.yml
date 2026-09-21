@@ -3,6 +3,9 @@ en:
     discourse_chatbot:
       title: "Chatbot"
     chatbot:
+      blocked_questions_strategy:
+        system_one: "System One (with example matching fallback)"
+        examples: "Example-based embedding matching"
       llm_provider:
         open_ai: "OpenAI"
         anthropic: "Anthropic"
