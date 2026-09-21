@@ -115,7 +115,11 @@ module DiscourseChatbot
               fallback_size: size,
             )
 
-          { answer: markdown, token_usage: tokens_used }
+          {
+            answer: markdown,
+            token_usage: tokens_used,
+            model_token_usage: response.dig("usage", "total_tokens").to_i,
+          }
         rescue => e
           Rails.logger.error("Chatbot: Error in paint tool: #{e}")
           if e.respond_to?(:response)

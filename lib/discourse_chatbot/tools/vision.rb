@@ -100,11 +100,13 @@ module DiscourseChatbot
           {
             answer: I18n.t("chatbot.prompt.function.vision.answer", description: description),
             token_usage: token_usage,
+            model_token_usage: token_usage,
           }
         rescue => e
           {
             answer: I18n.t("chatbot.prompt.function.vision.error", error: e.message),
             token_usage: token_usage,
+            model_token_usage: token_usage,
           }
         end
       end
