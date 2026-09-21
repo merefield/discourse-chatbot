@@ -3,6 +3,8 @@
 module DiscourseChatbot
   module Tools
     class UserInformation < ::DiscourseChatbot::Tool
+      attr_reader :user_field
+
       def initialize(user_field, user_id)
         @user_field_options = []
         @user_field = user_field
@@ -18,6 +20,10 @@ module DiscourseChatbot
         @user_custom_field_name = "user_field_#{@user_field_id}"
         @user_id = user_id
         super()
+      end
+
+      def requires_user_intent?
+        true
       end
 
       def name

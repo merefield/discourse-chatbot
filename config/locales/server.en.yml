@@ -104,10 +104,14 @@ en:
     chatbot_open_ai_embeddings_model_custom_name: "Optional custom embedding model name. When set, this overrides the model selected for {{setting:chatbot_embeddings_provider}}. The model must return 1,536-dimensional vectors to fit existing embedding storage. Changing this setting causes stored embeddings to be updated gradually."
     chatbot_open_ai_embeddings_char_limit: "Maximum number of Post characters sent to the selected embeddings provider. Keep this as high as possible without experiencing an error."
     chatbot_open_ai_embeddings_model_custom_url: "Optional embeddings endpoint override. The endpoint must support the selected provider's OpenAI-compatible embeddings API and receives that provider's shared API key."
-    chatbot_system_one_model: "System One model for semantic judgments. Defaults to TypeSafe AI's jev-latest. The model, URL, and key must all be populated to enable System One question blocking."
+    chatbot_system_one_model: "System One model for semantic judgments. Defaults to TypeSafe AI's jev-latest. The model, URL, and key must all be populated to use System One features."
+    chatbot_system_one_tool_selection_enabled: "Use System One to remove clearly irrelevant tools for each request. Requires the System One model, URL, and key. Sends the current query, recent conversation context, and eligible tool descriptions to that service. Decisions appear in Inner Thoughts when enabled. Independent of question blocking."
+    chatbot_system_one_tool_selection_context: "Optional administrator guidance for tool selection, such as when forum search should remain available. Up to 4,000 characters; longer guidance causes selection to fall back to all eligible tools. Does not grant tool permissions."
+    chatbot_system_one_tool_selection_look_back: "Number of preceding messages sent to System One for tool selection (0–20). Separate from the main model and question-blocking history windows. Each preceding message is limited to 2,000 characters. The current query is always included."
+    chatbot_system_one_tool_removal_threshold: "Minimum irrelevant probability needed to remove a tool. Lower values remove tools more readily. Relevant and unclear tools remain available; configured forced tools are preserved."
     chatbot_system_one_out_of_scope_threshold: "Minimum out-of-scope probability required to decline a question when System One classifies it as out of scope. Lower values block more readily. In-scope and unclear decisions always proceed. Does not affect example-based embedding matching."
     chatbot_system_one_url: "Full evaluation endpoint implementing TypeSafe AI's System One API. Defaults to https://api.typesafe.ai/v1/systemone."
-    chatbot_system_one_key: "Secret API key for the System One endpoint. When configured with a model and URL, enabled question blocking sends forum/category descriptions, the question, and up to four preceding messages to this service."
+    chatbot_system_one_key: "Secret API key for the System One endpoint. When configured with a model and URL, enabled question blocking sends forum/category descriptions, the question, and up to four preceding messages to this service. Tool selection also uses this key when enabled."
     chatbot_blocked_questions_enabled: "Check questions before calling the full language model. When all System One settings are populated, decline clearly off-topic questions using forum/category descriptions and conversation context, without examples. Otherwise use example-based embedding matching. System One failures fall back to example matching; embedding failures allow normal processing."
     chatbot_blocked_question_examples: "Used only when System One is unconfigured or fails. Questions the chatbot should decline. Defaults provide examples for Politics and Video Games. Add one subject category and example question per row; a category may be used by multiple questions and is included in the canned response. Uses the configured embeddings provider, model, and endpoint."
     chatbot_blocked_questions_similarity_threshold: "Applies only to example-based matching, not System One. Cosine similarity that a user question must exceed against a configured example to return the canned response. As with forum search, this is calculated as 1 minus cosine distance. Higher values reduce false positive matches."
@@ -353,6 +357,12 @@ en:
         call_function:
           error: "There was something wrong with your tool arguments"
     inner_thoughts:
+      tool_selection:
+        removed: "I removed these tools from the available set based on the query: %{tools}."
+        retained: "I kept all available tools after evaluating the query."
+        fallback: "I kept all available tools because System One tool selection could not be completed."
+        forced: "I kept all available tools because the administrator requires a tool call."
+        no_tools: "There were no available tools to filter for this query."
       system_one_reasons:
         in_scope: "The question was classified as relevant to the community."
         unclear: "Relevance was unclear, so normal answering was allowed."

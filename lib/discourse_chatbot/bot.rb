@@ -64,6 +64,12 @@ module ::DiscourseChatbot
     end
 
     def tool_enabled?(tool_name)
+      if @tool_selection_applied
+        if tool_name == "user_information"
+          return @tool_mapping.values.any? { |tool| tool.is_a?(Tools::UserInformation) }
+        end
+        return @tool_mapping.key?(tool_name)
+      end
       @enabled_tool_names.include?(tool_name)
     end
 
@@ -163,6 +169,10 @@ module ::DiscourseChatbot
     end
 
     def get_response(prompt, opts)
+      @initial_inner_thoughts = Array(opts[:initial_inner_thoughts]).deep_dup
+      @inner_thoughts = []
+      select_tools(prompt, opts) if SiteSetting.chatbot_system_one_tool_selection_enabled
+
       private_discussion = opts[:private] || false
       system_message = {
         role: "developer",
@@ -185,8 +195,6 @@ module ::DiscourseChatbot
         prompt.insert(1, { role: "developer", content: dynamic_system_message_parts.join("  ") })
       end
 
-      @initial_inner_thoughts = Array(opts[:initial_inner_thoughts]).deep_dup
-      @inner_thoughts = []
       @responses_context = []
       @posts_ids_found = []
       @topic_ids_found = []
@@ -205,6 +213,23 @@ module ::DiscourseChatbot
         cached_tokens: @cached_tokens,
         cache_write_tokens: @cache_write_tokens,
       }
+    end
+
+    def select_tools(prompt, opts)
+      selection =
+        ToolSelector.new.evaluate(
+          tools: @tool_mapping,
+          definitions: @tool_definitions,
+          prompt: prompt,
+          opts: opts,
+        )
+      retained = selection.fetch(:retained_tool_names)
+      @tool_mapping = @tool_mapping.slice(*retained)
+      @tool_definitions =
+        @tool_definitions.select { |definition| retained.include?(definition.fetch("name")) }
+      @tools = @tool_definitions.map { |tool| { type: "function", function: tool } }.presence
+      @tool_selection_applied = true
+      @initial_inner_thoughts << selection.fetch(:audit)
     end
 
     def has_empty_user_fields?(opts)
@@ -241,6 +266,12 @@ module ::DiscourseChatbot
           .where(editable: true)
           .order(:id)
           .each do |user_field|
+            if @tool_selection_applied &&
+                 !@tool_mapping.values.any? { |tool|
+                   tool.is_a?(Tools::UserInformation) && tool.user_field == user_field.name
+                 }
+              next
+            end
             user_field_options = []
             user_field_id = user_field.id
             user_field_type = user_field.field_type_enum

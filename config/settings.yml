@@ -782,6 +782,24 @@ plugins:
     client: false
     default: ''
     secret: true
+  chatbot_system_one_tool_selection_enabled:
+    client: false
+    default: false
+  chatbot_system_one_tool_selection_context:
+    client: false
+    default: ''
+    textarea: true
+  chatbot_system_one_tool_selection_look_back:
+    client: false
+    default: 4
+    min: 0
+    max: 20
+  chatbot_system_one_tool_removal_threshold:
+    client: false
+    type: float
+    default: 0.9
+    min: 0.0
+    max: 1.0
   chatbot_system_one_out_of_scope_threshold:
     client: false
     type: float

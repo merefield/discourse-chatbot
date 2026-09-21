@@ -45,6 +45,11 @@ module ::DiscourseChatbot
       @required = required
     end
 
+    # Extensions with side effects can opt into the selector's action-intent criteria.
+    def requires_user_intent?
+      false
+    end
+
     def process(args)
       validate_parameters(args)
     end
