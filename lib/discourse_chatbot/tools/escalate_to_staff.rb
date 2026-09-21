@@ -3,6 +3,10 @@
 module DiscourseChatbot
   module Tools
     class EscalateToStaff < ::DiscourseChatbot::Tool
+      def requires_user_intent?
+        true
+      end
+
       def name
         "escalate_to_staff"
       end
