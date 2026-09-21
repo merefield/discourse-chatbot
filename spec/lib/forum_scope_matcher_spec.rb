@@ -38,6 +38,41 @@ RSpec.describe DiscourseChatbot::BlockedQuestionMatcher, "#evaluate" do
     SiteSetting.site_description = "Discuss sailing, boats, and life on the water."
   end
 
+  it "uses examples with System One credentials and tool selection enabled when explicitly selected" do
+    SiteSetting.chatbot_blocked_questions_strategy = "examples"
+    SiteSetting.chatbot_system_one_tool_selection_enabled = true
+    SiteSetting.chatbot_blocked_question_examples = [
+      { category: "Video games", example_question: question },
+    ].to_json
+    OpenAI::Client.stubs(:new).returns(stub(embeddings: embedding_response([1.0, 0.0])))
+
+    expect(described_class.new.evaluate(question)).to include(
+      blocked: true,
+      outcome: "blocked",
+      category: "Video games",
+    )
+    expect(WebMock).not_to have_requested(:post, url)
+
+    stub_request(:post, url).to_return(body: response.to_json)
+    SiteSetting.chatbot_blocked_questions_strategy = "system_one"
+    expect(described_class.new.evaluate(question)).to include(blocked: true, strategy: "system_one")
+    expect(WebMock).to have_requested(:post, url).once
+
+    SiteSetting.chatbot_blocked_questions_enabled = false
+    expect(described_class.new.evaluate(question)).to be_nil
+    expect(WebMock).to have_requested(:post, url).once
+  end
+
+  it "allows requests without consulting System One when examples are selected but empty" do
+    SiteSetting.chatbot_blocked_questions_strategy = "examples"
+
+    expect(described_class.new.evaluate(question)).to include(
+      blocked: false,
+      outcome: "no_examples",
+    )
+    expect(WebMock).not_to have_requested(:post, url)
+  end
+
   it "uses the default endpoint and model without needing blocked-question examples" do
     request =
       stub_request(:post, url)
