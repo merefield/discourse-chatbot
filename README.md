@@ -235,7 +235,14 @@ Add `user_information` to the relevant trust-level tool allowlist to let the bot
 
 Enable `chatbot_blocked_questions_enabled` to check requests before calling the full language model, in Topics, Personal Messages, and Chat.
 
-When all three settings below are populated, System One evaluates whether the question relates to this community:
+Select the method with `chatbot_blocked_questions_strategy`:
+
+* `system_one` (default) preserves existing behaviour: use System One when configured, with example-based embedding matching as a fallback.
+* `examples` always uses example-based embedding matching, regardless of System One credentials. Choose this to combine example-based blocking with System One tool selection.
+
+The `system_one` option is available only when the System One model, URL and key are populated. Reload the settings page after changing these connection settings to refresh the choices. Clearing credentials retains the saved strategy but makes blocking fall back to examples.
+
+With `system_one` selected and all three settings below populated, System One evaluates whether the question relates to this community:
 
 | Setting | Default |
 | --- | --- |
@@ -251,7 +258,7 @@ The check includes up to four preceding visible messages from the same topic or 
 
 System One request and response bodies are logged when verbose console logging is enabled or verbose Rails logging is set to `api_calls_only` or `all`. Entries include a correlation ID, response HTTP status and elapsed time; failures include the exception class. Authorization headers are omitted and the configured API key is redacted from parsed JSON before log serialization. Non-JSON response bodies are omitted. These diagnostic bodies include question text and conversation context, including PM content, so enable verbose logging only when needed.
 
-If any connection setting is blank, the existing embedding matcher compares questions against `chatbot_blocked_question_examples`, using `chatbot_blocked_questions_similarity_threshold`. Matching questions receive a canned decline containing the configured subject label. System One timeouts, HTTP errors, and invalid responses also fall back to this matcher. Keep examples if you want this fallback to block questions; without examples, requests proceed normally. Embedding failures also allow normal processing.
+With the `examples` strategy, or if any System One connection setting is blank, the existing embedding matcher compares questions against `chatbot_blocked_question_examples`, using `chatbot_blocked_questions_similarity_threshold`. Matching questions receive a canned decline containing the configured subject label. System One timeouts, HTTP errors, and invalid responses also fall back to this matcher. Keep examples if you want this fallback to block questions; without examples, requests proceed normally. Embedding failures also allow normal processing.
 
 ## Tools by trust level
 

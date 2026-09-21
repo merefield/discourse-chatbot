@@ -11,7 +11,8 @@ module ::DiscourseChatbot
     def evaluate(question, submission: nil)
       return unless SiteSetting.chatbot_blocked_questions_enabled
 
-      if question.present? && SystemOneClient.configured?
+      if SiteSetting.chatbot_blocked_questions_strategy == "system_one" && question.present? &&
+           SystemOneClient.configured?
         begin
           return ForumScopeMatcher.new.evaluate(question, submission: submission)
         rescue StandardError => error

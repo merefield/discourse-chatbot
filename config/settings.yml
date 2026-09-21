@@ -809,6 +809,11 @@ plugins:
   chatbot_blocked_questions_enabled:
     client: false
     default: false
+  chatbot_blocked_questions_strategy:
+    client: false
+    type: enum
+    default: system_one
+    enum: "DiscourseChatbot::BlockedQuestionsStrategySiteSetting"
   chatbot_blocked_question_examples:
     client: false
     type: objects
