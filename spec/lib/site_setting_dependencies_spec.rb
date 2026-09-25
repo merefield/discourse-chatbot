@@ -199,6 +199,8 @@ RSpec.describe SiteSetting do
     expect(model_choices.call(:chatbot_open_ai_model_high_trust)).to eq(
       %w[
         gpt-6-astra
+        gpt-6-sol
+        gpt-6-luna
         gpt-5.6
         gpt-5.6-sol
         gpt-5.6-terra
@@ -228,7 +230,14 @@ RSpec.describe SiteSetting do
       %w[gpt-image-2.5-sunburst gpt-image-2.5-flare gpt-image-2 gpt-image-1.5 gpt-image-1-mini],
     )
     expect(model_choices.call(:chatbot_anthropic_model_high_trust)).to eq(
-      %w[claude-fable-5-1 claude-fable-5 claude-opus-5 claude-sonnet-5 claude-haiku-4-5],
+      %w[
+        claude-fable-5-1
+        claude-fable-5
+        claude-opus-5-5
+        claude-opus-5
+        claude-sonnet-5
+        claude-haiku-4-5
+      ],
     )
     expect(model_choices.call(:chatbot_google_gemini_model_high_trust)).to eq(
       %w[

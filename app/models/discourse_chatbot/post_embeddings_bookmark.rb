@@ -13,7 +13,7 @@ end
 # Table name: chatbot_post_embeddings_bookmark
 #
 #  id         :bigint           not null, primary key
-#  post_id    :integer
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
+#  post_id    :integer
 #

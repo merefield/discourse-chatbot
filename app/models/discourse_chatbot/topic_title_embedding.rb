@@ -13,15 +13,15 @@ end
 # Table name: chatbot_topic_title_embeddings
 #
 #  id         :bigint           not null, primary key
-#  topic_id   :integer          not null
 #  embedding  :vector(1536)     not null
 #  model      :string
 #  provider   :string           default("open_ai"), not null
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
+#  topic_id   :integer          not null
 #
 # Indexes
 #
 #  index_chatbot_topic_title_embeddings_on_topic_id  (topic_id) UNIQUE
-#  pgv_hnsw_index_on_chatbot_topic_title_embeddings  (embedding) USING hnsw
+#  pgv_hnsw_index_on_chatbot_topic_title_embeddings  (embedding vector_cosine_ops) USING hnsw
 #
