@@ -63,7 +63,7 @@ module DiscourseChatbot
               .order(created_at: :desc)
               .limit(5)
               .where.not(user_id: user.id)
-              .where("user_id > 0")
+              .where("user_id > 0 OR user_id = ?", bot_user.id)
               .first
               &.user_id
           prior_user_was_bot = last_other_posting_user_id == bot_user.id
