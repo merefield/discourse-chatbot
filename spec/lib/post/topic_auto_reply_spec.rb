@@ -108,6 +108,36 @@ describe ::DiscourseChatbot::Post::PostEvaluation, "#trigger_response" do
     expect(evaluation.trigger_response(post)).to include(human_participants_count: 1)
   end
 
+  it "recognizes a configured negative-ID bot while ignoring other system accounts" do
+    negative_bot = Fabricate(:user, id: -42, username: "negative_bot")
+    SiteSetting.chatbot_bot_user = negative_bot.username
+    create_post(negative_bot, raw: "Here is a summary of the keynote.")
+    create_post(Discourse.system_user)
+    post = create_post(user)
+
+    expect(evaluation.trigger_response(post)).to include(
+      bot_user_id: negative_bot.id,
+      reply_to_message_or_post_id: post.id,
+      human_participants_count: 1,
+      automatic_topic_reply: true,
+    )
+
+    SiteSetting.chatbot_unlimited_topic_auto_replies = false
+    SiteSetting.chatbot_auto_reply_up_to_post_count = 0
+    expect(evaluation.trigger_response(post)).to eq(false)
+
+    SiteSetting.chatbot_unlimited_topic_auto_replies = true
+    create_post(other_user)
+    create_post(negative_bot)
+    expect(evaluation.trigger_response(create_post(user))).to eq(false)
+  end
+
+  it "does not treat an unrelated negative-ID account as prior chatbot participation" do
+    create_post(Fabricate(:user, id: -42))
+
+    expect(evaluation.trigger_response(create_post(user))).to eq(false)
+  end
+
   it "applies the limit to category auto-responses" do
     SiteSetting.chatbot_auto_respond_categories = topic.category_id.to_s
     SiteSetting.chatbot_unlimited_topic_auto_replies = false
