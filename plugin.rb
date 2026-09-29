@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: discourse-chatbot
 # about: a plugin that allows you to have a conversation with a configurable chatbot in Chat, Topics and Private Messages
-# version: 3.1.6
+# version: 3.1.7
 # authors: merefield
 # url: https://github.com/merefield/discourse-chatbot
 
@@ -44,6 +44,7 @@ module ::DiscourseChatbot
 
   REASONING_MODELS = %w[
     gpt-6-astra
+    gpt-6.1-sol
     gpt-6-sol
     gpt-6-luna
     o1

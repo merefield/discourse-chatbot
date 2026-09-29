@@ -148,6 +148,7 @@ plugins:
     default: gpt-4.1-mini
     choices: &chatbot_open_ai_models
       - gpt-6-astra
+      - gpt-6.1-sol
       - gpt-6-sol
       - gpt-6-luna
       - gpt-5.6
@@ -185,6 +186,7 @@ plugins:
       - claude-fable-5
       - claude-opus-5-5
       - claude-opus-5
+      - claude-sonnet-5-5
       - claude-sonnet-5
       - claude-haiku-4-5
     depends_on:
@@ -924,6 +926,7 @@ plugins:
     default: gpt-4.1
     choices:
       - gpt-6-astra
+      - gpt-6.1-sol
       - gpt-6-sol
       - gpt-6-luna
       - gpt-5.6
