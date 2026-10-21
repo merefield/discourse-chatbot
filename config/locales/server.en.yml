@@ -105,7 +105,8 @@ en:
     chatbot_open_ai_embeddings_char_limit: "Maximum number of Post characters sent to the selected embeddings provider. Keep this as high as possible without experiencing an error."
     chatbot_open_ai_embeddings_model_custom_url: "Optional embeddings endpoint override. The endpoint must support the selected provider's OpenAI-compatible embeddings API and receives that provider's shared API key."
     chatbot_system_one_model: "System One model for semantic judgments. Defaults to TypeSafe AI's jev-latest. The model, URL, and key must all be populated to use System One features."
-    chatbot_system_one_tool_selection_enabled: "Use System One to remove clearly irrelevant tools for each request. Requires the System One model, URL, and key. Sends the current query, recent conversation context, and eligible tool descriptions to that service. Decisions appear in Inner Thoughts when enabled. Independent of question blocking."
+    chatbot_system_one_tool_selection_enabled: "Use System One to select tools for each request. Requires the System One model, URL, and key. Sends the current query, recent conversation context, and eligible tool descriptions to that service. Decisions appear in Inner Thoughts when enabled. Independent of question blocking."
+    chatbot_system_one_tool_selection_mode: "How System One applies tool selection. remove_definitions omits unselected tool descriptions to reduce input tokens. restrict_calls keeps eligible definitions stable for prompt caching and uses allowed_tools to restrict calls on the official OpenAI Responses API; other configurations use remove_definitions. Both modes prevent execution of unselected tools."
     chatbot_system_one_tool_selection_context: "Optional administrator guidance for tool selection, such as when forum search should remain available. Up to 4,000 characters; longer guidance causes selection to fall back to all eligible tools. Does not grant tool permissions."
     chatbot_system_one_tool_selection_look_back: "Number of preceding messages sent to System One for tool selection (0–20). Separate from the main model and question-blocking history windows. Each preceding message is limited to 2,000 characters. The current query is always included."
     chatbot_system_one_tool_removal_threshold: "Minimum irrelevant probability needed to remove a tool. Lower values remove tools more readily. Relevant and unclear tools remain available; configured forced tools are preserved."
@@ -360,6 +361,7 @@ en:
     inner_thoughts:
       tool_selection:
         removed: "I removed these tools from the available set based on the query: %{tools}."
+        restricted: "I disabled these tools based on the query while retaining their definitions for prompt caching: %{tools}."
         retained: "I kept all available tools after evaluating the query."
         fallback: "I kept all available tools because System One tool selection could not be completed."
         forced: "I kept all available tools because the administrator requires a tool call."

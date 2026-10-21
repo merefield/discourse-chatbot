@@ -790,6 +790,16 @@ plugins:
   chatbot_system_one_tool_selection_enabled:
     client: false
     default: false
+  chatbot_system_one_tool_selection_mode:
+    client: false
+    type: enum
+    default: remove_definitions
+    choices:
+      - remove_definitions
+      - restrict_calls
+    depends_on:
+      - chatbot_system_one_tool_selection_enabled
+    depends_behavior: hidden
   chatbot_system_one_tool_selection_context:
     client: false
     default: ''

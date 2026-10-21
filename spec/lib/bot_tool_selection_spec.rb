@@ -31,6 +31,21 @@ describe DiscourseChatbot::Bot, "#get_response" do
       },
     }
   end
+  let(:responses_final_response) do
+    {
+      "status" => "completed",
+      "output" => [
+        {
+          "type" => "message",
+          "role" => "assistant",
+          "content" => [{ "type" => "output_text", "text" => "Four." }],
+        },
+      ],
+      "usage" => {
+        "total_tokens" => 10,
+      },
+    }
+  end
 
   before do
     DiscourseChatbot::Tool.stubs(:descendants).returns([])
@@ -88,8 +103,219 @@ describe DiscourseChatbot::Bot, "#get_response" do
     expect(described_class.new({}).get_response(prompt, {})[:reply]).to eq("Four.")
   end
 
+  it "keeps definitions stable across tool-loop calls and exchanges with different selections" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-6.1-sol"
+    SiteSetting.chatbot_system_one_tool_selection_mode = "restrict_calls"
+    next_selection = selection_response.deep_dup
+    next_selection[:answers] = { tool_0: judgment("irrelevant"), tool_1: judgment("relevant") }
+    stub_request(:post, url).to_return(
+      { body: selection_response.to_json },
+      { body: next_selection.to_json },
+    )
+    tool_response = {
+      "status" => "completed",
+      "output" => [
+        {
+          "type" => "function_call",
+          "call_id" => "call_calculate",
+          "name" => "calculate",
+          "arguments" => '{"input":"2 + 2"}',
+        },
+      ],
+      "usage" => {
+        "total_tokens" => 10,
+      },
+    }
+    capture_responses(tool_response, responses_final_response, responses_final_response)
+    options = { type: DiscourseChatbot::MESSAGE, topic_or_channel_id: 7 }
+
+    first_result = described_class.new(options).get_response(prompt.deep_dup, options)
+    described_class.new(options).get_response(
+      [*prompt, { role: "assistant", content: "Four." }, { role: "user", content: "What is pi?" }],
+      options,
+    )
+
+    expect(requests.map { |request| request[:tools] }.uniq.length).to eq(1)
+    expect(requests.first[:tools].map { |tool| tool[:name] }).to eq(%w[calculate wikipedia])
+    expect(requests.map { |request| request.dig(:tool_choice, :tools) }).to eq(
+      [
+        [{ type: "function", name: "calculate" }],
+        [{ type: "function", name: "calculate" }],
+        [{ type: "function", name: "wikipedia" }],
+      ],
+    )
+    expect(requests.map { |request| request[:prompt_cache_key] }.uniq.length).to eq(1)
+    expect(first_result[:reply]).to eq("Four.")
+    expect(first_result[:inner_thoughts].first).to include(
+      outcome: "restricted",
+      requested_mode: "restrict_calls",
+      effective_mode: "restrict_calls",
+      removed_tools: [],
+      disabled_tools: ["wikipedia"],
+      retained_tools: ["calculate"],
+      content: I18n.t("chatbot.inner_thoughts.tool_selection.restricted", tools: "wikipedia"),
+    )
+    expect(JSON.generate(requests.last[:input])).not_to include("disabled_tools", "tool_selection")
+    expect(WebMock).to have_requested(:post, url).twice
+  end
+
+  it "disables all calls while keeping definitions when selection excludes every tool" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-6-sol"
+    SiteSetting.chatbot_system_one_tool_selection_mode = "restrict_calls"
+    selection_response[:answers][:tool_0] = judgment("irrelevant")
+    stub_request(:post, url).to_return(body: selection_response.to_json)
+    capture_responses
+
+    result = described_class.new({}).get_response(prompt, {})
+
+    expect(requests.first[:tools].map { |tool| tool[:name] }).to eq(%w[calculate wikipedia])
+    expect(requests.first[:tool_choice]).to eq("none")
+    expect(result[:inner_thoughts].first).to include(disabled_tools: %w[calculate wikipedia])
+    expect(JSON.generate(requests.first[:input])).to include(Date.current.iso8601)
+  end
+
+  it "retains definitions but disables calls on the last permitted model iteration" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-6-sol"
+    SiteSetting.chatbot_system_one_tool_selection_mode = "restrict_calls"
+    SiteSetting.chatbot_chain_of_thought_max_iterations = 1
+    stub_request(:post, url).to_return(body: selection_response.to_json)
+    capture_responses
+
+    described_class.new({}).get_response(prompt, {})
+
+    expect(requests.first[:tools].map { |tool| tool[:name] }).to eq(%w[calculate wikipedia])
+    expect(requests.first[:tool_choice]).to eq("none")
+  end
+
+  it "requires an allowed tool and restores the eligible set when every tool is rejected" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-6-sol"
+    SiteSetting.chatbot_system_one_tool_selection_mode = "restrict_calls"
+    SiteSetting.chatbot_tool_choice_first_iteration = "force_a_tool"
+    all_removed = selection_response.deep_dup
+    all_removed[:answers][:tool_0] = judgment("irrelevant")
+    stub_request(:post, url).to_return(
+      { body: selection_response.to_json },
+      { body: all_removed.to_json },
+    )
+    capture_responses(responses_final_response, responses_final_response)
+
+    described_class.new({}).get_response(prompt.deep_dup, {})
+    result = described_class.new({}).get_response(prompt.deep_dup, {})
+
+    expect(requests.first[:tool_choice]).to eq(
+      type: "allowed_tools",
+      mode: "required",
+      tools: [{ type: "function", name: "calculate" }],
+    )
+    expect(requests.last[:tool_choice]).to eq(
+      type: "allowed_tools",
+      mode: "required",
+      tools: %w[calculate wikipedia].map { |name| { type: "function", name: name } },
+    )
+    expect(result[:inner_thoughts].first).to include(
+      outcome: "forced",
+      disabled_tools: [],
+      protected_tools: %w[calculate wikipedia],
+    )
+  end
+
+  it "keeps a forced local search callable in restrict_calls mode" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-6-sol"
+    SiteSetting.chatbot_system_one_tool_selection_mode = "restrict_calls"
+    SiteSetting.chatbot_tool_choice_first_iteration = "force_local_forum_search"
+    SiteSetting.chatbot_embeddings_enabled = true
+    SiteSetting.chatbot_tools_low_trust = "calculate|wikipedia|local_forum_search"
+    selection_response[:answers][:tool_2] = judgment("irrelevant")
+    stub_request(:post, url).to_return(body: selection_response.to_json)
+    capture_responses
+
+    result = described_class.new({}).get_response(prompt, {})
+
+    expect(requests.first[:tool_choice]).to eq(type: "function", name: "local_forum_search")
+    expect(result[:inner_thoughts].first).to include(
+      disabled_tools: ["wikipedia"],
+      retained_tools: %w[calculate local_forum_search],
+      protected_tools: ["local_forum_search"],
+    )
+  end
+
+  it "falls back to definition removal for Chat Completions and reports the effective mode" do
+    SiteSetting.chatbot_system_one_tool_selection_mode = "restrict_calls"
+    stub_request(:post, url).to_return(body: selection_response.to_json)
+    capture_chat
+
+    result = described_class.new({}).get_response(prompt, {})
+
+    expect(requests.first[:tools].map { |tool| tool[:function]["name"] }).to eq(["calculate"])
+    expect(result[:inner_thoughts].first).to include(
+      outcome: "removed",
+      requested_mode: "restrict_calls",
+      effective_mode: "remove_definitions",
+      mode_fallback_reason: "unsupported_configuration",
+      removed_tools: ["wikipedia"],
+    )
+  end
+
+  it "keeps all definitions and callable tools when System One fails in restrict_calls mode" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-6-sol"
+    SiteSetting.chatbot_system_one_tool_selection_mode = "restrict_calls"
+    stub_request(:post, url).to_return(status: 503, body: "unavailable")
+    capture_responses
+
+    result = described_class.new({}).get_response(prompt, {})
+
+    expect(requests.first[:tools].map { |tool| tool[:name] }).to eq(%w[calculate wikipedia])
+    expect(requests.first[:tool_choice]).to eq(
+      type: "allowed_tools",
+      mode: "auto",
+      tools: %w[calculate wikipedia].map { |name| { type: "function", name: name } },
+    )
+    expect(result[:inner_thoughts].first).to include(outcome: "fallback", disabled_tools: [])
+  end
+
+  it "blocks execution of excluded field tools even though their definitions were supplied" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-6-sol"
+    SiteSetting.chatbot_system_one_tool_selection_mode = "restrict_calls"
+    SiteSetting.chatbot_tools_low_trust = "calculate|user_information"
+    user = Fabricate(:user)
+    field = Fabricate(:user_field, name: "Favourite colour", field_type: "text")
+    excluded_name = DiscourseChatbot::Tools::UserInformation.new(field.name, user.id).name
+    stub_request(:post, url).to_return(body: selection_response.to_json)
+    excluded_call = {
+      "status" => "completed",
+      "output" => [
+        {
+          "type" => "function_call",
+          "call_id" => "call_excluded",
+          "name" => excluded_name,
+          "arguments" => '{"answer":"blue"}',
+        },
+      ],
+      "usage" => {
+        "total_tokens" => 10,
+      },
+    }
+    capture_responses(excluded_call, responses_final_response)
+    options = { private: true, user_id: user.id }
+
+    result = described_class.new(options).get_response(prompt, options)
+
+    expect(requests.first[:tools].map { |tool| tool[:name] }).to eq(["calculate", excluded_name])
+    expect(requests.first[:tool_choice]).to eq(
+      type: "allowed_tools",
+      mode: "auto",
+      tools: [{ type: "function", name: "calculate" }],
+    )
+    expect(JSON.generate(requests.first[:input])).not_to include(field.name)
+    expect(UserCustomField.find_by(user_id: user.id, name: "user_field_#{field.id}")).to be_nil
+    expect(result[:inner_thoughts].find { |entry| entry[:role] == "tool" }[:content]).to eq(
+      I18n.t("chatbot.prompt.rag.call_function.error"),
+    )
+  end
+
   it "does not evaluate or add diagnostics when the feature is disabled" do
     SiteSetting.chatbot_system_one_tool_selection_enabled = false
+    SiteSetting.chatbot_system_one_tool_selection_mode = "restrict_calls"
     capture_chat
     result = described_class.new({}).get_response(prompt, {})
 

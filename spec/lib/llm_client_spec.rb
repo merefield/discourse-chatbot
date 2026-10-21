@@ -37,6 +37,30 @@ describe ::DiscourseChatbot::LlmClient do
     end
   end
 
+  it "supports allowed_tools only for official OpenAI Responses configurations" do
+    %w[gpt-5.4-mini gpt-5.6 gpt-6-astra gpt-6.1-sol gpt-6-sol gpt-6-luna].each do |model|
+      SiteSetting.chatbot_open_ai_model_low_trust = model
+      expect(described_class.new(trust_level: "low")).to be_supports_allowed_tools
+    end
+
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-4.1-mini"
+    expect(described_class.new(trust_level: "low")).not_to be_supports_allowed_tools
+
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-6-sol"
+    SiteSetting.chatbot_open_ai_model_custom_url_low_trust = "https://llm.example.com/v1/"
+    expect(described_class.new(trust_level: "low")).not_to be_supports_allowed_tools
+
+    SiteSetting.chatbot_open_ai_model_custom_url_low_trust = ""
+    SiteSetting.chatbot_open_ai_model_custom_api_type = "azure"
+    expect(described_class.new(trust_level: "low")).not_to be_supports_allowed_tools
+
+    SiteSetting.chatbot_open_ai_model_custom_api_type = "open_ai"
+    %w[anthropic google_gemini x_ai].each do |provider|
+      SiteSetting.chatbot_llm_provider = provider
+      expect(described_class.new(trust_level: "low")).not_to be_supports_allowed_tools
+    end
+  end
+
   it "uses Anthropic's compatibility endpoint and default model" do
     SiteSetting.chatbot_llm_provider = "anthropic"
 

@@ -25,5 +25,19 @@ module DiscourseChatbot
         end
         .returns(response)
     end
+
+    def capture_responses(*results)
+      results = [responses_final_response] if results.empty?
+      responses = mock
+      client.stubs(:responses).returns(responses)
+      responses
+        .expects(:create)
+        .times(results.length)
+        .with do |parameters:|
+          requests << parameters.deep_dup
+          true
+        end
+        .returns(*results)
+    end
   end
 end
