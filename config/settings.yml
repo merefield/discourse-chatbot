@@ -794,9 +794,7 @@ plugins:
     client: false
     type: enum
     default: remove_definitions
-    choices:
-      - remove_definitions
-      - restrict_calls
+    enum: "DiscourseChatbot::ToolSelectionModeSiteSetting"
     depends_on:
       - chatbot_system_one_tool_selection_enabled
     depends_behavior: hidden

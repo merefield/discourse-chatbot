@@ -147,7 +147,7 @@ module DiscourseChatbot
     end
 
     def explicit_prompt_caching?
-      @official_openai_endpoint && @model_name.match?(/\Agpt-5\.6(?:-|\z)/)
+      @official_openai_endpoint && @model_name.match?(/\Agpt-(?:5\.6|6|6\.1)(?:-|\z)/)
     end
 
     def chat_completions_messages(messages)

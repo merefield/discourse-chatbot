@@ -137,6 +137,12 @@ describe DiscourseChatbot::Bot, "#get_response" do
 
     expect(requests.map { |request| request[:tools] }.uniq.length).to eq(1)
     expect(requests.first[:tools].map { |tool| tool[:name] }).to eq(%w[calculate wikipedia])
+    expect(requests.map { |request| request[:prompt_cache_options] }.uniq).to eq(
+      [{ mode: "implicit" }],
+    )
+    expect(
+      requests.map { |request| request.dig(:input, 0, :content, 0, :prompt_cache_breakpoint) }.uniq,
+    ).to eq([{ mode: "explicit" }])
     expect(requests.map { |request| request.dig(:tool_choice, :tools) }).to eq(
       [
         [{ type: "function", name: "calculate" }],

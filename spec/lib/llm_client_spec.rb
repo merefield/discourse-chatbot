@@ -61,6 +61,66 @@ describe ::DiscourseChatbot::LlmClient do
     end
   end
 
+  it "adds explicit breakpoints for GPT-5.6 and supported GPT-6 models, preserving implicit caching" do
+    messages = [
+      { role: "developer", content: "Stable instructions", prompt_cache_breakpoint: true },
+    ]
+    %w[gpt-5.6 gpt-5.6-sol gpt-6-astra gpt-6.1-sol gpt-6-sol gpt-6-luna].each do |model|
+      SiteSetting.chatbot_open_ai_model_low_trust = model
+      parameters = described_class.new(trust_level: "low").responses_parameters(messages)
+
+      expect(parameters[:prompt_cache_options]).to eq(mode: "implicit")
+      expect(parameters.dig(:input, 0, :content, 0)).to eq(
+        type: "input_text",
+        text: "Stable instructions",
+        prompt_cache_breakpoint: {
+          mode: "explicit",
+        },
+      )
+    end
+
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-5.5"
+    parameters = described_class.new(trust_level: "low").responses_parameters(messages)
+    expect(parameters).not_to have_key(:prompt_cache_options)
+    expect(parameters.dig(:input, 0, :content, 0)).to eq(
+      type: "input_text",
+      text: "Stable instructions",
+    )
+  end
+
+  it "omits GPT-6 breakpoints for custom endpoints, Azure and other providers" do
+    SiteSetting.chatbot_open_ai_model_low_trust = "gpt-6-sol"
+    messages = [
+      { role: "developer", content: "Stable instructions", prompt_cache_breakpoint: true },
+    ]
+    SiteSetting.chatbot_open_ai_model_custom_url_low_trust = "https://llm.example.com/v1/"
+    parameters = described_class.new(trust_level: "low").responses_parameters(messages)
+    expect(parameters).not_to have_key(:prompt_cache_options)
+    expect(parameters.dig(:input, 0, :content, 0)).to eq(
+      type: "input_text",
+      text: "Stable instructions",
+    )
+
+    SiteSetting.chatbot_open_ai_model_custom_url_low_trust = ""
+    SiteSetting.chatbot_open_ai_model_custom_api_type = "azure"
+    parameters = described_class.new(trust_level: "low").responses_parameters(messages)
+    expect(parameters).not_to have_key(:prompt_cache_options)
+    expect(parameters.dig(:input, 0, :content, 0)).to eq(
+      type: "input_text",
+      text: "Stable instructions",
+    )
+
+    SiteSetting.chatbot_open_ai_model_custom_api_type = ""
+    %w[anthropic google_gemini x_ai].each do |provider|
+      SiteSetting.chatbot_llm_provider = provider
+      SiteSetting.chatbot_open_ai_model_custom_low_trust = true
+      SiteSetting.chatbot_open_ai_model_custom_name_low_trust = "gpt-6-sol"
+      parameters = described_class.new(trust_level: "low").chat_completions_parameters(messages)
+      expect(parameters).not_to have_key(:prompt_cache_options)
+      expect(parameters[:messages].first[:content]).to eq("Stable instructions")
+    end
+  end
+
   it "uses Anthropic's compatibility endpoint and default model" do
     SiteSetting.chatbot_llm_provider = "anthropic"
 

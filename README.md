@@ -338,11 +338,18 @@ tools. An empty selection uses `tool_choice: "none"`. Forced tools and the final
 tool-call limit still apply. Chat Completions, custom endpoints, Azure and other providers use
 `remove_definitions` even when `restrict_calls` is selected.
 
+The `restrict_calls` choice is offered when the provider is OpenAI and the API type is not
+Azure. Reload the settings page after changing the provider or API type to refresh the choices.
+A saved preference is retained when these settings change; runtime compatibility checks still
+apply independently to each trust level's model and custom endpoint.
+
 Stable definitions can improve cache reuse between exchanges with different selections.
 They still consume input tokens, and changes to eligible tools, conversation history or other
 prompt content can reduce reuse. Compare the existing cached-input and cache-write usage
 statistics to assess the cost for your conversations. See OpenAI's
 [tool-caching guidance](https://developers.openai.com/api/docs/guides/prompt-caching#manage-tools-with-append-only-updates).
+Official OpenAI GPT-5.6, GPT-6 and GPT-6.1 requests also place an explicit cache breakpoint after
+the fixed developer instructions while keeping implicit conversation caching enabled.
 
 For user-information collection and staff escalation, the criteria also consider
 whether the user requests the action or answers a pending collection question. This is a
