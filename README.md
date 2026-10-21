@@ -324,8 +324,10 @@ The current query is not truncated. If the selection state exceeds 40,000 charac
 administrator guidance exceeds 4,000 characters, all eligible tools remain available.
 
 Relevant, unclear, and below-threshold decisions retain the tool. Missing configuration, provider
-errors, and invalid responses also retain the eligible set. A forced local search remains
-available. If the administrator requires any tool call and selection would remove every tool,
+errors, and invalid responses also retain the eligible set. An eligible forced local search
+remains available. If local search is unavailable, such as when embeddings are disabled or the
+trust-level tool list excludes it, the forced-local-search setting is ignored for that request.
+If the administrator requires any tool call and selection would remove every tool,
 the eligible set is retained. Existing access rules, credentials and extension availability
 checks run first; selection never enables an otherwise unavailable tool.
 

@@ -245,6 +245,47 @@ describe DiscourseChatbot::Bot, "#get_response" do
     )
   end
 
+  [
+    %w[gpt-4.1-mini remove_definitions],
+    %w[gpt-6-sol remove_definitions],
+    %w[gpt-6-sol restrict_calls],
+  ].each do |model, mode|
+    it "ignores an ineligible forced local search with #{model} and #{mode}" do
+      SiteSetting.chatbot_open_ai_model_low_trust = model
+      SiteSetting.chatbot_system_one_tool_selection_mode = mode
+      SiteSetting.chatbot_tool_choice_first_iteration = "force_local_forum_search"
+      stub_request(:post, url).to_return(body: selection_response.to_json)
+      if model == "gpt-4.1-mini"
+        client
+          .expects(:chat)
+          .twice
+          .with do |parameters:|
+            requests << parameters.deep_dup
+            true
+          end
+          .returns(final_response)
+      else
+        capture_responses(responses_final_response, responses_final_response)
+      end
+
+      SiteSetting.chatbot_tools_low_trust = "calculate|wikipedia|local_forum_search"
+      SiteSetting.chatbot_embeddings_enabled = false
+      described_class.new({}).get_response(prompt.deep_dup, {})
+
+      SiteSetting.chatbot_tools_low_trust = "calculate|wikipedia"
+      SiteSetting.chatbot_embeddings_enabled = true
+      described_class.new({}).get_response(prompt.deep_dup, {})
+
+      expected_choice =
+        if mode == "restrict_calls"
+          { type: "allowed_tools", mode: "auto", tools: [{ type: "function", name: "calculate" }] }
+        end
+      expect(requests.map { |request| request[:tool_choice] }).to eq(
+        [expected_choice, expected_choice],
+      )
+    end
+  end
+
   it "falls back to definition removal for Chat Completions and reports the effective mode" do
     SiteSetting.chatbot_system_one_tool_selection_mode = "restrict_calls"
     stub_request(:post, url).to_return(body: selection_response.to_json)

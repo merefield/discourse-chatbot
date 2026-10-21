@@ -476,6 +476,12 @@ module ::DiscourseChatbot
           +++++++++++++++++++++++++++++++
         EOS
 
+        force_local_search =
+          iteration == 1 &&
+            SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_TOOL &&
+            @tool_mapping.key?("local_forum_search") &&
+            @tool_definitions.any? { |tool| tool["name"] == "local_forum_search" }
+
         if reasoning_model?
           parameters =
             responses_parameters(
@@ -489,7 +495,7 @@ module ::DiscourseChatbot
               parameters[:tool_choice] = "none"
             elsif @restrict_tool_calls
               forced_choice = SiteSetting.chatbot_tool_choice_first_iteration
-              if iteration == 1 && forced_choice == FORCE_LOCAL_SEARCH_TOOL
+              if force_local_search
                 parameters[:tool_choice] = { type: "function", name: "local_forum_search" }
               else
                 parameters[:tool_choice] = {
@@ -508,7 +514,7 @@ module ::DiscourseChatbot
             elsif iteration == 1
               if FORCE_A_TOOL_VALUES.include?(SiteSetting.chatbot_tool_choice_first_iteration)
                 parameters[:tool_choice] = "required"
-              elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_TOOL
+              elsif force_local_search
                 parameters[:tool_choice] = { type: "function", name: "local_forum_search" }
               end
             end
@@ -532,7 +538,7 @@ module ::DiscourseChatbot
             elsif iteration == 1
               if FORCE_A_TOOL_VALUES.include?(SiteSetting.chatbot_tool_choice_first_iteration)
                 parameters.merge!(tool_choice: "required")
-              elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_TOOL
+              elsif force_local_search
                 parameters.merge!(
                   tool_choice: {
                     type: "function",
