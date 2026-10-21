@@ -101,6 +101,10 @@ module DiscourseChatbot
       REASONING_MODELS.include?(@model_name)
     end
 
+    def supports_allowed_tools?
+      @official_openai_endpoint && reasoning_model?
+    end
+
     def responses_parameters(messages, include_reasoning_summary: false)
       parameters = { model: @model_name, input: responses_input(messages) }.merge(
         prompt_cache_parameters,
@@ -143,7 +147,7 @@ module DiscourseChatbot
     end
 
     def explicit_prompt_caching?
-      @official_openai_endpoint && @model_name.match?(/\Agpt-5\.6(?:-|\z)/)
+      @official_openai_endpoint && @model_name.match?(/\Agpt-(?:5\.6|6|6\.1)(?:-|\z)/)
     end
 
     def chat_completions_messages(messages)

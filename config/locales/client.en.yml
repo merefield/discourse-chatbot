@@ -3,6 +3,9 @@ en:
     discourse_chatbot:
       title: "Chatbot"
     chatbot:
+      tool_selection_mode:
+        remove_definitions: "Remove unselected tool definitions"
+        restrict_calls: "Restrict calls and retain tool definitions for caching"
       blocked_questions_strategy:
         system_one: "System One (with example matching fallback)"
         examples: "Example-based embedding matching"

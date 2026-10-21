@@ -309,6 +309,7 @@ means no selection call or selection diagnostic; enabled means active filtering.
 | Setting | Default | Purpose |
 | --- | --- | --- |
 | `chatbot_system_one_tool_selection_enabled` | `false` | Enable active selection. |
+| `chatbot_system_one_tool_selection_mode` | `remove_definitions` | Omit unselected definitions, or use `restrict_calls` to retain definitions for caching on the official OpenAI Responses API. |
 | `chatbot_system_one_tool_selection_context` | Empty | Optional administrator guidance, up to 4,000 characters. |
 | `chatbot_system_one_tool_selection_look_back` | `4` | Include 0–20 preceding messages, independently of the answering model's history window. |
 | `chatbot_system_one_tool_removal_threshold` | `0.9` | Remove only tools classified irrelevant at or above this probability. |
@@ -323,22 +324,48 @@ The current query is not truncated. If the selection state exceeds 40,000 charac
 administrator guidance exceeds 4,000 characters, all eligible tools remain available.
 
 Relevant, unclear, and below-threshold decisions retain the tool. Missing configuration, provider
-errors, and invalid responses also retain the eligible set. A forced local search remains
-available. If the administrator requires any tool call and selection would remove every tool,
+errors, and invalid responses also retain the eligible set. An eligible forced local search
+remains available. If local search is unavailable, such as when embeddings are disabled or the
+trust-level tool list excludes it, the forced-local-search setting is ignored for that request.
+If the administrator requires any tool call and selection would remove every tool,
 the eligible set is retained. Existing access rules, credentials and extension availability
 checks run first; selection never enables an otherwise unavailable tool.
 
 The selected set stays fixed for the response's tool loop and applies to both Chat Completions
-and Responses API requests. It controls tool definitions, execution lookup and tool-dependent
-prompts. For user-information collection and staff escalation, the criteria also consider
+and Responses API requests. It controls execution lookup and tool-dependent prompts. In the
+default `remove_definitions` mode, unselected tool definitions are omitted from the request.
+In `restrict_calls` mode, official OpenAI Responses requests retain the full eligible definitions
+and their ordering, and use `tool_choice: { type: "allowed_tools", ... }` to restrict callable
+tools. An empty selection uses `tool_choice: "none"`. Forced tools and the final iteration's
+tool-call limit still apply. Chat Completions, custom endpoints, Azure and other providers use
+`remove_definitions` even when `restrict_calls` is selected.
+
+The `restrict_calls` choice is offered when the provider is OpenAI and the API type is not
+Azure. Reload the settings page after changing the provider or API type to refresh the choices.
+A saved preference is retained when these settings change; runtime compatibility checks still
+apply independently to each trust level's model and custom endpoint.
+
+Stable definitions can improve cache reuse between exchanges with different selections.
+They still consume input tokens, and changes to eligible tools, conversation history or other
+prompt content can reduce reuse. Compare the existing cached-input and cache-write usage
+statistics to assess the cost for your conversations. See OpenAI's
+[tool-caching guidance](https://developers.openai.com/api/docs/guides/prompt-caching#manage-tools-with-append-only-updates).
+Official OpenAI GPT-5.6, GPT-6 and GPT-6.1 requests also place an explicit cache breakpoint after
+the fixed developer instructions while keeping implicit conversation caching enabled.
+
+For user-information collection and staff escalation, the criteria also consider
 whether the user requests the action or answers a pending collection question. This is a
 relevance check, not an authorization or proposed-argument check.
 
 When Inner Thoughts output is enabled, a selection entry says, for example:
 “I removed these tools from the available set based on the query: wikipedia, paint_picture.”
 It includes removed/retained names, per-tool probabilities, protected tools, model and usage.
-It also explains keeping all tools or falling back. These diagnostics are not fed back to the
-answering model. System One usage is reported separately, like scope-evaluation usage.
+In `restrict_calls` mode, the entry instead says tools were disabled while their definitions
+were retained for caching, and lists `disabled_tools` separately from `removed_tools`.
+Entries report the requested and effective mode, including a mode fallback reason for unsupported
+configurations. They also explain keeping all tools or selection failures. These diagnostics
+are not fed back to the answering model. System One usage is reported separately, like
+scope-evaluation usage.
 
 Filtering adds an evaluation call and can change prompt-cache reuse; reduced tool count does not
 guarantee lower total cost or better answers. Thresholds and guidance should be evaluated against

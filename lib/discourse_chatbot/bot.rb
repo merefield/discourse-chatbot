@@ -225,11 +225,31 @@ module ::DiscourseChatbot
         )
       retained = selection.fetch(:retained_tool_names)
       @tool_mapping = @tool_mapping.slice(*retained)
-      @tool_definitions =
-        @tool_definitions.select { |definition| retained.include?(definition.fetch("name")) }
-      @tools = @tool_definitions.map { |tool| { type: "function", function: tool } }.presence
+      requested_mode = SiteSetting.chatbot_system_one_tool_selection_mode
+      @restrict_tool_calls =
+        requested_mode == "restrict_calls" && @llm_client.supports_allowed_tools?
+      if !@restrict_tool_calls
+        @tool_definitions =
+          @tool_definitions.select { |definition| retained.include?(definition.fetch("name")) }
+        @tools = @tool_definitions.map { |tool| { type: "function", function: tool } }.presence
+      end
       @tool_selection_applied = true
-      @initial_inner_thoughts << selection.fetch(:audit)
+      audit = selection.fetch(:audit)
+      effective_mode = @restrict_tool_calls ? "restrict_calls" : "remove_definitions"
+      audit.merge!(requested_mode: requested_mode, effective_mode: effective_mode)
+      audit[:mode_fallback_reason] = "unsupported_configuration" if requested_mode != effective_mode
+      if @restrict_tool_calls
+        disabled = audit.fetch(:removed_tools)
+        audit.merge!(removed_tools: [], disabled_tools: disabled)
+        if disabled.present?
+          audit[:outcome] = "restricted"
+          audit[:content] = I18n.t(
+            "chatbot.inner_thoughts.tool_selection.restricted",
+            tools: disabled.join(", "),
+          )
+        end
+      end
+      @initial_inner_thoughts << audit
     end
 
     def has_empty_user_fields?(opts)
@@ -456,6 +476,12 @@ module ::DiscourseChatbot
           +++++++++++++++++++++++++++++++
         EOS
 
+        force_local_search =
+          iteration == 1 &&
+            SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_TOOL &&
+            @tool_mapping.key?("local_forum_search") &&
+            @tool_definitions.any? { |tool| tool["name"] == "local_forum_search" }
+
         if reasoning_model?
           parameters =
             responses_parameters(
@@ -465,12 +491,30 @@ module ::DiscourseChatbot
 
           if @tools
             parameters[:tools] = responses_tools
-            if !use_tools
+            if !use_tools || (@restrict_tool_calls && @tool_mapping.empty?)
               parameters[:tool_choice] = "none"
+            elsif @restrict_tool_calls
+              forced_choice = SiteSetting.chatbot_tool_choice_first_iteration
+              if force_local_search
+                parameters[:tool_choice] = { type: "function", name: "local_forum_search" }
+              else
+                parameters[:tool_choice] = {
+                  type: "allowed_tools",
+                  mode:
+                    (
+                      if iteration == 1 && FORCE_A_TOOL_VALUES.include?(forced_choice)
+                        "required"
+                      else
+                        "auto"
+                      end
+                    ),
+                  tools: @tool_mapping.keys.map { |name| { type: "function", name: name } },
+                }
+              end
             elsif iteration == 1
               if FORCE_A_TOOL_VALUES.include?(SiteSetting.chatbot_tool_choice_first_iteration)
                 parameters[:tool_choice] = "required"
-              elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_TOOL
+              elsif force_local_search
                 parameters[:tool_choice] = { type: "function", name: "local_forum_search" }
               end
             end
@@ -494,7 +538,7 @@ module ::DiscourseChatbot
             elsif iteration == 1
               if FORCE_A_TOOL_VALUES.include?(SiteSetting.chatbot_tool_choice_first_iteration)
                 parameters.merge!(tool_choice: "required")
-              elsif SiteSetting.chatbot_tool_choice_first_iteration == FORCE_LOCAL_SEARCH_TOOL
+              elsif force_local_search
                 parameters.merge!(
                   tool_choice: {
                     type: "function",
