@@ -271,7 +271,7 @@ provided by other plugins are controlled by those plugins instead.
 
 The defaults are:
 
-* Low and medium trust: `calculate`, `remaining_bot_quota`, and `local_forum_search`.
+* Low and medium trust: `calculate`, `plot_function`, `remaining_bot_quota`, and `local_forum_search`.
 * High trust: those tools plus `wikipedia`, `news`, `web_crawler`, `web_search`, and `stock_data`.
 
 Runtime requirements still take precedence over these defaults. For example,
@@ -374,9 +374,10 @@ your community's requests.
 ### Mathematical function graphs
 
 Chatbot bundles function-plot 1.26.0 for interactive graphs rendered locally in the
-reader's browser. Enable `chatbot_function_plot_enabled` (default `true`) and add
-`plot_function` to the appropriate `chatbot_tools_*_trust` settings to let the bot
-prepare graphs. Existing trust-level tool lists are not changed automatically.
+reader's browser. `chatbot_function_plot_enabled` defaults to `true`, and
+`plot_function` is included in the defaults for all `chatbot_tools_*_trust` settings.
+Customised trust-level tool lists retain their existing selections; add
+`plot_function` to those lists to let the bot prepare graphs.
 System One selection evaluates the new tool like the other eligible tools.
 
 The tool is intended to accompany mathematical explanations, including the site's

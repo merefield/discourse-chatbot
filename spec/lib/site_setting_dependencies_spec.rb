@@ -178,7 +178,7 @@ RSpec.describe SiteSetting do
   end
 
   it "selects the core tools by default at every trust level" do
-    expected_tools = %w[calculate remaining_bot_quota local_forum_search]
+    expected_tools = %w[calculate plot_function remaining_bot_quota local_forum_search]
     configured_settings =
       YAML.safe_load_file(
         File.expand_path("../../config/settings.yml", __dir__),

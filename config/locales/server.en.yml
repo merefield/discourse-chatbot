@@ -1,6 +1,6 @@
 en:
   site_settings:
-    chatbot_function_plot_enabled: "Render function-plot graph blocks locally in posts, PMs and Chat. Add plot_function to the appropriate trust-level tool lists to let Chatbot prepare graphs. Graphs can accompany maths explanations and MathJax output."
+    chatbot_function_plot_enabled: "Render function-plot graph blocks locally in posts, PMs and Chat. The plot_function tool is included in the defaults for every trust level; add it to any customised tool lists to let Chatbot prepare graphs. Graphs can accompany maths explanations and MathJax output."
     chatbot_enabled: "Enable the chatbot plugin"
     chatbot_llm_provider: "Provider used for chatbot completions. OpenAI, Anthropic, Google Gemini, and xAI are supported through their OpenAI-compatible APIs."
     chatbot_open_ai_token: "OpenAI API key shared by every chatbot capability configured to use OpenAI. Get a key at <a target='_blank' rel='noopener' href='https://platform.openai.com/api-keys'>OpenAI</a>."
