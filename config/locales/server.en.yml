@@ -1,5 +1,6 @@
 en:
   site_settings:
+    chatbot_function_plot_enabled: "Render function-plot graph blocks locally in posts, PMs and Chat. Add plot_function to the appropriate trust-level tool lists to let Chatbot prepare graphs. Graphs can accompany maths explanations and MathJax output."
     chatbot_enabled: "Enable the chatbot plugin"
     chatbot_llm_provider: "Provider used for chatbot completions. OpenAI, Anthropic, Google Gemini, and xAI are supported through their OpenAI-compatible APIs."
     chatbot_open_ai_token: "OpenAI API key shared by every chatbot capability configured to use OpenAI. Get a key at <a target='_blank' rel='noopener' href='https://platform.openai.com/api-keys'>OpenAI</a>."
@@ -196,6 +197,18 @@ en:
         post_analysis_before_posts: "I am now talking to only %{username} who has asked me to consider the following posts in private.  The other users are now not present, but I have access to their conversation which is as follows:"
         post_analysis: "I am still talking to only %{username} who has asked me to consider the above posts in private.  I should summarize the discussion, provide my opinion about it to %{username} and ask them what they would like to discuss about it."
       function:
+        function_plot:
+          description: |
+            Prepare an interactive graph of up to four mathematical functions y=f(x). Use when a graph would help explain a maths question: roots, intersections, turning points, trigonometry, growth, or comparing functions, even if the user did not explicitly ask for a graph. Accompany the graph with the mathematical explanation and the site's usual LaTeX/MathJax notation; the graph does not replace the answer or numerical calculation tools.
+            Supply expressions in x, one per line, without 'y=' or LaTeX. Use explicit multiplication (*), powers (^), parentheses, constants pi and e, and these single-argument functions: sin, cos, tan, asin, acos, atan, sqrt, abs, exp, log (natural logarithm), log10, floor, ceil. Trigonometric angles are radians. For example: x^2-4 or sin(x). Expressions are limited to 256 characters each.
+            Choose axis bounds that show the relevant features. Bounds are numeric; supply both minimum and maximum for an axis, with -1000000 <= minimum < maximum <= 1000000. Each axis defaults to [-10,10] if omitted. The tool returns a function-plot fenced block; copy the complete block unchanged into your final answer outside any other code fence. The graph renders in the reader's browser; do not claim to have viewed its rendered appearance.
+          expressions: "One to four expressions in x, separated by newlines, for example sin(x) followed by cos(x)."
+          title: "Optional plain-text graph title, up to 120 characters."
+          x_min: "Left boundary of the graph. Supply with x_max."
+          x_max: "Right boundary of the graph. Supply with x_min."
+          y_min: "Bottom boundary of the graph. Supply with y_max."
+          y_max: "Top boundary of the graph. Supply with y_min."
+          error: "Unable to prepare the graph. Use up to four supported expressions in x, one per line, without y= or LaTeX. Supply finite, increasing axis bounds in pairs, within -1000000 to 1000000, and a title of at most 120 characters. Correct the arguments before retrying."
         remaining_bot_quota:
           description: |
             Get the current number of tokens or queries you have left for use of the bot this week

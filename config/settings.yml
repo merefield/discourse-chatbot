@@ -2,6 +2,9 @@ plugins:
   chatbot_enabled:
     default: true
     client: true
+  chatbot_function_plot_enabled:
+    default: true
+    client: true
   chatbot_llm_provider:
     client: false
     default: open_ai

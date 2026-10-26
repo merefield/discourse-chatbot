@@ -371,6 +371,47 @@ Filtering adds an evaluation call and can change prompt-cache reuse; reduced too
 guarantee lower total cost or better answers. Thresholds and guidance should be evaluated against
 your community's requests.
 
+### Mathematical function graphs
+
+Chatbot bundles function-plot 1.26.0 for interactive graphs rendered locally in the
+reader's browser. Enable `chatbot_function_plot_enabled` (default `true`) and add
+`plot_function` to the appropriate `chatbot_tools_*_trust` settings to let the bot
+prepare graphs. Existing trust-level tool lists are not changed automatically.
+System One selection evaluates the new tool like the other eligible tools.
+
+The tool is intended to accompany mathematical explanations, including the site's
+usual MathJax/LaTeX output when Discourse Math is installed. For example, an answer
+about quadratic roots can explain the algebra and include a plot of `x^2-4`.
+The graph tool uses no external API and adds no notional tool quota charge.
+
+Human-authored posts, PMs and Chat messages can use the same fenced format:
+
+````markdown
+The curves intersect where $\sin(x)=\cos(x)$.
+
+```function-plot
+{"functions":["sin(x)","cos(x)"],"title":"Sine and cosine","x_domain":[-7,7],"y_domain":[-2,2]}
+```
+````
+
+Supported expressions use `x`, numeric literals, `pi`, `e`, explicit multiplication,
+`+ - * / ^`, parentheses, and the single-argument functions `sin`, `cos`, `tan`,
+`asin`, `acos`, `atan`, `sqrt`, `abs`, `exp`, `log`, `log10`, `floor`, and `ceil`.
+`log` is the natural logarithm and trigonometric angles are radians. Omit `y=` and
+LaTeX commands from graph expressions. There may be up to four expressions, each
+at most 256 characters. Titles are plain text, at most 120 characters. Both axes
+default to `[-10,10]`; custom domains must be finite, increasing pairs within
+`[-1000000,1000000]`, with a span of at least `0.000001`.
+
+The renderer uses a restricted interpreter with function-plot's numeric sampler
+(1,000 samples per curve) rather than its string-to-JavaScript compiler, preserving
+Discourse's CSP. It redraws when resized or zoomed and uses function-plot's
+discontinuity handling. Undefined or non-finite function values are omitted;
+graphs are numerical visualisations, not proofs or a symbolic solver. Graph
+definitions remain available in a disclosure below each plot and as ordinary
+code blocks in email, exports, disabled rendering, and clients without JavaScript.
+Invalid definitions display an error and retain the original definition.
+
 ### Tool extensions
 
 Other plugins can add tools by loading zero-argument subclasses of
