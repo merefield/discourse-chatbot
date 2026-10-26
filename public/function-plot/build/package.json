@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "esbuild": "0.25.10",
+    "function-plot": "1.26.0",
+    "interval-arithmetic-eval": "0.5.3"
+  },
+  "name": "chatbot-function-plot-vendor",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}

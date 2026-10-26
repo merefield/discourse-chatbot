@@ -9,6 +9,7 @@ module ::DiscourseChatbot
       news
       paint_edit_picture
       paint_picture
+      plot_function
       remaining_bot_quota
       stock_data
       user_information

@@ -104,3 +104,82 @@
     opacity: 100%;
   }
 }
+
+.chatbot-function-plot {
+  margin: 1em 0;
+  padding: 0.5em;
+  border: 1px solid var(--primary-low);
+  border-radius: var(--d-border-radius);
+  background: var(--secondary);
+
+  &__canvas {
+    position: relative;
+    width: 100%;
+    min-height: 260px;
+    overflow: hidden;
+
+    svg {
+      display: block;
+      max-width: 100%;
+    }
+
+    svg text {
+      fill: var(--primary);
+    }
+
+    .axis path,
+    .axis line {
+      stroke: var(--primary-medium);
+    }
+  }
+
+  figcaption {
+    color: var(--primary-high);
+    font-size: var(--font-down-1);
+  }
+
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em 1.5em;
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+    font-family: monospace;
+
+    li {
+      display: flex;
+      flex-direction: column;
+    }
+
+    li:nth-child(4n + 1) {
+      color: #08c;
+    }
+
+    li:nth-child(4n + 2) {
+      color: #e4572e;
+    }
+
+    li:nth-child(4n + 3) {
+      color: #32a66a;
+    }
+
+    li:nth-child(4n + 4) {
+      color: #b279a2;
+    }
+  }
+
+  &__coordinates {
+    min-height: 1.4em;
+    font-size: var(--font-down-1);
+    white-space: nowrap;
+  }
+
+  &__definition {
+    margin-top: 0.5em;
+    font-size: var(--font-down-1);
+  }
+
+  &__error {
+    color: var(--danger);
+  }
+}

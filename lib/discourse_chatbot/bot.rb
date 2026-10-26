@@ -28,6 +28,7 @@ module ::DiscourseChatbot
       DiscourseChatbot::Tools::UserInformation
       DiscourseChatbot::Tools::EscalateToStaff
       DiscourseChatbot::Tools::Calculator
+      DiscourseChatbot::Tools::FunctionPlot
       DiscourseChatbot::Tools::RemainingQuota
     ]
 
@@ -360,6 +361,9 @@ module ::DiscourseChatbot
     def merge_tools(opts)
       tools = []
       tools << ::DiscourseChatbot::Tools::Calculator.new if tool_enabled?("calculate")
+      if tool_enabled?("plot_function") && SiteSetting.chatbot_function_plot_enabled
+        tools << ::DiscourseChatbot::Tools::FunctionPlot.new
+      end
       tools << ::DiscourseChatbot::Tools::Wikipedia.new if tool_enabled?("wikipedia")
 
       if opts[:private] && tool_enabled?("user_information")

@@ -1,5 +1,6 @@
 en:
   site_settings:
+    chatbot_function_plot_enabled: "Render interactive 2D function, implicit, parametric, polar, point and vector plots locally with function-plot in posts, PMs and Chat. The plot_function tool is included in the defaults for every trust level; add it to customised tool lists to let Chatbot prepare graphs alongside maths explanations and MathJax output."
     chatbot_enabled: "Enable the chatbot plugin"
     chatbot_llm_provider: "Provider used for chatbot completions. OpenAI, Anthropic, Google Gemini, and xAI are supported through their OpenAI-compatible APIs."
     chatbot_open_ai_token: "OpenAI API key shared by every chatbot capability configured to use OpenAI. Get a key at <a target='_blank' rel='noopener' href='https://platform.openai.com/api-keys'>OpenAI</a>."
@@ -196,6 +197,21 @@ en:
         post_analysis_before_posts: "I am now talking to only %{username} who has asked me to consider the following posts in private.  The other users are now not present, but I have access to their conversation which is as follows:"
         post_analysis: "I am still talking to only %{username} who has asked me to consider the above posts in private.  I should summarize the discussion, provide my opinion about it to %{username} and ask them what they would like to discuss about it."
       function:
+        function_plot:
+          description: |
+            Prepare an interactive 2D mathematical graph when it helps explain the answer, including roots, intersections, conics, trajectories or data. Choose plot_type and use the matching expressions format. Accompany the graph with the mathematical explanation and usual LaTeX/MathJax notation. 3D is unsupported.
+            Expressions use explicit multiplication (*), powers (^), parentheses, pi, e, and single-argument sin, cos, tan, asin, acos, atan, sqrt, cbrt, abs, exp, log (natural), log10, floor, ceil. Angles are radians. Use cbrt(...) for real cube roots of negative arguments. Omit assignments and LaTeX. Limit each expression to 256 characters.
+            Choose numeric axis bounds that show the relevant features; supply min/max pairs within [-1000000,1000000], increasing by at least 0.000001. Axes default to [-10,10]. For parametric/polar curves, parameter_min/parameter_max select t/theta (default 0 to 2*pi); ignored for other types. Copy the returned function-plot fence unchanged into the final answer outside other fences. Rendering is local; do not claim to have viewed the result.
+          expressions: "Newline-separated entries: function (default): y=f(x) as x^2-4; implicit: F(x,y)=0 as x^2+y^2-4 (max 2); parametric: x(t); y(t) as cos(t); sin(t); polar: r(theta) as 2*cos(3*theta). Max 4 curves except implicit. points/polyline: numeric x,y per line (max 150), scatter/connected respectively. vector: numeric dx,dy from origin or x0,y0,dx,dy per line (max 16)."
+          title: "Optional plain-text graph title, up to 120 characters."
+          plot_type: "Plot family; function is the default. One family per graph."
+          x_min: "Left boundary. Supply with x_max."
+          x_max: "Right boundary. Supply with x_min."
+          y_min: "Bottom boundary. Supply with y_max."
+          y_max: "Top boundary. Supply with y_min."
+          parameter_min: "Start of t/theta for parametric/polar curves. Supply with parameter_max. Ignored otherwise."
+          parameter_max: "End of t/theta for parametric/polar curves. Supply with parameter_min. Ignored otherwise."
+          error: "Unable to prepare the graph. Check plot_type and its expressions format: function in x; implicit in x,y equal to zero; parametric x(t);y(t); polar in theta; points/polyline numeric x,y; vector numeric dx,dy or x0,y0,dx,dy. Max 4 curves (2 implicit), 150 points or 16 vectors. Use supported maths only, increasing finite bounds in pairs within +/-1000000, and a title up to 120 characters. Parameter bounds apply only to parametric/polar curves. Correct the arguments before retrying."
         remaining_bot_quota:
           description: |
             Get the current number of tokens or queries you have left for use of the bot this week

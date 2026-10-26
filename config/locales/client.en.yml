@@ -3,6 +3,14 @@ en:
     discourse_chatbot:
       title: "Chatbot"
     chatbot:
+      function_plot:
+        loading: "Loading graph…"
+        error: "This graph could not be rendered. Check its expressions and bounds, or simplify an expensive implicit equation."
+        fallback: "Graph definition"
+        label: "Interactive function graph"
+        help: "Move the pointer to trace values, snapping near axes and series intersections; drag to pan; scroll or pinch to zoom. Angles are in radians."
+        trace_values: "x = %{x}, y = %{y}"
+        help_other: "Drag to pan; scroll or pinch to zoom. Angles are in radians."
       tool_selection_mode:
         remove_definitions: "Remove unselected tool definitions"
         restrict_calls: "Restrict calls and retain tool definitions for caching"

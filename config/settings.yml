@@ -2,6 +2,9 @@ plugins:
   chatbot_enabled:
     default: true
     client: true
+  chatbot_function_plot_enabled:
+    default: true
+    client: true
   chatbot_llm_provider:
     client: false
     default: open_ai
@@ -136,7 +139,7 @@ plugins:
     type: group_list
     list_type: compact
   chatbot_tools_high_trust:
-    default: "calculate|wikipedia|remaining_bot_quota|local_forum_search|news|web_crawler|web_search|stock_data"
+    default: "calculate|plot_function|wikipedia|remaining_bot_quota|local_forum_search|news|web_crawler|web_search|stock_data"
     client: false
     type: list
     list_type: compact
@@ -248,7 +251,7 @@ plugins:
     client: false
     default: ''
   chatbot_tools_medium_trust:
-    default: "calculate|remaining_bot_quota|local_forum_search"
+    default: "calculate|plot_function|remaining_bot_quota|local_forum_search"
     client: false
     type: list
     list_type: compact
@@ -312,7 +315,7 @@ plugins:
     client: false
     default: ''
   chatbot_tools_low_trust:
-    default: "calculate|remaining_bot_quota|local_forum_search"
+    default: "calculate|plot_function|remaining_bot_quota|local_forum_search"
     client: false
     type: list
     list_type: compact
