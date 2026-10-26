@@ -1,22 +1,41 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
+import { get } from "@ember/helper";
 import { modifier } from "ember-modifier";
 import loadScript from "discourse/lib/load-script";
 import { eq } from "discourse/truth-helpers";
 import { i18n } from "discourse-i18n";
 import { parseGraph } from "../lib/function-plot-expression";
-import { createGraphBoard } from "../lib/jsxgraph-renderer";
+import { createCurveTrace, createGraphBoard } from "../lib/jsxgraph-renderer";
 
 export default class FunctionPlotBlock extends Component {
   @tracked failed = false;
   @tracked graph = null;
   @tracked loading = true;
+  @tracked traceValues = [];
 
   renderPlot = modifier((element, [raw]) => {
     let disposed = false;
     let board;
     let observer;
     let previousWidth;
+    let trace;
+    const locale = document.documentElement.lang || undefined;
+    const formatter = new Intl.NumberFormat(locale, {
+      maximumSignificantDigits: 6,
+    });
+    const scientificFormatter = new Intl.NumberFormat(locale, {
+      maximumSignificantDigits: 6,
+      notation: "scientific",
+    });
+    const formatNumber = (value) => {
+      const magnitude = Math.abs(value);
+      return (
+        magnitude !== 0 && (magnitude < 0.0001 || magnitude >= 1000000)
+          ? scientificFormatter
+          : formatter
+      ).format(value === 0 ? 0 : value);
+    };
 
     const onWheel = (event) => {
       event.preventDefault();
@@ -34,6 +53,7 @@ export default class FunctionPlotBlock extends Component {
       } else {
         board.zoomOut(position[1], position[2]);
       }
+      trace?.move(event);
     };
 
     const resize = () => {
@@ -41,6 +61,7 @@ export default class FunctionPlotBlock extends Component {
       const height = Math.max(260, Math.min(width * 0.7, 480));
       if (width !== previousWidth) {
         previousWidth = width;
+        trace?.clear();
         element.style.height = `${height}px`;
         board?.resizeContainer(width, height, true);
       }
@@ -58,6 +79,22 @@ export default class FunctionPlotBlock extends Component {
         this.graph = graph;
         resize();
         board = createGraphBoard(element, graph);
+        if (graph.dimensions === 2) {
+          trace = createCurveTrace(board, graph, (values) => {
+            if (!disposed) {
+              this.traceValues = values.map((value) =>
+                value
+                  ? i18n("chatbot.function_plot.trace_values", {
+                      x: formatNumber(value.x),
+                      y: formatNumber(value.y),
+                    })
+                  : null
+              );
+            }
+          });
+          element.addEventListener("pointermove", trace.move);
+          element.addEventListener("pointerleave", trace.clear);
+        }
         element.addEventListener("wheel", onWheel, { passive: false });
         observer = new ResizeObserver(() => {
           if (!disposed) {
@@ -80,6 +117,11 @@ export default class FunctionPlotBlock extends Component {
     return () => {
       disposed = true;
       element.removeEventListener("wheel", onWheel);
+      if (trace) {
+        element.removeEventListener("pointermove", trace.move);
+        element.removeEventListener("pointerleave", trace.clear);
+        trace.destroy();
+      }
       observer?.disconnect();
       if (board) {
         window.JXG.JSXGraph.freeBoard(board);
@@ -110,8 +152,16 @@ export default class FunctionPlotBlock extends Component {
         {{this.renderPlot @data.raw}}
       ></div>
       <ul class="chatbot-function-plot__legend">
-        {{#each this.graph.functions as |curve|}}
-          <li>{{curve.expression}}</li>
+        {{#each this.graph.functions as |curve index|}}
+          <li>
+            <span>{{curve.expression}}</span>
+            {{#if (eq this.graph.dimensions 2)}}
+              <span class="chatbot-function-plot__coordinates">{{get
+                  this.traceValues
+                  index
+                }}</span>
+            {{/if}}
+          </li>
         {{/each}}
       </ul>
       <figcaption>{{i18n

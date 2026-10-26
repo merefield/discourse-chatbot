@@ -1,4 +1,83 @@
+import { traceSeriesCoordinates } from "./function-plot-trace";
+
 const COLORS = ["#0088cc", "#e4572e", "#32a66a", "#b279a2"];
+
+export function createCurveTrace(board, graph, onValues) {
+  let values = [];
+  let frame = null;
+  let pointer;
+  const points = graph.functions.map((_curve, index) => {
+    const point = board.create(
+      "point",
+      [() => values[index]?.x ?? NaN, () => values[index]?.y ?? NaN],
+      {
+        name: "",
+        withLabel: false,
+        fixed: true,
+        highlight: false,
+        showInfobox: false,
+        size: 3,
+        strokeWidth: 2,
+        strokeColor: COLORS[index],
+        fillColor: COLORS[index],
+        visible: () => Boolean(values[index]),
+      }
+    );
+    point.hasPoint = () => false;
+    point.rendNode.classList.add("chatbot-function-plot__trace-point");
+    return point;
+  });
+  const renderPoints = () => {
+    points.forEach((point) =>
+      point.prepareUpdate().update().updateVisibility().updateRenderer()
+    );
+    onValues(values);
+  };
+  const clear = () => {
+    if (frame !== null) {
+      cancelAnimationFrame(frame);
+      frame = null;
+    }
+    pointer = null;
+    values = [];
+    renderPoints();
+  };
+  const update = () => {
+    frame = null;
+    const position = board.getMousePosition(pointer);
+    if (
+      position[0] < 0 ||
+      position[0] > board.canvasWidth ||
+      position[1] < 0 ||
+      position[1] > board.canvasHeight
+    ) {
+      clear();
+      return;
+    }
+    const x = new window.JXG.Coords(
+      window.JXG.COORDS_BY_SCREEN,
+      position,
+      board
+    ).usrCoords[1];
+    values = traceSeriesCoordinates(
+      graph.functions.map((curve) => curve.evaluate),
+      x,
+      board.getBoundingBox(),
+      board.canvasWidth
+    );
+    renderPoints();
+  };
+  return {
+    clear,
+    move(event) {
+      pointer = event;
+      if (frame === null) {
+        frame = requestAnimationFrame(update);
+      }
+    },
+    destroy: clear,
+  };
+}
 
 export function createGraphBoard(element, graph) {
   const library = window.JXG;

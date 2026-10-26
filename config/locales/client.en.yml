@@ -8,7 +8,8 @@ en:
         error: "This graph could not be rendered. Check its expressions and axis bounds."
         fallback: "Graph definition"
         label: "Interactive function graph"
-        help: "Drag to pan; scroll or pinch to zoom. Angles are in radians."
+        help: "Move the pointer to trace values, snapping near axes and series intersections; drag to pan; scroll or pinch to zoom. Angles are in radians."
+        trace_values: "x = %{x}, y = %{y}"
         help_3d: "Drag to rotate; scroll or pinch to zoom. Angles are in radians."
       tool_selection_mode:
         remove_definitions: "Remove unselected tool definitions"

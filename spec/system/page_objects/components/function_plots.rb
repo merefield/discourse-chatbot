@@ -24,6 +24,46 @@ module PageObjects
         path["d"].scan(/M/i).length >= 2
       end
 
+      def move_over_2d_plot(relative_x:)
+        page.driver.with_playwright_page do |browser_page|
+          canvas = browser_page.locator(".chatbot-function-plot__canvas[data-dimensions='2']").first
+          canvas.scroll_into_view_if_needed
+          box = canvas.bounding_box
+          browser_page.mouse.move(
+            box["x"] + box["width"] * relative_x,
+            box["y"] + box["height"] / 2,
+          )
+        end
+      end
+
+      def leave_plot
+        page.driver.with_playwright_page do |browser_page|
+          browser_page.mouse.move(browser_page.evaluate("window.innerWidth") - 40, 500)
+        end
+      end
+
+      def has_trace_points?(count:)
+        page.has_css?(".chatbot-function-plot__trace-point", count: count)
+      end
+
+      def has_trace_values?(count:)
+        page.has_css?(".chatbot-function-plot__coordinates:not(:empty)", count: count)
+      end
+
+      def trace_coordinates
+        all(".chatbot-function-plot__coordinates", visible: :all).map do |readout|
+          readout
+            .text
+            .match(/x = ([+-]?\d+(?:\.\d+)?), y = ([+-]?\d+(?:\.\d+)?)/)
+            &.captures
+            &.map(&:to_f)
+        end
+      end
+
+      def trace_point_positions
+        all(".chatbot-function-plot__trace-point").map { |point| [point[:cx], point[:cy]] }
+      end
+
       def has_surface?
         page.has_css?(
           ".chatbot-function-plot__canvas[data-dimensions='3'] svg path[fill^='hsl']",

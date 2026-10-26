@@ -373,7 +373,7 @@ your community's requests.
 
 ### Mathematical function graphs
 
-This local experimental branch bundles JSXGraph 1.14.1 for interactive 2D curves
+Chatbot bundles JSXGraph 1.14.1 for interactive 2D curves
 and 3D surfaces rendered locally in the
 reader's browser. `chatbot_function_plot_enabled` defaults to `true`, and
 `plot_function` is included in the defaults for all `chatbot_tools_*_trust` settings.
@@ -392,11 +392,21 @@ add `"dimensions":3` and optionally `"z_domain"` to its JSON definition:
 
 Readers drag a 3D surface to rotate it and scroll or pinch to zoom. The tool accepts the equivalent numeric
 `dimensions` parameter (2 by default, or 3 for surfaces) and paired `z_min`/`z_max`
-bounds. Z bounds are ignored for 2D plots, including placeholder values supplied by strict tool schemas. Use at most two surfaces in a graph. This first 3D experiment supports
+bounds. Z bounds are ignored for 2D plots, including placeholder values supplied by strict tool schemas. Use at most two surfaces in a graph. The 3D mode supports
 explicit surfaces `z=f(x,y)`, not arbitrary implicit solids or parametric curves.
 
+In 2D, moving the pointer shows a coloured marker and live x/y coordinates for
+each curve visible at that x value. Undefined and off-screen values are hidden;
+the markers and coordinate readouts clear when the pointer leaves the plot.
+Within six screen pixels of a nearby axis intercept or series intersection,
+tracing snaps to that crossing. Intersecting series share a marker location and
+coordinate reading, and axis intercepts show a zero coordinate. All series follow
+the selected x position. Crossings are found numerically; coincident series, poles,
+jumps and undefined regions do not introduce false intersection targets.
+Tangential contacts can be missed unless a sampled point lands exactly on the contact.
+
 The tool is intended to accompany mathematical explanations, including the site's
-usual MathJax/LaTeX output when Discourse Math is installed. For example, an answer
+usual MathJax/LaTeX output when Discourse Math is enabled (`discourse_math_enabled`). For example, an answer
 about quadratic roots can explain the algebra and include a plot of `x^2-4`.
 The graph tool uses no external API and adds no notional tool quota charge.
 
@@ -410,12 +420,12 @@ The curves intersect where $\sin(x)=\cos(x)$.
 ```
 ````
 
-Supported expressions use `x`, numeric literals, `pi`, `e`, explicit multiplication,
+Supported expressions use `x` (and `y` for 3D surfaces), numeric literals, `pi`, `e`, explicit multiplication,
 `+ - * / ^`, parentheses, and the single-argument functions `sin`, `cos`, `tan`,
 `asin`, `acos`, `atan`, `sqrt`, `cbrt`, `abs`, `exp`, `log`, `log10`, `floor`, and `ceil`.
 Use `cbrt(...)` for real cube roots of negative as well as positive values.
 `log` is the natural logarithm and trigonometric angles are radians. Omit `y=` and
-LaTeX commands from graph expressions. There may be up to four expressions, each
+LaTeX commands from graph expressions. There may be up to four 2D expressions or two 3D expressions, each
 at most 256 characters. Titles are plain text, at most 120 characters. Both axes
 default to `[-10,10]`; custom domains must be finite, increasing pairs within
 `[-1000000,1000000]`, with a span of at least `0.000001`.

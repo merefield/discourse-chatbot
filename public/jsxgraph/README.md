@@ -1,4 +1,4 @@
-# JSXGraph local experiment
+# JSXGraph
 
 `1.14.1/jsxgraphcore.js` is the unmodified browser distribution from
 `npm pack jsxgraph@1.14.1` (`distrib/jsxgraphcore.js`). Its generated licence
@@ -13,6 +13,3 @@ The renderer passes callbacks from Chatbot's restricted maths interpreter, never
 post text as JessieCode. JessieCode compilation is disabled because internal
 library expressions must also work under Discourse's default CSP. Board cleanup
 uses `JXG.JSXGraph.freeBoard` to release handlers and the board registry entry.
-
-This is the local `experiment/jsxgraph-plots` branch. The function-plot assets remain
-available on the original `feature/function-plot-graphs` branch and in PR #191.

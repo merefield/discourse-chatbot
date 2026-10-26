@@ -57,6 +57,47 @@ RSpec.describe "Read function plots" do
     expect(topic_page).to have_content(I18n.t("js.chatbot.function_plot.fallback"))
   end
 
+  it "traces visible curves and snaps to axes and series intersections" do
+    graph =
+      DiscourseChatbot::FunctionPlot.markdown(
+        "expressions" => "x^2\nsqrt(x)",
+        "x_min" => -2,
+        "x_max" => 2,
+        "y_min" => -1,
+        "y_max" => 5,
+      )
+    Fabricate(:post, topic: topic, raw: graph)
+    topic_page.visit_topic(topic)
+
+    expect(graphs).to have_rendered_graphs(count: 1)
+    graphs.move_over_2d_plot(relative_x: 0.755)
+    expect(graphs).to have_trace_points(count: 2)
+    expect(graphs).to have_trace_values(count: 2)
+    expect(graphs.trace_coordinates).to eq([[1, 1], [1, 1]])
+    expect(graphs.trace_point_positions.uniq.length).to eq(1)
+    initial_positions = graphs.trace_point_positions
+
+    graphs.move_over_2d_plot(relative_x: 0.875)
+    try_until_success { expect(graphs.trace_coordinates.first[0]).to be_within(0.03).of(1.5) }
+    expect(graphs.trace_coordinates.first[1]).to be_within(0.04).of(2.25)
+    expect(graphs.trace_point_positions).not_to eq(initial_positions)
+
+    graphs.move_over_2d_plot(relative_x: 0.25)
+    expect(graphs).to have_trace_points(count: 1)
+    expect(graphs).to have_trace_values(count: 1)
+    expect(graphs.trace_coordinates.last).to be_nil
+
+    graphs.move_over_2d_plot(relative_x: 0.502)
+    expect(graphs).to have_trace_points(count: 2)
+    expect(graphs).to have_trace_values(count: 2)
+    expect(graphs.trace_coordinates.first).to eq([0, 0])
+    expect(graphs.trace_coordinates[1]).to eq([0, 0])
+
+    graphs.leave_plot
+    expect(graphs).to have_trace_points(count: 0)
+    expect(graphs).to have_trace_values(count: 0)
+  end
+
   it "preserves gaps in the domain and handles an entirely undefined curve" do
     graph = DiscourseChatbot::FunctionPlot.markdown("expressions" => "sqrt(x^2-1)\nsqrt(-1)")
     Fabricate(:post, topic: topic, raw: graph)
