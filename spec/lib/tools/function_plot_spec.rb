@@ -34,6 +34,7 @@ describe DiscourseChatbot::Tools::FunctionPlot do
       2^-x
       1/x
       sqrt(x)
+      cbrt(x)
       log(x)
       log10(x)
       exp(x)
@@ -71,6 +72,25 @@ describe DiscourseChatbot::Tools::FunctionPlot do
     expect(result[:token_usage]).to eq(0)
   end
 
+  it "ignores z arguments supplied for 2D plots by providers requiring all fields" do
+    result =
+      tool.process(
+        "expressions" => "exp(-0.15*x)*sin(3*x)\nexp(-0.15*x)\n-exp(-0.15*x)",
+        "title" => "Damped oscillation with exponential envelopes",
+        "dimensions" => 2,
+        "x_min" => 0,
+        "x_max" => 20,
+        "y_min" => -1.1,
+        "y_max" => 1.1,
+        "z_min" => 0,
+        "z_max" => 0,
+      )
+    graph = JSON.parse(result[:answer].lines[1])
+    expect(graph["functions"].length).to eq(3)
+    expect(graph["x_domain"]).to eq([0, 20])
+    expect(graph).not_to have_key("z_domain")
+  end
+
   it "rejects unsafe, malformed and oversized graph requests with correction guidance" do
     invalid = [
       {},
@@ -92,7 +112,6 @@ describe DiscourseChatbot::Tools::FunctionPlot do
       { "expressions" => "x", "unexpected" => "value" },
       { "expressions" => "y" },
       { "expressions" => "x", "dimensions" => 4 },
-      { "expressions" => "x", "z_min" => -1, "z_max" => 1 },
       { "expressions" => "x", "dimensions" => 3, "z_min" => 1 },
       { "expressions" => "x\ny\nx+y", "dimensions" => 3 },
     ]

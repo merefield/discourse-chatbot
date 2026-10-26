@@ -4,7 +4,7 @@ require "dentaku"
 
 module DiscourseChatbot
   class FunctionPlot
-    FUNCTIONS = %w[sin cos tan asin acos atan sqrt abs exp log log10 floor ceil].freeze
+    FUNCTIONS = %w[sin cos tan asin acos atan sqrt cbrt abs exp log log10 floor ceil].freeze
     VARIABLES = %w[x pi e].freeze
     MAX_FUNCTIONS = 4
     MAX_EXPRESSION_LENGTH = 256
@@ -15,7 +15,6 @@ module DiscourseChatbot
     def self.markdown(args)
       dimensions = args.fetch("dimensions", 2)
       raise ArgumentError if [2, 3].exclude?(dimensions)
-      raise ArgumentError if dimensions == 2 && (args.key?("z_min") || args.key?("z_max"))
 
       expressions = args.fetch("expressions").split("\n").map(&:strip).reject(&:empty?)
       limit = dimensions == 3 ? 2 : MAX_FUNCTIONS
@@ -59,6 +58,7 @@ module DiscourseChatbot
       calculator = Dentaku::Calculator.new
       calculator.add_function(:floor, :numeric, ->(value) { value.floor })
       calculator.add_function(:ceil, :numeric, ->(value) { value.ceil })
+      calculator.add_function(:cbrt, :numeric, ->(value) { Math.cbrt(value) })
       raise ArgumentError if calculator.tokenizer.tokenize(normalized).length > MAX_TOKENS
       node = calculator.ast(normalized)
       raise ArgumentError unless (node.dependencies - variables).empty?

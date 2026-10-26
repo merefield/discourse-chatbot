@@ -392,7 +392,7 @@ add `"dimensions":3` and optionally `"z_domain"` to its JSON definition:
 
 Readers drag a 3D surface to rotate it and scroll or pinch to zoom. The tool accepts the equivalent numeric
 `dimensions` parameter (2 by default, or 3 for surfaces) and paired `z_min`/`z_max`
-bounds. Use at most two surfaces in a graph. This first 3D experiment supports
+bounds. Z bounds are ignored for 2D plots, including placeholder values supplied by strict tool schemas. Use at most two surfaces in a graph. This first 3D experiment supports
 explicit surfaces `z=f(x,y)`, not arbitrary implicit solids or parametric curves.
 
 The tool is intended to accompany mathematical explanations, including the site's
@@ -412,7 +412,8 @@ The curves intersect where $\sin(x)=\cos(x)$.
 
 Supported expressions use `x`, numeric literals, `pi`, `e`, explicit multiplication,
 `+ - * / ^`, parentheses, and the single-argument functions `sin`, `cos`, `tan`,
-`asin`, `acos`, `atan`, `sqrt`, `abs`, `exp`, `log`, `log10`, `floor`, and `ceil`.
+`asin`, `acos`, `atan`, `sqrt`, `cbrt`, `abs`, `exp`, `log`, `log10`, `floor`, and `ceil`.
+Use `cbrt(...)` for real cube roots of negative as well as positive values.
 `log` is the natural logarithm and trigonometric angles are radians. Omit `y=` and
 LaTeX commands from graph expressions. There may be up to four expressions, each
 at most 256 characters. Titles are plain text, at most 120 characters. Both axes

@@ -15,6 +15,8 @@ module("Chatbot | function plot expressions", function () {
       ["exp(log(e))", 0, Math.E],
       ["log10(1000)", 0, 3],
       ["sqrt(abs(x))", -4, 2],
+      ["cbrt(x)", -8, -2],
+      ["cbrt((3-4*x^3)/2)", 1, Math.cbrt(-0.5)],
       ["1e3*x", 2, 2000],
     ].forEach(([expression, x, expected]) => {
       assert.true(

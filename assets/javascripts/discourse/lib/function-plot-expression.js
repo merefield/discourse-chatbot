@@ -6,6 +6,7 @@ const FUNCTIONS = Object.freeze({
   acos: Math.acos,
   atan: Math.atan,
   sqrt: Math.sqrt,
+  cbrt: Math.cbrt,
   abs: Math.abs,
   exp: Math.exp,
   log: Math.log,

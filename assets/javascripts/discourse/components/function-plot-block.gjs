@@ -18,6 +18,24 @@ export default class FunctionPlotBlock extends Component {
     let observer;
     let previousWidth;
 
+    const onWheel = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.deltaY === 0) {
+        return;
+      }
+      const position = new window.JXG.Coords(
+        window.JXG.COORDS_BY_SCREEN,
+        board.getMousePosition(event),
+        board
+      ).usrCoords;
+      if (event.deltaY < 0) {
+        board.zoomIn(position[1], position[2]);
+      } else {
+        board.zoomOut(position[1], position[2]);
+      }
+    };
+
     const resize = () => {
       const width = Math.max(240, Math.min(element.clientWidth || 640, 1000));
       const height = Math.max(260, Math.min(width * 0.7, 480));
@@ -40,6 +58,7 @@ export default class FunctionPlotBlock extends Component {
         this.graph = graph;
         resize();
         board = createGraphBoard(element, graph);
+        element.addEventListener("wheel", onWheel, { passive: false });
         observer = new ResizeObserver(() => {
           if (!disposed) {
             resize();
@@ -60,6 +79,7 @@ export default class FunctionPlotBlock extends Component {
 
     return () => {
       disposed = true;
+      element.removeEventListener("wheel", onWheel);
       observer?.disconnect();
       if (board) {
         window.JXG.JSXGraph.freeBoard(board);

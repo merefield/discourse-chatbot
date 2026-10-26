@@ -34,6 +34,8 @@ export function createGraphBoard(element, graph) {
     showInfobox: false,
     keepaspectratio: is3D,
     resize: { enabled: false },
+    // The component handles wheel events to prevent zoom from also scrolling the page.
+    registerEvents: { wheel: false },
     pan: { enabled: !is3D, needShift: false },
     zoom: { enabled: true, needShift: false },
     title: "",

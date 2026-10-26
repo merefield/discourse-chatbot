@@ -52,12 +52,27 @@ module PageObjects
         ]
       end
 
-      def zoom_surface
+      def zoom_surface(delta_y: -300)
         page.driver.with_playwright_page do |browser_page|
           canvas = browser_page.locator(".chatbot-function-plot__canvas[data-dimensions='3']")
           box = canvas.bounding_box
           browser_page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
-          browser_page.mouse.wheel(0, -300)
+          browser_page.mouse.wheel(0, delta_y)
+        end
+      end
+
+      def page_scroll_position
+        page.evaluate_async_script(<<~JS)
+          const done = arguments[0];
+          requestAnimationFrame(() => requestAnimationFrame(() => done(window.scrollY)));
+        JS
+      end
+
+      def scroll_outside_plot
+        page.driver.with_playwright_page do |browser_page|
+          viewport_width = browser_page.evaluate("window.innerWidth")
+          browser_page.mouse.move(viewport_width - 40, 500)
+          browser_page.mouse.wheel(0, 300)
         end
       end
 

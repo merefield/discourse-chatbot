@@ -67,7 +67,7 @@ RSpec.describe "Read function plots" do
     expect(graphs).to have_no_error
   end
 
-  it "lets readers rotate and zoom a 3D surface" do
+  it "lets readers rotate and zoom a 3D surface without scrolling the page" do
     graph =
       DiscourseChatbot::FunctionPlot.markdown(
         "dimensions" => 3,
@@ -80,7 +80,7 @@ RSpec.describe "Read function plots" do
         "z_min" => -1.5,
         "z_max" => 1.5,
       )
-    Fabricate(:post, topic: topic, raw: graph)
+    Fabricate(:post, topic: topic, raw: graph + "\n\n" + ("More about the graph.\n\n" * 30))
     topic_page.visit_topic(topic)
 
     expect(graphs).to have_surface
@@ -90,6 +90,13 @@ RSpec.describe "Read function plots" do
     rotated_path = graphs.surface_path
     graphs.zoom_surface
     expect(graphs).to have_changed_surface(rotated_path)
+    zoomed_path = graphs.surface_path
+    scroll_position = graphs.page_scroll_position
+    graphs.zoom_surface(delta_y: 300)
+    expect(graphs).to have_changed_surface(zoomed_path)
+    expect(graphs.page_scroll_position).to eq(scroll_position)
     expect(graphs).to have_no_error
+    graphs.scroll_outside_plot
+    try_until_success { expect(graphs.page_scroll_position).to be > scroll_position }
   end
 end
