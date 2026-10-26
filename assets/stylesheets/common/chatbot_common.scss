@@ -113,7 +113,9 @@
   background: var(--secondary);
 
   &__canvas {
+    position: relative;
     width: 100%;
+    min-height: 260px;
     overflow: hidden;
 
     svg {
@@ -134,6 +136,31 @@
   figcaption {
     color: var(--primary-high);
     font-size: var(--font-down-1);
+  }
+
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em 1.5em;
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+    font-family: monospace;
+
+    li:nth-child(1) {
+      color: #08c;
+    }
+
+    li:nth-child(2) {
+      color: #e4572e;
+    }
+
+    li:nth-child(3) {
+      color: #32a66a;
+    }
+
+    li:nth-child(4) {
+      color: #b279a2;
+    }
   }
 
   &__definition {

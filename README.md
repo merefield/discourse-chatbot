@@ -373,12 +373,27 @@ your community's requests.
 
 ### Mathematical function graphs
 
-Chatbot bundles function-plot 1.26.0 for interactive graphs rendered locally in the
+This local experimental branch bundles JSXGraph 1.14.1 for interactive 2D curves
+and 3D surfaces rendered locally in the
 reader's browser. `chatbot_function_plot_enabled` defaults to `true`, and
 `plot_function` is included in the defaults for all `chatbot_tools_*_trust` settings.
 Customised trust-level tool lists retain their existing selections; add
 `plot_function` to those lists to let the bot prepare graphs.
 System One selection evaluates the new tool like the other eligible tools.
+
+Existing `function-plot` fences remain compatible. To plot a surface `z=f(x,y)`,
+add `"dimensions":3` and optionally `"z_domain"` to its JSON definition:
+
+````markdown
+```function-plot
+{"dimensions":3,"functions":["sin(x)*cos(y)"],"title":"A 3D wave","x_domain":[-3,3],"y_domain":[-3,3],"z_domain":[-1.5,1.5]}
+```
+````
+
+Readers drag a 3D surface to rotate it and scroll or pinch to zoom. The tool accepts the equivalent numeric
+`dimensions` parameter (2 by default, or 3 for surfaces) and paired `z_min`/`z_max`
+bounds. Use at most two surfaces in a graph. This first 3D experiment supports
+explicit surfaces `z=f(x,y)`, not arbitrary implicit solids or parametric curves.
 
 The tool is intended to accompany mathematical explanations, including the site's
 usual MathJax/LaTeX output when Discourse Math is installed. For example, an answer
@@ -404,10 +419,10 @@ at most 256 characters. Titles are plain text, at most 120 characters. Both axes
 default to `[-10,10]`; custom domains must be finite, increasing pairs within
 `[-1000000,1000000]`, with a span of at least `0.000001`.
 
-The renderer uses a restricted interpreter with function-plot's numeric sampler
-(1,000 samples per curve) rather than its string-to-JavaScript compiler, preserving
-Discourse's CSP. It redraws when resized or zoomed and uses function-plot's
-discontinuity handling. Undefined or non-finite function values are omitted;
+The renderer uses a restricted interpreter and trusted callbacks, with JSXGraph's
+code compilation disabled, preserving Discourse's CSP. 2D curves use adaptive
+sampling; 3D surfaces use a bounded mesh with 24 subdivisions in each direction.
+It redraws when resized, zoomed or rotated. Undefined or non-finite values are gaps;
 graphs are numerical visualisations, not proofs or a symbolic solver. Graph
 definitions remain available in a disclosure below each plot and as ordinary
 code blocks in email, exports, disabled rendering, and clients without JavaScript.

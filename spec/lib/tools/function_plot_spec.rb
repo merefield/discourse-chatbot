@@ -53,6 +53,24 @@ describe DiscourseChatbot::Tools::FunctionPlot do
     end
   end
 
+  it "prepares 3D surfaces with two independent variables and z bounds" do
+    result =
+      tool.process(
+        "dimensions" => 3,
+        "expressions" => "sin(x)*cos(y)\nx^2-y^2",
+        "z_min" => -2,
+        "z_max" => 2,
+      )
+    graph = JSON.parse(result[:answer].lines[1])
+
+    expect(graph).to include(
+      "dimensions" => 3,
+      "functions" => %w[sin(x)*cos(y) x^2-y^2],
+      "z_domain" => [-2, 2],
+    )
+    expect(result[:token_usage]).to eq(0)
+  end
+
   it "rejects unsafe, malformed and oversized graph requests with correction guidance" do
     invalid = [
       {},
@@ -72,6 +90,11 @@ describe DiscourseChatbot::Tools::FunctionPlot do
       { "expressions" => "x", "x_min" => -10, "x_max" => 1_000_001 },
       { "expressions" => "x", "title" => "a" * 121 },
       { "expressions" => "x", "unexpected" => "value" },
+      { "expressions" => "y" },
+      { "expressions" => "x", "dimensions" => 4 },
+      { "expressions" => "x", "z_min" => -1, "z_max" => 1 },
+      { "expressions" => "x", "dimensions" => 3, "z_min" => 1 },
+      { "expressions" => "x\ny\nx+y", "dimensions" => 3 },
     ]
     invalid.each do |arguments|
       expect(tool.process(arguments)).to eq(

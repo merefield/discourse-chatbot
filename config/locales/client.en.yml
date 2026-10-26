@@ -9,6 +9,7 @@ en:
         fallback: "Graph definition"
         label: "Interactive function graph"
         help: "Drag to pan; scroll or pinch to zoom. Angles are in radians."
+        help_3d: "Drag to rotate; scroll or pinch to zoom. Angles are in radians."
       tool_selection_mode:
         remove_definitions: "Remove unselected tool definitions"
         restrict_calls: "Restrict calls and retain tool definitions for caching"

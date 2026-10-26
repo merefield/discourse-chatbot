@@ -13,10 +13,16 @@ module DiscourseChatbot
     MAX_BOUND = 1_000_000
 
     def self.markdown(args)
-      expressions = args.fetch("expressions").split("\n").map(&:strip).reject(&:empty?)
-      raise ArgumentError if expressions.empty? || expressions.length > MAX_FUNCTIONS
+      dimensions = args.fetch("dimensions", 2)
+      raise ArgumentError if [2, 3].exclude?(dimensions)
+      raise ArgumentError if dimensions == 2 && (args.key?("z_min") || args.key?("z_max"))
 
-      expressions.each { |expression| validate_expression!(expression) }
+      expressions = args.fetch("expressions").split("\n").map(&:strip).reject(&:empty?)
+      limit = dimensions == 3 ? 2 : MAX_FUNCTIONS
+      raise ArgumentError if expressions.empty? || expressions.length > limit
+
+      variables = dimensions == 3 ? VARIABLES + ["y"] : VARIABLES
+      expressions.each { |expression| validate_expression!(expression, variables) }
       title = args.fetch("title", "")
       raise ArgumentError if title.length > 120 || title.match?(/[\r\n]/)
 
@@ -26,17 +32,21 @@ module DiscourseChatbot
         x_domain: domain(args, "x", [-10, 10]),
         y_domain: domain(args, "y", [-10, 10]),
       }
+      if dimensions == 3
+        graph[:dimensions] = 3
+        graph[:z_domain] = domain(args, "z", [-10, 10])
+      end
       "```function-plot\n#{JSON.generate(graph)}\n```"
     end
 
-    def self.validate_expression!(expression)
+    def self.validate_expression!(expression, variables)
       if expression.length > MAX_EXPRESSION_LENGTH ||
            !expression.match?(%r{\A[0-9a-z+\-*/^().\s]+\z}i)
         raise ArgumentError
       end
       normalized = expression.downcase
       names = normalized.scan(/[a-z][a-z0-9]*/).reject { |name| name.match?(/\Ae\d+\z/) }
-      raise ArgumentError unless (names - FUNCTIONS - VARIABLES).empty?
+      raise ArgumentError unless (names - FUNCTIONS - variables).empty?
 
       depth = 0
       normalized.each_char do |character|
@@ -51,7 +61,7 @@ module DiscourseChatbot
       calculator.add_function(:ceil, :numeric, ->(value) { value.ceil })
       raise ArgumentError if calculator.tokenizer.tokenize(normalized).length > MAX_TOKENS
       node = calculator.ast(normalized)
-      raise ArgumentError unless (node.dependencies - VARIABLES).empty?
+      raise ArgumentError unless (node.dependencies - variables).empty?
     rescue Dentaku::Error
       raise ArgumentError
     end

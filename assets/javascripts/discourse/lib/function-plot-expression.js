@@ -23,7 +23,7 @@ const OPERATORS = {
 };
 
 // Interpret a small maths grammar; never pass post text to the library's code generator.
-export function compileExpression(expression) {
+export function compileExpression(expression, { dimensions = 2 } = {}) {
   if (
     typeof expression !== "string" ||
     !expression.trim() ||
@@ -59,7 +59,7 @@ export function compileExpression(expression) {
     let left;
     if (token === "+" || token === "-") {
       const operand = parse(3, depth + 1);
-      left = token === "-" ? (x) => -operand(x) : operand;
+      left = token === "-" ? (x, y) => -operand(x, y) : operand;
     } else if (token === "(") {
       left = parse(1, depth + 1);
       if (tokens[index++] !== ")") {
@@ -67,6 +67,8 @@ export function compileExpression(expression) {
       }
     } else if (token === "x") {
       left = (x) => x;
+    } else if (token === "y" && dimensions === 3) {
+      left = (_x, y) => y;
     } else if (token === "pi" || token === "e") {
       const constant = token === "pi" ? Math.PI : Math.E;
       left = () => constant;
@@ -78,7 +80,7 @@ export function compileExpression(expression) {
       if (tokens[index++] !== ")") {
         throw new Error("Invalid function argument");
       }
-      left = (x) => FUNCTIONS[token](argument(x));
+      left = (x, y) => FUNCTIONS[token](argument(x, y));
     } else if (token && Number.isFinite(Number(token))) {
       const number = Number(token);
       left = () => number;
@@ -96,7 +98,7 @@ export function compileExpression(expression) {
         depth + 1
       );
       const previous = left;
-      left = (x) => OPERATORS[operator](previous(x), right(x));
+      left = (x, y) => OPERATORS[operator](previous(x, y), right(x, y));
     }
     return left;
   }
@@ -105,8 +107,8 @@ export function compileExpression(expression) {
   if (index !== tokens.length) {
     throw new Error("Unexpected expression input");
   }
-  return (x) => {
-    const result = evaluate(x);
+  return (x, y) => {
+    const result = evaluate(x, y);
     return Number.isFinite(result) ? result : NaN;
   };
 }
@@ -133,13 +135,24 @@ export function parseGraph(raw) {
     throw new Error("Graph too large");
   }
   const graph = JSON.parse(raw);
+  const dimensions = graph?.dimensions ?? 2;
   if (
     !graph ||
+    ![2, 3].includes(dimensions) ||
     !Array.isArray(graph.functions) ||
     graph.functions.length < 1 ||
-    graph.functions.length > 4 ||
+    graph.functions.length > (dimensions === 3 ? 2 : 4) ||
+    (dimensions === 2 && Object.hasOwn(graph, "z_domain")) ||
     Object.keys(graph).some(
-      (key) => !["functions", "title", "x_domain", "y_domain"].includes(key)
+      (key) =>
+        ![
+          "functions",
+          "title",
+          "dimensions",
+          "x_domain",
+          "y_domain",
+          "z_domain",
+        ].includes(key)
     )
   ) {
     throw new Error("Invalid graph");
@@ -149,39 +162,14 @@ export function parseGraph(raw) {
     throw new Error("Invalid title");
   }
   return {
+    dimensions,
     title,
     xDomain: domain(graph.x_domain ?? [-10, 10]),
     yDomain: domain(graph.y_domain ?? [-10, 10]),
+    zDomain: dimensions === 3 ? domain(graph.z_domain ?? [-10, 10]) : null,
     functions: graph.functions.map((expression) => ({
       expression,
-      evaluate: compileExpression(expression),
+      evaluate: compileExpression(expression, { dimensions }),
     })),
   };
-}
-
-// The upstream sampler drops undefined points, which can otherwise bridge domain gaps.
-export function splitUndefinedSegments(segments, evaluate, step) {
-  const result = [];
-  for (const segment of segments) {
-    let current = [];
-    for (const point of segment) {
-      if (!point || !point.every(Number.isFinite)) {
-        continue;
-      }
-      const previous = current.at(-1);
-      if (
-        previous &&
-        (point[0] - previous[0] > step * 1.5 ||
-          !Number.isFinite(evaluate((point[0] + previous[0]) / 2)))
-      ) {
-        result.push(current);
-        current = [];
-      }
-      current.push(point);
-    }
-    if (current.length) {
-      result.push(current);
-    }
-  }
-  return result;
 }

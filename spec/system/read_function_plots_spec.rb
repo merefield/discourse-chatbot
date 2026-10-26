@@ -66,4 +66,30 @@ RSpec.describe "Read function plots" do
     expect(graphs).to have_separate_domain_segments
     expect(graphs).to have_no_error
   end
+
+  it "lets readers rotate and zoom a 3D surface" do
+    graph =
+      DiscourseChatbot::FunctionPlot.markdown(
+        "dimensions" => 3,
+        "expressions" => "sin(x)*cos(y)",
+        "title" => "A 3D wave",
+        "x_min" => -3,
+        "x_max" => 3,
+        "y_min" => -3,
+        "y_max" => 3,
+        "z_min" => -1.5,
+        "z_max" => 1.5,
+      )
+    Fabricate(:post, topic: topic, raw: graph)
+    topic_page.visit_topic(topic)
+
+    expect(graphs).to have_surface
+    original_path = graphs.surface_path
+    graphs.rotate_surface
+    expect(graphs).to have_changed_surface(original_path)
+    rotated_path = graphs.surface_path
+    graphs.zoom_surface
+    expect(graphs).to have_changed_surface(rotated_path)
+    expect(graphs).to have_no_error
+  end
 end

@@ -199,16 +199,19 @@ en:
       function:
         function_plot:
           description: |
-            Prepare an interactive graph of up to four mathematical functions y=f(x). Use when a graph would help explain a maths question: roots, intersections, turning points, trigonometry, growth, or comparing functions, even if the user did not explicitly ask for a graph. Accompany the graph with the mathematical explanation and the site's usual LaTeX/MathJax notation; the graph does not replace the answer or numerical calculation tools.
-            Supply expressions in x, one per line, without 'y=' or LaTeX. Use explicit multiplication (*), powers (^), parentheses, constants pi and e, and these single-argument functions: sin, cos, tan, asin, acos, atan, sqrt, abs, exp, log (natural logarithm), log10, floor, ceil. Trigonometric angles are radians. For example: x^2-4 or sin(x). Expressions are limited to 256 characters each.
-            Choose axis bounds that show the relevant features. Bounds are numeric; supply both minimum and maximum for an axis, with -1000000 <= minimum < maximum <= 1000000. Each axis defaults to [-10,10] if omitted. The tool returns a function-plot fenced block; copy the complete block unchanged into your final answer outside any other code fence. The graph renders in the reader's browser; do not claim to have viewed its rendered appearance.
-          expressions: "One to four expressions in x, separated by newlines, for example sin(x) followed by cos(x)."
+            Prepare an interactive mathematical graph. For ordinary equations in x and y use dimensions=2 (the default): up to four curves y=f(x), with expressions in x. For a surface z=f(x,y), use dimensions=3: up to two expressions in x and y; readers can rotate the surface. Do not add a third dimension to an equation that only describes a 2D curve. Use when a graph would help explain roots, intersections, turning points, trigonometry, growth, or surfaces, even if the user did not explicitly ask for a graph. Accompany the graph with a mathematical explanation and the site's usual LaTeX/MathJax notation; the graph does not replace the answer or numerical calculation tools.
+            Supply expressions one per line, without 'y=', 'z=' or LaTeX. Use explicit multiplication (*), powers (^), parentheses, constants pi and e, and these single-argument functions: sin, cos, tan, asin, acos, atan, sqrt, abs, exp, log (natural logarithm), log10, floor, ceil. Trigonometric angles are radians. Examples: x^2-4 for 2D; sin(x)*cos(y) or x^2-y^2 for 3D. Expressions are limited to 256 characters each.
+            Choose axis bounds that show the relevant features. Bounds are numeric; supply both minimum and maximum for an axis, with -1000000 <= minimum < maximum <= 1000000. Each axis defaults to [-10,10] if omitted. Supply z_min/z_max only for 3D. The tool returns a function-plot fenced block; copy the complete block unchanged into your final answer outside any other code fence. The graph renders in the reader's browser; do not claim to have viewed its rendered appearance.
+          expressions: "Expressions separated by newlines: up to four in x for 2D curves, or up to two in x and y for 3D surfaces."
           title: "Optional plain-text graph title, up to 120 characters."
+          dimensions: "Optional number 2 (default) for y=f(x) curves, or 3 for z=f(x,y) surfaces."
           x_min: "Left boundary of the graph. Supply with x_max."
           x_max: "Right boundary of the graph. Supply with x_min."
           y_min: "Bottom boundary of the graph. Supply with y_max."
           y_max: "Top boundary of the graph. Supply with y_min."
-          error: "Unable to prepare the graph. Use up to four supported expressions in x, one per line, without y= or LaTeX. Supply finite, increasing axis bounds in pairs, within -1000000 to 1000000, and a title of at most 120 characters. Correct the arguments before retrying."
+          z_min: "Lower z-axis boundary for a 3D surface only. Supply with z_max."
+          z_max: "Upper z-axis boundary for a 3D surface only. Supply with z_min."
+          error: "Unable to prepare the graph. Use dimensions=2 with up to four expressions in x, or dimensions=3 with up to two expressions in x and y, one per line, without y=, z= or LaTeX. Supply finite, increasing axis bounds in pairs, within -1000000 to 1000000, z bounds only for 3D, and a title of at most 120 characters. Correct the arguments before retrying."
         remaining_bot_quota:
           description: |
             Get the current number of tokens or queries you have left for use of the bot this week

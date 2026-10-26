@@ -2,7 +2,6 @@ import { module, test } from "qunit";
 import {
   compileExpression,
   parseGraph,
-  splitUndefinedSegments,
 } from "discourse/plugins/discourse-chatbot/discourse/lib/function-plot-expression";
 
 module("Chatbot | function plot expressions", function () {
@@ -75,31 +74,27 @@ module("Chatbot | function plot expressions", function () {
     assert.throws(() => parseGraph("x".repeat(8193)));
   });
 
-  test("keeps sampled curves separate across undefined domains", function (assert) {
-    const evaluate = compileExpression("sqrt(x^2-1)");
-    const points = [-2, -1.5, -1, 1, 1.5, 2].map((x) => [x, evaluate(x)]);
-    assert.deepEqual(splitUndefinedSegments([points], evaluate, 0.5), [
-      points.slice(0, 3),
-      points.slice(3),
-    ]);
-    assert.deepEqual(splitUndefinedSegments([[undefined]], evaluate, 0.5), []);
-    assert.deepEqual(
-      splitUndefinedSegments(
-        [
-          [
-            [0, 0],
-            [1, 1],
-          ],
-        ],
-        compileExpression("x"),
-        1
-      ),
-      [
-        [
-          [0, 0],
-          [1, 1],
-        ],
-      ]
+  test("supports two independent variables only for 3D surfaces", function (assert) {
+    const graph = parseGraph(
+      JSON.stringify({
+        dimensions: 3,
+        functions: ["sin(x)*cos(y)", "x^2-y^2"],
+        z_domain: [-2, 2],
+      })
+    );
+    assert.strictEqual(graph.dimensions, 3);
+    assert.deepEqual(graph.zDomain, [-2, 2]);
+    assert.strictEqual(graph.functions[0].evaluate(Math.PI / 2, 0), 1);
+    assert.strictEqual(graph.functions[1].evaluate(3, 2), 5);
+    assert.throws(() => compileExpression("y"));
+    [
+      { functions: ["y"] },
+      { functions: ["x"], dimensions: 4 },
+      { functions: ["x"], z_domain: [-1, 1] },
+      { functions: ["x"], dimensions: 3, z_domain: [2, 1] },
+      { functions: ["x", "y", "x+y"], dimensions: 3 },
+    ].forEach((value) =>
+      assert.throws(() => parseGraph(JSON.stringify(value)))
     );
   });
 });
