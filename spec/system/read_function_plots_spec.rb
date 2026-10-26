@@ -108,33 +108,64 @@ RSpec.describe "Read function plots" do
     expect(graphs).to have_no_error
   end
 
-  it "lets readers rotate and zoom a 3D surface without scrolling the page" do
+  it "renders the additional plot families locally" do
+    definitions = [
+      { "plot_type" => "implicit", "expressions" => "x^2+y^2-4", "title" => "Circle" },
+      {
+        "plot_type" => "parametric",
+        "expressions" => "cos(t); sin(t)",
+        "title" => "Parametric circle",
+      },
+      { "plot_type" => "polar", "expressions" => "2*cos(3*theta)", "title" => "Rose" },
+      { "plot_type" => "points", "expressions" => "0,1\n2,3\n3,2", "title" => "Scatter" },
+      {
+        "plot_type" => "polyline",
+        "expressions" => "0,1\n2,3\n3,2",
+        "title" => "Connected points",
+      },
+      { "plot_type" => "vector", "expressions" => "3,2\n1,1,-2,1", "title" => "Vectors" },
+    ]
+    raw = definitions.map { |args| DiscourseChatbot::FunctionPlot.markdown(args) }.join("\n\n")
+    Fabricate(:post, topic: topic, raw: raw)
+
+    topic_page.visit_topic(topic)
+
+    expect(graphs).to have_rendered_graphs(count: 6)
+    expect(graphs).to have_implicit_curve
+    expect(graphs).to have_scatter_points(count: 3)
+    expect(graphs).to have_vector_arrows(count: 2)
+    expect(graphs).to have_no_error
+    expect(graphs).to have_finite_paths
+  end
+
+  it "stops an expensive implicit definition with a useful fallback" do
     graph =
-      DiscourseChatbot::FunctionPlot.markdown(
-        "dimensions" => 3,
-        "expressions" => "sin(x)*cos(y)",
-        "title" => "A 3D wave",
-        "x_min" => -3,
-        "x_max" => 3,
-        "y_min" => -3,
-        "y_max" => 3,
-        "z_min" => -1.5,
-        "z_max" => 1.5,
-      )
+      DiscourseChatbot::FunctionPlot.markdown("plot_type" => "implicit", "expressions" => "x-x+y-y")
+    Fabricate(:post, topic: topic, raw: graph)
+
+    topic_page.visit_topic(topic)
+
+    expect(graphs).to have_error
+    expect(graphs).to have_no_visible_canvas
+    expect(topic_page).to have_content(I18n.t("js.chatbot.function_plot.fallback"))
+  end
+
+  it "lets readers pan and zoom a curve without scrolling the page" do
+    graph = DiscourseChatbot::FunctionPlot.markdown("expressions" => "sin(x)")
     Fabricate(:post, topic: topic, raw: graph + "\n\n" + ("More about the graph.\n\n" * 30))
     topic_page.visit_topic(topic)
 
-    expect(graphs).to have_surface
-    original_path = graphs.surface_path
-    graphs.rotate_surface
-    expect(graphs).to have_changed_surface(original_path)
-    rotated_path = graphs.surface_path
-    graphs.zoom_surface
-    expect(graphs).to have_changed_surface(rotated_path)
-    zoomed_path = graphs.surface_path
+    expect(graphs).to have_rendered_graphs(count: 1)
+    original_path = graphs.curve_path
+    graphs.pan_plot
+    try_until_success { expect(graphs.curve_path).not_to eq(original_path) }
+    panned_path = graphs.curve_path
+    graphs.zoom_plot
+    try_until_success { expect(graphs.curve_path).not_to eq(panned_path) }
+    zoomed_path = graphs.curve_path
     scroll_position = graphs.page_scroll_position
-    graphs.zoom_surface(delta_y: 300)
-    expect(graphs).to have_changed_surface(zoomed_path)
+    graphs.zoom_plot(delta_y: 300)
+    try_until_success { expect(graphs.curve_path).not_to eq(zoomed_path) }
     expect(graphs.page_scroll_position).to eq(scroll_position)
     expect(graphs).to have_no_error
     graphs.scroll_outside_plot

@@ -24,11 +24,12 @@ module DiscourseChatbot
             description: I18n.t("chatbot.prompt.function.function_plot.title"),
           },
           {
-            name: "dimensions",
-            type: Numeric,
-            description: I18n.t("chatbot.prompt.function.function_plot.dimensions"),
+            name: "plot_type",
+            type: String,
+            enum: ::DiscourseChatbot::FunctionPlot::PLOT_TYPES,
+            description: I18n.t("chatbot.prompt.function.function_plot.plot_type"),
           },
-          *%w[x_min x_max y_min y_max z_min z_max].map do |name|
+          *%w[x_min x_max y_min y_max parameter_min parameter_max].map do |name|
             {
               name: name,
               type: Numeric,

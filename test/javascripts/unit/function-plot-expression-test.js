@@ -58,10 +58,10 @@ module("Chatbot | function plot expressions", function () {
         title: "Two curves",
       })
     );
-    assert.strictEqual(graph.functions.length, 2);
+    assert.strictEqual(graph.series.length, 2);
     assert.deepEqual(graph.xDomain, [-7, 7]);
     assert.deepEqual(graph.yDomain, [-2, 2]);
-    assert.strictEqual(graph.functions[0].evaluate(0), 0);
+    assert.strictEqual(graph.series[0].evaluate(0), 0);
     [
       { functions: [] },
       { functions: ["x", "x", "x", "x", "x"] },
@@ -76,27 +76,64 @@ module("Chatbot | function plot expressions", function () {
     assert.throws(() => parseGraph("x".repeat(8193)));
   });
 
-  test("supports two independent variables only for 3D surfaces", function (assert) {
-    const graph = parseGraph(
-      JSON.stringify({
-        dimensions: 3,
-        functions: ["sin(x)*cos(y)", "x^2-y^2"],
-        z_domain: [-2, 2],
-      })
+  test("uses the variables and data format for each selected family", function (assert) {
+    const parse = (value) => parseGraph(JSON.stringify(value));
+    const implicit = parse({ plot_type: "implicit", functions: ["x^2+y^2-4"] });
+    assert.strictEqual(implicit.series[0].evaluate(0, 2), 0);
+    const parametric = parse({
+      plot_type: "parametric",
+      functions: [["cos(t)", "sin(t)"]],
+    });
+    assert.strictEqual(parametric.series[0].evaluateX(0), 1);
+    assert.strictEqual(parametric.series[0].evaluateY(0), 0);
+    assert.deepEqual(parametric.parameterRange, [0, 2 * Math.PI]);
+    const polar = parse({
+      plot_type: "polar",
+      functions: ["theta"],
+      parameter_range: [0, 8],
+    });
+    assert.strictEqual(polar.series[0].evaluate(3), 3);
+    assert.deepEqual(polar.parameterRange, [0, 8]);
+    for (const plot_type of ["points", "polyline"]) {
+      assert.deepEqual(
+        parse({
+          plot_type,
+          points: [
+            [1, 2],
+            [3, 4],
+          ],
+        }).series[0].points,
+        [
+          [1, 2],
+          [3, 4],
+        ]
+      );
+    }
+    assert.deepEqual(
+      parse({ plot_type: "vector", vectors: [[1, 2, 3, 4]] }).series[0].vector,
+      [1, 2, 3, 4]
     );
-    assert.strictEqual(graph.dimensions, 3);
-    assert.deepEqual(graph.zDomain, [-2, 2]);
-    assert.strictEqual(graph.functions[0].evaluate(Math.PI / 2, 0), 1);
-    assert.strictEqual(graph.functions[1].evaluate(3, 2), 5);
-    assert.throws(() => compileExpression("y"));
+    assert.strictEqual(
+      parse({ dimensions: 2, functions: ["x"] }).plotType,
+      "function"
+    );
     [
       { functions: ["y"] },
-      { functions: ["x"], dimensions: 4 },
+      { functions: ["x"], dimensions: 3 },
       { functions: ["x"], z_domain: [-1, 1] },
-      { functions: ["x"], dimensions: 3, z_domain: [2, 1] },
-      { functions: ["x", "y", "x+y"], dimensions: 3 },
+      { functions: ["x"], parameter_range: [0, 1] },
+      { plot_type: "polar", functions: ["x"] },
+      { plot_type: "parametric", functions: [["t", "y"]] },
+      { plot_type: "parametric", functions: ["cos(t);sin(t)"] },
+      { plot_type: "implicit", functions: ["x", "y", "x+y"] },
+      { plot_type: "points", points: [[1, null]] },
+      { plot_type: "points", points: Array(151).fill([0, 1]) },
+      { plot_type: "polyline", points: [[1, "2"]] },
+      { plot_type: "vector", vectors: [[1, 2]] },
+      { plot_type: "polar", functions: ["theta"], parameter_range: [1, 0] },
+      { plot_type: "points", points: [[0, 0]], functions: ["x"] },
     ].forEach((value) =>
-      assert.throws(() => parseGraph(JSON.stringify(value)))
+      assert.throws(() => parse(value), undefined, JSON.stringify(value))
     );
   });
 });

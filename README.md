@@ -371,46 +371,40 @@ Filtering adds an evaluation call and can change prompt-cache reuse; reduced too
 guarantee lower total cost or better answers. Thresholds and guidance should be evaluated against
 your community's requests.
 
-### Mathematical function graphs
+### Mathematical graphs
 
-Chatbot bundles JSXGraph 1.14.1 for interactive 2D curves
-and 3D surfaces rendered locally in the
-reader's browser. `chatbot_function_plot_enabled` defaults to `true`, and
-`plot_function` is included in the defaults for all `chatbot_tools_*_trust` settings.
-Customised trust-level tool lists retain their existing selections; add
-`plot_function` to those lists to let the bot prepare graphs.
-System One selection evaluates the new tool like the other eligible tools.
+Chatbot bundles function-plot 1.26.0 for interactive 2D graphs rendered in the
+reader's browser. The library loads only when a graph is present, with no external
+rendering API or notional tool quota charge. `chatbot_function_plot_enabled`
+defaults to `true`; `plot_function` is included in all `chatbot_tools_*_trust`
+defaults. Add it to any customised tool lists to make it available. System One
+selection evaluates it like the other eligible tools.
 
-Existing `function-plot` fences remain compatible. To plot a surface `z=f(x,y)`,
-add `"dimensions":3` and optionally `"z_domain"` to its JSON definition:
+A single `plot_function` tool accepts an optional `plot_type` (default `function`),
+`expressions`, `title`, paired `x_min`/`x_max` and `y_min`/`y_max` bounds, and paired
+`parameter_min`/`parameter_max` for parametric/polar curves. Unused parameter bounds
+are ignored, including placeholders supplied by strict tool schemas. Each graph
+uses one family; an answer can include multiple graphs alongside explanations and
+the usual MathJax/LaTeX output when Discourse Math is enabled.
 
-````markdown
-```function-plot
-{"dimensions":3,"functions":["sin(x)*cos(y)"],"title":"A 3D wave","x_domain":[-3,3],"y_domain":[-3,3],"z_domain":[-1.5,1.5]}
-```
-````
+| Plot type | Tool `expressions` format (one entry per line) | Limit |
+| --- | --- | --- |
+| `function` | `sin(x)` or `cbrt((3-4*x^3)/2)` | 4 curves |
+| `implicit` | `x^2+y^2-4` for the equation F(x,y)=0 | 2 curves |
+| `parametric` | `cos(t); sin(t)` for x(t); y(t) | 4 curves |
+| `polar` | `2*cos(3*theta)` for r(theta) | 4 curves |
+| `points` | `1,2` for x,y scatter points | 150 points |
+| `polyline` | `1,2` for connected x,y points in supplied order | 150 points |
+| `vector` | `3,2` for dx,dy from the origin, or `1,1,3,2` for x0,y0,dx,dy | 16 vectors |
 
-Readers drag a 3D surface to rotate it and scroll or pinch to zoom. The tool accepts the equivalent numeric
-`dimensions` parameter (2 by default, or 3 for surfaces) and paired `z_min`/`z_max`
-bounds. Z bounds are ignored for 2D plots, including placeholder values supplied by strict tool schemas. Use at most two surfaces in a graph. The 3D mode supports
-explicit surfaces `z=f(x,y)`, not arbitrary implicit solids or parametric curves.
+Axes default to `[-10,10]`; t/theta defaults to `[0,2*pi]`. Custom bounds must be
+finite, increasing pairs within `[-1000000,1000000]`, spanning at least `0.000001`.
+Coordinates and vector components share that numeric limit. Titles are plain text
+up to 120 characters. Inputs are limited to 6000 characters; rendered JSON to 8192.
 
-In 2D, moving the pointer shows a coloured marker and live x/y coordinates for
-each curve visible at that x value. Undefined and off-screen values are hidden;
-the markers and coordinate readouts clear when the pointer leaves the plot.
-Within six screen pixels of a nearby axis intercept or series intersection,
-tracing snaps to that crossing. Intersecting series share a marker location and
-coordinate reading, and axis intercepts show a zero coordinate. All series follow
-the selected x position. Crossings are found numerically; coincident series, poles,
-jumps and undefined regions do not introduce false intersection targets.
-Tangential contacts can be missed unless a sampled point lands exactly on the contact.
-
-The tool is intended to accompany mathematical explanations, including the site's
-usual MathJax/LaTeX output when Discourse Math is enabled (`discourse_math_enabled`). For example, an answer
-about quadratic roots can explain the algebra and include a plot of `x^2-4`.
-The graph tool uses no external API and adds no notional tool quota charge.
-
-Human-authored posts, PMs and Chat messages can use the same fenced format:
+Human-authored posts, PMs and Chat can use the same `function-plot` fenced JSON.
+Existing 2D `functions` blocks retain their format. These examples show the fields
+for each additional family; `title`, `x_domain` and `y_domain` are optional:
 
 ````markdown
 The curves intersect where $\sin(x)=\cos(x)$.
@@ -418,26 +412,56 @@ The curves intersect where $\sin(x)=\cos(x)$.
 ```function-plot
 {"functions":["sin(x)","cos(x)"],"title":"Sine and cosine","x_domain":[-7,7],"y_domain":[-2,2]}
 ```
+
+```function-plot
+{"plot_type":"implicit","functions":["x^2+y^2-4"],"x_domain":[-3,3],"y_domain":[-3,3]}
+```
+
+```function-plot
+{"plot_type":"parametric","functions":[["cos(t)","sin(t)"]],"parameter_range":[0,6.283185307179586]}
+```
+
+```function-plot
+{"plot_type":"polar","functions":["2*cos(3*theta)"]}
+```
+
+```function-plot
+{"plot_type":"points","points":[[0,0],[1,2],[2,1]]}
+```
+
+```function-plot
+{"plot_type":"polyline","points":[[0,0],[1,2],[2,1]]}
+```
+
+```function-plot
+{"plot_type":"vector","vectors":[[0,0,3,2],[1,1,-2,1]]}
+```
 ````
 
-Supported expressions use `x` (and `y` for 3D surfaces), numeric literals, `pi`, `e`, explicit multiplication,
-`+ - * / ^`, parentheses, and the single-argument functions `sin`, `cos`, `tan`,
-`asin`, `acos`, `atan`, `sqrt`, `cbrt`, `abs`, `exp`, `log`, `log10`, `floor`, and `ceil`.
-Use `cbrt(...)` for real cube roots of negative as well as positive values.
-`log` is the natural logarithm and trigonometric angles are radians. Omit `y=` and
-LaTeX commands from graph expressions. There may be up to four 2D expressions or two 3D expressions, each
-at most 256 characters. Titles are plain text, at most 120 characters. Both axes
-default to `[-10,10]`; custom domains must be finite, increasing pairs within
-`[-1000000,1000000]`, with a span of at least `0.000001`.
+Readers drag to pan and scroll or pinch to zoom. Wheel zoom inside a graph does
+not scroll the page. For ordinary `function` curves, moving the pointer shows a
+coloured marker and live x/y coordinates on each visible curve. Tracing snaps
+within six screen pixels of axis intercepts and series intersections. Intersecting
+series share coordinates; undefined/off-screen values and pointer exit hide the
+markers. Crossings are numerical; poles, jumps and coincident series do not create
+false snapping targets. Tangencies can be missed. Other plot types support pan and
+zoom without the function-specific trace overlay.
 
-The renderer uses a restricted interpreter and trusted callbacks, with JSXGraph's
-code compilation disabled, preserving Discourse's CSP. 2D curves use adaptive
-sampling; 3D surfaces use a bounded mesh with 24 subdivisions in each direction.
-It redraws when resized, zoomed or rotated. Undefined or non-finite values are gaps;
-graphs are numerical visualisations, not proofs or a symbolic solver. Graph
-definitions remain available in a disclosure below each plot and as ordinary
-code blocks in email, exports, disabled rendering, and clients without JavaScript.
-Invalid definitions display an error and retain the original definition.
+The restricted interpreter accepts numeric literals, `pi`, `e`, `+ - * / ^`,
+parentheses and `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sqrt`, `cbrt`, `abs`,
+`exp`, `log`, `log10`, `floor`, `ceil`. Variables depend on the selected family.
+Expressions are limited to 256 characters each, 128 tokens and bounded nesting;
+assignments, JavaScript and arbitrary library options are rejected on both sides.
+Use `cbrt(...)` for real cube roots; `log` is natural and angles are radians.
+
+Trusted callbacks preserve Discourse's CSP without evaluating post text as code.
+Ordinary curves use 1000 samples and preserve undefined domain gaps. Implicit
+curves use the library's interval sampler and a shared limit of 40000 evaluations
+per redraw; over-budget graphs show an error with the original definition.
+Graphs are numerical visualisations, not symbolic solutions or proofs. 3D surfaces
+are unsupported. Definitions remain available below each plot and as ordinary
+code in email, exports, disabled rendering, and clients without JavaScript.
+Vendor build instructions and checksums are in `public/function-plot/README.md`.
 
 ### Tool extensions
 

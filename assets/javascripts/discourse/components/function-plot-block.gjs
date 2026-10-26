@@ -6,7 +6,10 @@ import loadScript from "discourse/lib/load-script";
 import { eq } from "discourse/truth-helpers";
 import { i18n } from "discourse-i18n";
 import { parseGraph } from "../lib/function-plot-expression";
-import { createCurveTrace, createGraphBoard } from "../lib/jsxgraph-renderer";
+import {
+  createCurveTrace,
+  createGraphChart,
+} from "../lib/function-plot-renderer";
 
 export default class FunctionPlotBlock extends Component {
   @tracked failed = false;
@@ -16,7 +19,7 @@ export default class FunctionPlotBlock extends Component {
 
   renderPlot = modifier((element, [raw]) => {
     let disposed = false;
-    let board;
+    let chart;
     let observer;
     let previousWidth;
     let trace;
@@ -40,20 +43,6 @@ export default class FunctionPlotBlock extends Component {
     const onWheel = (event) => {
       event.preventDefault();
       event.stopPropagation();
-      if (event.deltaY === 0) {
-        return;
-      }
-      const position = new window.JXG.Coords(
-        window.JXG.COORDS_BY_SCREEN,
-        board.getMousePosition(event),
-        board
-      ).usrCoords;
-      if (event.deltaY < 0) {
-        board.zoomIn(position[1], position[2]);
-      } else {
-        board.zoomOut(position[1], position[2]);
-      }
-      trace?.move(event);
     };
 
     const resize = () => {
@@ -63,7 +52,11 @@ export default class FunctionPlotBlock extends Component {
         previousWidth = width;
         trace?.clear();
         element.style.height = `${height}px`;
-        board?.resizeContainer(width, height, true);
+        if (chart) {
+          chart.options.width = width;
+          chart.options.height = height;
+          chart.build();
+        }
       }
     };
 
@@ -71,16 +64,20 @@ export default class FunctionPlotBlock extends Component {
       try {
         const graph = parseGraph(raw);
         await loadScript(
-          "/plugins/discourse-chatbot/jsxgraph/1.14.1/jsxgraphcore.js"
+          "/plugins/discourse-chatbot/function-plot/1.26.0/function-plot.js"
         );
         if (disposed) {
           return;
         }
         this.graph = graph;
+        chart = createGraphChart(element, graph, () => {
+          if (!disposed) {
+            this.failed = true;
+          }
+        });
         resize();
-        board = createGraphBoard(element, graph);
-        if (graph.dimensions === 2) {
-          trace = createCurveTrace(board, graph, (values) => {
+        if (graph.plotType === "function") {
+          trace = createCurveTrace(chart, graph, (values) => {
             if (!disposed) {
               this.traceValues = values.map((value) =>
                 value
@@ -123,8 +120,10 @@ export default class FunctionPlotBlock extends Component {
         trace.destroy();
       }
       observer?.disconnect();
-      if (board) {
-        window.JXG.JSXGraph.freeBoard(board);
+      if (chart) {
+        chart.removeAllListeners();
+        // Upstream retains detached charts in a static cache.
+        delete chart.constructor.cache[chart.id];
       }
     };
   });
@@ -149,26 +148,30 @@ export default class FunctionPlotBlock extends Component {
       {{/if}}
       <div
         class="chatbot-function-plot__canvas"
+        data-plot-type={{this.graph.plotType}}
+        hidden={{this.failed}}
         {{this.renderPlot @data.raw}}
       ></div>
       <ul class="chatbot-function-plot__legend">
-        {{#each this.graph.functions as |curve index|}}
-          <li>
-            <span>{{curve.expression}}</span>
-            {{#if (eq this.graph.dimensions 2)}}
-              <span class="chatbot-function-plot__coordinates">{{get
-                  this.traceValues
-                  index
-                }}</span>
-            {{/if}}
-          </li>
+        {{#each this.graph.series as |curve index|}}
+          {{#if curve.expression}}
+            <li>
+              <span>{{curve.expression}}</span>
+              {{#if (eq this.graph.plotType "function")}}
+                <span class="chatbot-function-plot__coordinates">{{get
+                    this.traceValues
+                    index
+                  }}</span>
+              {{/if}}
+            </li>
+          {{/if}}
         {{/each}}
       </ul>
       <figcaption>{{i18n
           (if
-            (eq this.graph.dimensions 3)
-            "chatbot.function_plot.help_3d"
+            (eq this.graph.plotType "function")
             "chatbot.function_plot.help"
+            "chatbot.function_plot.help_other"
           )
         }}</figcaption>
       <details class="chatbot-function-plot__definition">

@@ -1,6 +1,6 @@
 en:
   site_settings:
-    chatbot_function_plot_enabled: "Render interactive 2D curves and 3D surfaces from function-plot blocks using JSXGraph in posts, PMs and Chat. The plot_function tool is included in the defaults for every trust level; add it to any customised tool lists to let Chatbot prepare graphs. Graphs can accompany maths explanations and MathJax output."
+    chatbot_function_plot_enabled: "Render interactive 2D function, implicit, parametric, polar, point and vector plots locally with function-plot in posts, PMs and Chat. The plot_function tool is included in the defaults for every trust level; add it to customised tool lists to let Chatbot prepare graphs alongside maths explanations and MathJax output."
     chatbot_enabled: "Enable the chatbot plugin"
     chatbot_llm_provider: "Provider used for chatbot completions. OpenAI, Anthropic, Google Gemini, and xAI are supported through their OpenAI-compatible APIs."
     chatbot_open_ai_token: "OpenAI API key shared by every chatbot capability configured to use OpenAI. Get a key at <a target='_blank' rel='noopener' href='https://platform.openai.com/api-keys'>OpenAI</a>."
@@ -199,19 +199,19 @@ en:
       function:
         function_plot:
           description: |
-            Prepare an interactive mathematical graph. For ordinary equations in x and y use dimensions=2 (the default): up to four curves y=f(x), with expressions in x. For a surface z=f(x,y), use dimensions=3: up to two expressions in x and y; readers can rotate the surface. Do not add a third dimension to an equation that only describes a 2D curve. Use when a graph would help explain roots, intersections, turning points, trigonometry, growth, or surfaces, even if the user did not explicitly ask for a graph. Accompany the graph with a mathematical explanation and the site's usual LaTeX/MathJax notation; the graph does not replace the answer or numerical calculation tools.
-            Supply expressions one per line, without 'y=', 'z=' or LaTeX. Use explicit multiplication (*), powers (^), parentheses, constants pi and e, and these single-argument functions: sin, cos, tan, asin, acos, atan, sqrt, cbrt, abs, exp, log (natural logarithm), log10, floor, ceil. Use cbrt(expression) for real cube roots, especially when the argument may be negative; do not use ^(1/3) for those roots. Trigonometric angles are radians. Examples: x^2-4 for 2D; sin(x)*cos(y) or x^2-y^2 for 3D. Expressions are limited to 256 characters each.
-            Choose axis bounds that show the relevant features. Bounds are numeric; supply both minimum and maximum for an axis, with -1000000 <= minimum < maximum <= 1000000. Each axis defaults to [-10,10] if omitted. The z_min/z_max bounds are used only for 3D and ignored for 2D. The tool returns a function-plot fenced block; copy the complete block unchanged into your final answer outside any other code fence. The graph renders in the reader's browser; do not claim to have viewed its rendered appearance.
-          expressions: "Expressions separated by newlines: up to four in x for 2D curves, or up to two in x and y for 3D surfaces."
+            Prepare an interactive 2D mathematical graph when it helps explain the answer, including roots, intersections, conics, trajectories or data. Choose plot_type and use the matching expressions format. Accompany the graph with the mathematical explanation and usual LaTeX/MathJax notation. 3D is unsupported.
+            Expressions use explicit multiplication (*), powers (^), parentheses, pi, e, and single-argument sin, cos, tan, asin, acos, atan, sqrt, cbrt, abs, exp, log (natural), log10, floor, ceil. Angles are radians. Use cbrt(...) for real cube roots of negative arguments. Omit assignments and LaTeX. Limit each expression to 256 characters.
+            Choose numeric axis bounds that show the relevant features; supply min/max pairs within [-1000000,1000000], increasing by at least 0.000001. Axes default to [-10,10]. For parametric/polar curves, parameter_min/parameter_max select t/theta (default 0 to 2*pi); ignored for other types. Copy the returned function-plot fence unchanged into the final answer outside other fences. Rendering is local; do not claim to have viewed the result.
+          expressions: "Newline-separated entries: function (default): y=f(x) as x^2-4; implicit: F(x,y)=0 as x^2+y^2-4 (max 2); parametric: x(t); y(t) as cos(t); sin(t); polar: r(theta) as 2*cos(3*theta). Max 4 curves except implicit. points/polyline: numeric x,y per line (max 150), scatter/connected respectively. vector: numeric dx,dy from origin or x0,y0,dx,dy per line (max 16)."
           title: "Optional plain-text graph title, up to 120 characters."
-          dimensions: "Optional number 2 (default) for y=f(x) curves, or 3 for z=f(x,y) surfaces."
-          x_min: "Left boundary of the graph. Supply with x_max."
-          x_max: "Right boundary of the graph. Supply with x_min."
-          y_min: "Bottom boundary of the graph. Supply with y_max."
-          y_max: "Top boundary of the graph. Supply with y_min."
-          z_min: "Lower z-axis boundary for a 3D surface. Ignored for 2D. Supply with z_max."
-          z_max: "Upper z-axis boundary for a 3D surface. Ignored for 2D. Supply with z_min."
-          error: "Unable to prepare the graph. Use dimensions=2 with up to four expressions in x, or dimensions=3 with up to two expressions in x and y, one per line, without y=, z= or LaTeX. Supply finite, increasing axis bounds in pairs, within -1000000 to 1000000, paired z bounds for 3D (ignored for 2D), and a title of at most 120 characters. Correct the arguments before retrying."
+          plot_type: "Plot family; function is the default. One family per graph."
+          x_min: "Left boundary. Supply with x_max."
+          x_max: "Right boundary. Supply with x_min."
+          y_min: "Bottom boundary. Supply with y_max."
+          y_max: "Top boundary. Supply with y_min."
+          parameter_min: "Start of t/theta for parametric/polar curves. Supply with parameter_max. Ignored otherwise."
+          parameter_max: "End of t/theta for parametric/polar curves. Supply with parameter_min. Ignored otherwise."
+          error: "Unable to prepare the graph. Check plot_type and its expressions format: function in x; implicit in x,y equal to zero; parametric x(t);y(t); polar in theta; points/polyline numeric x,y; vector numeric dx,dy or x0,y0,dx,dy. Max 4 curves (2 implicit), 150 points or 16 vectors. Use supported maths only, increasing finite bounds in pairs within +/-1000000, and a title up to 120 characters. Parameter bounds apply only to parametric/polar curves. Correct the arguments before retrying."
         remaining_bot_quota:
           description: |
             Get the current number of tokens or queries you have left for use of the bot this week

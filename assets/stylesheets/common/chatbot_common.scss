@@ -151,19 +151,19 @@
       flex-direction: column;
     }
 
-    li:nth-child(1) {
+    li:nth-child(4n + 1) {
       color: #08c;
     }
 
-    li:nth-child(2) {
+    li:nth-child(4n + 2) {
       color: #e4572e;
     }
 
-    li:nth-child(3) {
+    li:nth-child(4n + 3) {
       color: #32a66a;
     }
 
-    li:nth-child(4) {
+    li:nth-child(4n + 4) {
       color: #b279a2;
     }
   }

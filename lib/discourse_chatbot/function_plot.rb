@@ -5,7 +5,7 @@ require "dentaku"
 module DiscourseChatbot
   class FunctionPlot
     FUNCTIONS = %w[sin cos tan asin acos atan sqrt cbrt abs exp log log10 floor ceil].freeze
-    VARIABLES = %w[x pi e].freeze
+    PLOT_TYPES = %w[function implicit parametric polar points polyline vector].freeze
     MAX_FUNCTIONS = 4
     MAX_EXPRESSION_LENGTH = 256
     MAX_TOKENS = 128
@@ -13,27 +13,59 @@ module DiscourseChatbot
     MAX_BOUND = 1_000_000
 
     def self.markdown(args)
-      dimensions = args.fetch("dimensions", 2)
-      raise ArgumentError if [2, 3].exclude?(dimensions)
+      plot_type = args.fetch("plot_type", "function")
+      raise ArgumentError if PLOT_TYPES.exclude?(plot_type)
 
-      expressions = args.fetch("expressions").split("\n").map(&:strip).reject(&:empty?)
-      limit = dimensions == 3 ? 2 : MAX_FUNCTIONS
-      raise ArgumentError if expressions.empty? || expressions.length > limit
-
-      variables = dimensions == 3 ? VARIABLES + ["y"] : VARIABLES
-      expressions.each { |expression| validate_expression!(expression, variables) }
+      source = args.fetch("expressions")
+      raise ArgumentError if source.length > 6000
+      expressions = source.split("\n").map(&:strip).reject(&:empty?)
       title = args.fetch("title", "")
       raise ArgumentError if title.length > 120 || title.match?(/[\r\n]/)
 
       graph = {
-        functions: expressions,
         title: title,
         x_domain: domain(args, "x", [-10, 10]),
         y_domain: domain(args, "y", [-10, 10]),
       }
-      if dimensions == 3
-        graph[:dimensions] = 3
-        graph[:z_domain] = domain(args, "z", [-10, 10])
+      graph[:plot_type] = plot_type unless plot_type == "function"
+      if %w[points polyline vector].include?(plot_type)
+        key = plot_type == "vector" ? :vectors : :points
+        limit = plot_type == "vector" ? 16 : 150
+        raise ArgumentError if expressions.empty? || expressions.length > limit
+        graph[key] = expressions.map do |line|
+          values = line.split(",", -1).map(&:strip)
+          sizes = plot_type == "vector" ? [2, 4] : [2]
+          unless sizes.include?(values.length) &&
+                   values.all? { |value|
+                     value.match?(/\A[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?\z/i)
+                   }
+            raise ArgumentError
+          end
+          numbers = values.map(&:to_f)
+          unless numbers.all? { |value| value.finite? && value.abs <= MAX_BOUND }
+            raise ArgumentError
+          end
+          numbers.unshift(0, 0) if plot_type == "vector" && numbers.length == 2
+          numbers
+        end
+      else
+        limit = plot_type == "implicit" ? 2 : MAX_FUNCTIONS
+        raise ArgumentError if expressions.empty? || expressions.length > limit
+        variables = {
+          "function" => %w[x],
+          "implicit" => %w[x y],
+          "parametric" => %w[t],
+          "polar" => %w[theta],
+        }.fetch(plot_type)
+        graph[:functions] = expressions.map do |expression|
+          parts = plot_type == "parametric" ? expression.split(";", -1).map(&:strip) : [expression]
+          raise ArgumentError if parts.length != (plot_type == "parametric" ? 2 : 1)
+          parts.each { |part| validate_expression!(part, variables + %w[pi e]) }
+          plot_type == "parametric" ? parts : expression
+        end
+        if %w[parametric polar].include?(plot_type)
+          graph[:parameter_range] = domain(args, "parameter", [0, 2 * Math::PI])
+        end
       end
       "```function-plot\n#{JSON.generate(graph)}\n```"
     end
